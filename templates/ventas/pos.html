@@ -1,0 +1,357 @@
+{% include "ventas/submenu.html" %}
+
+<div id="modulo-punto-venta" class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6 opacity-0 translate-y-2 transition-all duration-300">
+    
+    <div class="lg:col-span-2 space-y-4">
+        
+        <div class="relative bg-gray-900 border border-gray-800 rounded-2xl p-4 flex items-center gap-3 focus-within:border-emerald-500/50 transition-all">
+            <div class="text-xl pl-1 select-none">🔍</div>
+            <input type="text" id="input-busqueda-pos" autofocus autocomplete="off"
+                placeholder="Escaneá con la pistola o escribí el nombre del artículo..." 
+                class="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-sm text-gray-200 focus:outline-none focus:border-emerald-500 transition-all placeholder:text-gray-600 font-mono">
+            
+            <div id="dropdown-resultados-pos" class="hidden absolute top-full left-0 w-full mt-2 bg-gray-900 border border-gray-800 rounded-xl shadow-2xl max-h-60 overflow-y-auto z-50 divide-y divide-gray-800/60 font-mono text-xs">
+                </div>
+        </div>
+
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden min-h-[380px] flex flex-col justify-between shadow-xl">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-gray-800 bg-gray-950/40 text-gray-400 font-mono text-xs uppercase tracking-wider">
+                            <th class="p-4 font-bold">Artículo</th>
+                            <th class="p-4 font-bold text-center w-36">Cantidad</th>
+                            <th class="p-4 font-bold text-right">P. Unitario</th>
+                            <th class="p-4 font-bold text-right">Subtotal</th>
+                            <th class="p-4 font-bold text-center w-20"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-items-venta" class="divide-y divide-gray-800/40 text-gray-200 font-mono text-sm">
+                        <tr>
+                            <td colspan="5" class="text-center py-24 text-gray-600 tracking-tight font-sans text-xs">
+                                <span class="text-3xl block mb-2">🛒</span> Carrito vacío. Escaneá un código para comenzar.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="space-y-4">
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 flex flex-col justify-between min-h-[468px] shadow-xl">
+            
+            <div class="space-y-6">
+                <h3 class="text-xs font-mono font-bold uppercase text-gray-500 tracking-wider border-b border-gray-800 pb-2">Resumen de Compra</h3>
+                
+                <div class="bg-gray-950 border border-gray-800 rounded-xl p-5 text-center select-none shadow-inner border-l-4 border-l-emerald-500">
+                    <span class="block text-[10px] font-mono font-bold uppercase tracking-widest text-gray-500">Total General</span>
+                    <span id="pos-total-gigante" class="text-4xl font-black font-mono text-emerald-400 tracking-tight">$ 0.00</span>
+                </div>
+
+                <div class="space-y-2.5 font-mono text-xs bg-gray-950/40 p-4 border border-gray-800/80 rounded-xl">
+                    <div class="flex justify-between text-gray-400">
+                        <span>Variedad de artículos:</span>
+                        <span id="pos-total-lineas" class="text-gray-200 font-bold">0 de productos</span>
+                    </div>
+                    <div class="flex justify-between text-gray-400">
+                        <span>Cantidad total de bultos:</span>
+                        <span id="pos-total-unidades" class="text-gray-200 font-bold">0 u.</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-2 pt-6 border-t border-gray-800/60">
+                <button id="btn-finalizar-venta" onclick="procesarEnvioVenta()" disabled
+                    class="w-full text-xs font-extrabold py-3.5 rounded-xl transition-all text-gray-500 bg-gray-800/40 border border-gray-800 cursor-not-allowed flex items-center justify-center gap-1.5 shadow-md uppercase tracking-wider">
+                    💵 Confirmar Transacción (F10)
+                </button>
+                <button onclick="cancelarVentaActual()" class="w-full text-xs font-bold py-2.5 text-gray-500 hover:text-rose-400 rounded-xl transition-colors font-mono tracking-tight cursor-pointer">
+                    ❌ Vaciar Carrito
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        let carrito = [];
+        let productosFiltradosActuales = []; // Guardamos los resultados en memoria para el Enter inmediato
+        
+        const inputBusqueda = document.getElementById('input-busqueda-pos');
+        const dropdownResultados = document.getElementById('dropdown-resultados-pos');
+        const tablaItems = document.getElementById('tabla-items-venta');
+        const totalGigante = document.getElementById('pos-total-gigante');
+        const totalLineas = document.getElementById('pos-total-lineas');
+        const totalUnidades = document.getElementById('pos-total-unidades');
+        const btnFinalizar = document.getElementById('btn-finalizar-venta');
+        const moduloContenedor = document.getElementById('modulo-punto-venta');
+
+        setTimeout(() => {
+            moduloContenedor.classList.remove('opacity-0', 'translate-y-2');
+        }, 50);
+
+        if (inputBusqueda) inputBusqueda.focus();
+
+        // 🟢 BUSCADOR: Capturar evento de escritura
+        inputBusqueda.addEventListener('input', async (e) => {
+            const termino = e.target.value.trim();
+            if (termino.length < 2) {
+                dropdownResultados.classList.add('hidden');
+                productosFiltradosActuales = [];
+                return;
+            }
+
+            try {
+                const respuesta = await fetch(`/productos/?search=${encodeURIComponent(termino)}`);
+                if (respuesta.ok) {
+                    productosFiltradosActuales = await respuesta.json();
+                    renderizarDropdown(productosFiltradosActuales);
+                }
+            } catch (err) {
+                console.error("Error buscando productos:", err);
+            }
+        });
+
+        // ⚡ CAPTURA DEL ENTER EN EL BUSCADOR (Pistola Láser o Teclado)
+        inputBusqueda.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // Evitamos que refresque el formulario
+                
+                // Si la lista tiene al menos un resultado, tomamos el primero automáticamente
+                if (productosFiltradosActuales && productosFiltradosActuales.length > 0) {
+                    const p = productosFiltradosActuales[0];
+                    agregarAlCarrito(parseInt(p.id), p.nombre, parseFloat(p.precio), parseInt(p.stock));
+                    
+                    // Limpieza inmediata del buscador para el siguiente escaneo
+                    dropdownResultados.classList.add('hidden');
+                    inputBusqueda.value = "";
+                    productosFiltradosActuales = [];
+                    inputBusqueda.focus();
+                } else {
+                    emitirNotificacionGlobal("❌ No se encontró ningún producto con ese código/nombre", "error");
+                }
+            }
+        });
+
+        function renderizarDropdown(productos) {
+            if (productos.length === 0) {
+                dropdownResultados.innerHTML = `<div class="p-3 text-gray-500 italic text-center">Sin resultados coincidentes</div>`;
+                dropdownResultados.classList.remove('hidden');
+                return;
+            }
+
+            // El primer elemento se destaca sutilmente (border-l-4) indicando que es el que se elegirá al dar Enter
+            dropdownResultados.innerHTML = productos.map((p, index) => `
+                <div class="p-3 hover:bg-gray-800/80 cursor-pointer flex justify-between items-center transition-colors ${index === 0 ? 'bg-gray-950/40 border-l-2 border-l-emerald-500' : ''}" 
+                     data-id="${p.id}" data-nombre="${p.nombre}" data-precio="${p.precio}" data-stock="${p.stock}">
+                    <div>
+                        <span class="text-gray-200 font-bold">${p.nombre}</span> ${index === 0 ? '<span class="text-[9px] bg-emerald-500/10 text-emerald-400 px-1 py-0.5 rounded ml-1 font-sans">Enter para cargar</span>' : ''}
+                        <span class="text-[10px] text-gray-500 block">Cód: ${p.codigo_barras || 'N/A'}</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-emerald-400 font-bold font-mono">$ ${parseFloat(p.precio).toFixed(2)}</span>
+                        <span class="text-[10px] text-gray-400 block">Stock: ${p.stock}</span>
+                    </div>
+                </div>
+            `).join('');
+            dropdownResultados.classList.remove('hidden');
+
+            // Selección manual con click por si acaso
+            dropdownResultados.querySelectorAll('[data-id]').forEach(elem => {
+                elem.addEventListener('click', () => {
+                    const id = parseInt(elem.getAttribute('data-id'));
+                    const nombre = elem.getAttribute('data-nombre');
+                    const precio = parseFloat(elem.getAttribute('data-precio'));
+                    const stock = parseInt(elem.getAttribute('data-stock'));
+                    
+                    agregarAlCarrito(id, nombre, precio, stock);
+                    dropdownResultados.classList.add('hidden');
+                    inputBusqueda.value = "";
+                    productosFiltradosActuales = [];
+                    inputBusqueda.focus();
+                });
+            });
+        }
+
+        // Ocultar al hacer clic fuera
+        document.addEventListener('click', (e) => {
+            if (dropdownResultados && !inputBusqueda.contains(e.target) && !dropdownResultados.contains(e.target)) {
+                dropdownResultados.classList.add('hidden');
+            }
+        });
+
+        // 🛒 LÓGICA DEL CARRITO
+        function agregarAlCarrito(id, nombre, precio, stockMax) {
+            const itemExistente = carrito.find(item => item.producto_id === id);
+
+            if (itemExistente) {
+                if (itemExistente.cantidad >= stockMax) {
+                    emitirNotificacionGlobal(`⚠️ Stock tope alcanzado para: ${nombre}`, "error");
+                    return;
+                }
+                itemExistente.cantidad++;
+            } else {
+                if (stockMax <= 0) {
+                    emitirNotificacionGlobal(`❌ El artículo '${nombre}' no cuenta con stock disponible`, "error");
+                    return;
+                }
+                carrito.push({
+                    producto_id: id,
+                    nombre: nombre,
+                    precio: precio,
+                    cantidad: 1,
+                    stock_max: stockMax
+                });
+            }
+            renderizarTablaCarrito();
+            emitirNotificacionGlobal(`➕ ${nombre} sumado al carro`, "exito");
+        }
+
+        window.cambiarCantidadItem = function(id, delta) {
+            const item = carrito.find(i => i.producto_id === id);
+            if (!item) return;
+
+            const nuevaCant = item.cantidad + delta;
+            if (nuevaCant <= 0) {
+                eliminarItemCarrito(id);
+                return;
+            }
+            if (nuevaCant > item.stock_max) {
+                emitirNotificacionGlobal(`⚠️ Límite de stock excedido (${item.stock_max} disponibles)`, "error");
+                return;
+            }
+            item.cantidad = nuevaCant;
+            renderizarTablaCarrito();
+        };
+
+        window.eliminarItemCarrito = function(id) {
+            carrito = carrito.filter(i => i.producto_id !== id);
+            renderizarTablaCarrito();
+            emitirNotificacionGlobal("Artículo removido de la lista", "error");
+        };
+
+        function renderizarTablaCarrito() {
+            if (carrito.length === 0) {
+                tablaItems.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center py-24 text-gray-600 tracking-tight font-sans text-xs">
+                            <span class="text-3xl block mb-2">🛒</span> Carrito vacío. Escaneá un código para comenzar.
+                        </td>
+                    </tr>`;
+                totalGigante.innerText = "$ 0.00";
+                totalLineas.innerText = "0 de productos";
+                totalUnidades.innerText = "0 u.";
+                
+                btnFinalizar.disabled = true;
+                btnFinalizar.className = "w-full text-xs font-extrabold py-3.5 rounded-xl transition-all text-gray-500 bg-gray-800/40 border border-gray-800 cursor-not-allowed flex items-center justify-center gap-1.5 shadow-md uppercase tracking-wider";
+                return;
+            }
+
+            let acumuladoDinero = 0;
+            let acumuladoUnidades = 0;
+
+            // Renderizado con tipografía más grande e impactante (text-base para nombres y subtotales)
+            tablaItems.innerHTML = carrito.map(item => {
+                const subtotal = item.precio * item.cantidad;
+                acumuladoDinero += subtotal;
+                acumuladoUnidades += item.cantidad;
+
+                return `
+                    <tr class="hover:bg-gray-900/40 transition-colors">
+                        <td class="p-4">
+                            <span class="font-black text-gray-100 text-base block tracking-tight">${item.nombre}</span>
+                            <span class="text-[10px] text-gray-500 font-mono">Ref ID: ${item.producto_id}</span>
+                        </td>
+                        <td class="p-4 text-center">
+                            <div class="flex items-center justify-center gap-2 bg-gray-950 border border-gray-800 p-1 rounded-xl max-w-[120px] mx-auto">
+                                <button onclick="cambiarCantidadItem(${item.producto_id}, -1)" class="w-7 h-7 rounded-lg bg-gray-900 hover:bg-gray-800 text-gray-300 font-bold transition-colors select-none cursor-pointer text-sm">-</button>
+                                <span class="font-black text-gray-100 text-sm px-1">${item.cantidad}</span>
+                                <button onclick="cambiarCantidadItem(${item.producto_id}, 1)" class="w-7 h-7 rounded-lg bg-gray-900 hover:bg-gray-800 text-gray-300 font-bold transition-colors select-none cursor-pointer text-sm">+</button>
+                            </div>
+                        </td>
+                        <td class="p-4 text-right text-gray-400 text-sm">$ ${item.precio.toFixed(2)}</td>
+                        <td class="p-4 text-right font-black text-emerald-400 text-base">$ ${subtotal.toFixed(2)}</td>
+                        <td class="p-4 text-center">
+                            <button onclick="eliminarItemCarrito(${item.producto_id})" class="text-gray-600 hover:text-rose-400 transition-colors cursor-pointer text-base">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            totalGigante.innerText = `$ ${acumuladoDinero.toFixed(2)}`;
+            totalLineas.innerText = `${carrito.length} ${carrito.length === 1 ? 'tipo' : 'tipos'}`;
+            totalUnidades.innerText = `${acumuladoUnidades} u.`;
+
+            btnFinalizar.disabled = false;
+            btnFinalizar.className = "w-full text-xs font-extrabold py-3.5 rounded-xl transition-all text-gray-950 bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-300 hover:to-teal-400 shadow-lg shadow-emerald-500/10 cursor-pointer flex items-center justify-center gap-1.5 uppercase tracking-wider";
+        }
+
+        window.cancelarVentaActual = function() {
+            if (carrito.length === 0) return;
+            if (confirm("¿Estás seguro de que querés vaciar por completo el carrito actual?")) {
+                carrito = [];
+                renderizarTablaCarrito();
+                emitirNotificacionGlobal("Operación cancelada y carrito vaciado", "error");
+            }
+        };
+
+        // 🚀 ENVIAR VENTA A BASE DE DATOS
+        window.procesarEnvioVenta = async function() {
+            if (carrito.length === 0) return;
+
+            btnFinalizar.disabled = true;
+            btnFinalizar.innerText = "⏳ Impactando en Caja...";
+
+            const payload = {
+                detalles: carrito.map(item => ({
+                    producto_id: item.producto_id,
+                    cantidad: item.cantidad
+                }))
+            };
+
+            try {
+                const respuesta = await fetch('/ventas/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const resultado = await respuesta.json();
+
+                if (respuesta.ok) {
+                    emitirNotificacionGlobal(`✨ ¡Venta N° ${resultado.id} registrada con éxito!`, "exito");
+                    carrito = [];
+                    renderizarTablaCarrito();
+                    if (inputBusqueda) inputBusqueda.focus();
+                } else {
+                    let mensajeError = resultado.detail && typeof resultado.detail === 'string' ? resultado.detail : "Fallo de operación";
+                    emitirNotificacionGlobal(`❌ Servidor: ${mensajeError}`, "error");
+                    btnFinalizar.disabled = false;
+                    btnFinalizar.innerText = "💵 Confirmar Transacción (F10)";
+                }
+            } catch (err) {
+                emitirNotificacionGlobal("⚠️ Error crítico de conexión al procesar la venta", "error");
+                btnFinalizar.disabled = false;
+                btnFinalizar.innerText = "💵 Confirmar Transacción (F10)";
+            }
+        };
+
+        const manejarAtajosPOS = function(e) {
+            if (e.key === "F10") {
+                e.preventDefault();
+                if (carrito.length > 0 && !btnFinalizar.disabled) {
+                    procesarEnvioVenta();
+                }
+            }
+        };
+        window.addEventListener('keydown', manejarAtajosPOS);
+
+        window.moduloActivoLimpieza = function() {
+            window.removeEventListener('keydown', manejarAtajosPOS);
+        };
+
+    })();
+</script>

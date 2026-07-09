@@ -1,0 +1,52 @@
+<div class="max-w-7xl mx-auto flex items-center justify-between gap-4 mb-6 border-b border-gray-800 pb-4 select-none">
+    
+    <div>
+        <h2 id="titulo-modulo-ventas" class="text-base font-black tracking-wide uppercase flex items-center gap-2">
+            </h2>
+        <p id="leyenda-modulo-ventas" class="text-xs text-gray-400 mt-0.5">
+            </p>
+    </div>
+    
+    <div class="flex items-center gap-1.5 bg-gray-900/50 border border-gray-800 p-1.5 rounded-xl flex-shrink-0">
+        <button id="btn-ventas-pos" onclick="irASeccion('ventas_pos')" class="text-xs font-bold px-3.5 py-2 rounded-lg transition-all text-gray-400 hover:text-gray-200 hover:bg-gray-800/40 cursor-pointer flex items-center gap-1">
+            🛒 Punto de Venta
+        </button>
+        <button id="btn-ventas-historial" onclick="irASeccion('ventas_historial')" class="text-xs font-bold px-3.5 py-2 rounded-lg transition-all text-gray-400 hover:text-gray-200 hover:bg-gray-800/40 cursor-pointer flex items-center gap-1">
+            📜 Historial de Ventas
+        </button>
+        <button id="btn-ventas-reportes" onclick="emitirNotificacionGlobal('Módulo de Reportes en desarrollo', 'error')" class="text-xs font-bold px-3.5 py-2 rounded-lg transition-all text-gray-400 hover:text-gray-200 hover:bg-gray-800/40 cursor-pointer flex items-center gap-1">
+            📈 Ver Cierres
+        </button>
+    </div>
+</div>
+
+<script>
+    (function() {
+        setTimeout(() => {
+            const titulo = document.getElementById('titulo-modulo-ventas');
+            const leyenda = document.getElementById('leyenda-modulo-ventas');
+
+            // Selectores únicos de cada vista
+            const esVistaPOS = document.getElementById('modulo-punto-venta');
+            const esVistaHistorial = document.getElementById('modulo-historial-ventas');
+
+            if (esVistaPOS) {
+                if(titulo) titulo.innerHTML = "⚡ Punto de Venta";
+                if(leyenda) leyenda.innerHTML = 'Fijá el cursor en el buscador o escaneá directo. Presioná <kbd class="px-1.5 py-0.5 bg-gray-800 border border-gray-700 rounded font-mono text-emerald-400 font-bold">F10</kbd> para cobrar.';
+                marcarBotonActivo('btn-ventas-pos');
+            } else if (esVistaHistorial) {
+                if(titulo) titulo.innerHTML = "📜 Historial de Operaciones";
+                if(leyenda) leyenda.innerHTML = "Auditoría completa de transacciones impactadas en el sistema AlmaZen.";
+                marcarBotonActivo('btn-ventas-historial');
+            }
+        }, 1);
+
+        function marcarBotonActivo(idBoton) {
+            const btn = document.getElementById(idBoton);
+            if (btn) {
+                btn.className = "text-xs font-extrabold px-3.5 py-2 rounded-lg transition-all text-gray-950 bg-gradient-to-r from-emerald-400 to-teal-500 shadow-md cursor-default flex items-center gap-1";
+                btn.removeAttribute('onclick');
+            }
+        }
+    })();
+</script>

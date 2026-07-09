@@ -1,0 +1,140 @@
+{% include "productos/submenu.html" %}
+
+    <form id="form-carga-producto" class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl space-y-4">
+            <div>
+                <label for="prod-codigo" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Código de Barras (Opcional)</label>
+                <input type="text" id="prod-codigo" name="codigo_barras" autocomplete="off"
+                       class="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all font-mono"
+                       placeholder="Escanear o ingresar código numérico...">
+            </div>
+            <div>
+                <label for="prod-categoria" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Categoría</label>
+                <input type="text" id="prod-categoria" name="categoria" required autocomplete="off"
+                       class="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
+                       placeholder="Ej. Almacén (Se normaliza automáticamente)">
+            </div>
+        </div>
+
+        <div>
+            <label for="prod-nombre" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Nombre / Artículo</label>
+            <input type="text" id="prod-nombre" name="nombre" required autocomplete="off"
+                   class="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
+                   placeholder="Ej. Galletitas Sonrisas 150g">
+        </div>
+
+        <div>
+            <label for="prod-descripcion" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Detalle / Descripción Corta</label>
+            <input type="text" id="prod-descripcion" name="descripcion" autocomplete="off"
+                   class="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
+                   placeholder="Ej. Packs de fideos secos tallarín">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+                <label for="prod-stock" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Stock Inicial</label>
+                <input type="number" id="prod-stock" name="stock" value="0" min="0" required autocomplete="off"
+                       class="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all font-mono"
+                       placeholder="0">
+            </div>
+            <div>
+                <label for="prod-costo" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Costo Unitario ($)</label>
+                <input type="number" id="prod-costo" name="costo" step="0.01" min="0.01" required autocomplete="off"
+                       class="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all font-mono"
+                       placeholder="0.00">
+            </div>
+            <div>
+                <label for="prod-precio" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Precio Venta ($)</label>
+                <input type="number" id="prod-precio" name="precio" step="0.01" min="0.01" required autocomplete="off"
+                       class="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all font-mono"
+                       placeholder="0.00">
+            </div>
+        </div>
+
+        <div class="pt-2">
+            <button type="submit" id="btn-guardar-producto"
+                    class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-gray-950 font-black text-xs uppercase tracking-wider py-3.5 rounded-xl shadow-lg shadow-emerald-500/10 transition-all cursor-pointer flex items-center justify-center gap-2">
+                💾 Guardar Producto (F9)
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    (() => {
+        const formulario = document.getElementById('form-carga-producto');
+        const inputCodigo = document.getElementById('prod-codigo');
+        const btnGuardar = document.getElementById('btn-guardar-producto');
+
+        if (inputCodigo) inputCodigo.focus();
+
+        const presionarTeclaF9 = (e) => {
+            if (e.key === 'F9') {
+                e.preventDefault();
+                if (formulario) formulario.requestSubmit();
+            }
+        };
+        window.addEventListener('keydown', presionarTeclaF9);
+
+        window.moduloActivoLimpieza = () => {
+            window.removeEventListener('keydown', presionarTeclaF9);
+        };
+
+        function normalizarCategoria(texto) {
+            if (!texto) return "";
+            const mapaTildes = { 'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u', 'Á': 'A', 'É': 'E', 'Í': 'I', 'Ó': 'O', 'Ú': 'U' };
+            const sinTildes = texto.split('').map(letra => mapaTildes[letra] || letra).join('');
+            const limpia = sinTildes.trim();
+            return limpia.charAt(0).toUpperCase() + limpia.slice(1).toLowerCase();
+        }
+
+        formulario.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            
+            btnGuardar.disabled = true;
+            btnGuardar.innerText = "⏳ Guardando...";
+
+            const formData = new FormData(formulario);
+            const raw = Object.fromEntries(formData.entries());
+
+            const payload = {
+                nombre: raw.nombre,
+                descripcion: raw.descripcion.trim() === "" ? null : raw.descripcion.trim(),
+                categoria: normalizarCategoria(raw.categoria),
+                stock: parseInt(raw.stock) || 0,
+                costo: parseFloat(raw.costo) || 0.0,
+                precio: parseFloat(raw.precio) || 0.0,
+                codigo_barras: raw.codigo_barras.trim() === "" ? null : raw.codigo_barras.trim()
+            };
+
+            try {
+                const respuesta = await fetch('/productos/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (respuesta.status === 201) {
+                    emitirNotificacionGlobal("✨ Producto cargado correctamente en ALMAZEN", "exito");
+                    formulario.reset();
+                    if (inputCodigo) inputCodigo.focus();
+                } else {
+                    const errorJson = await respuesta.json().catch(() => ({}));
+                    let mensajeError = errorJson.detail;
+                    if (Array.isArray(errorJson.detail)) {
+                        mensajeError = errorJson.detail.map(err => err.msg).join(" | ");
+                    }
+                    emitirNotificacionGlobal(`❌ Error: ${mensajeError || "Datos inválidos."}`, "error");
+                }
+            } catch (error) {
+                if (!navigator.onLine || error.message.includes('Failed to fetch')) {
+                    emitirNotificacionGlobal("⚠️ Error de conexión: No se puede conectar al backend.", "error");
+                } else {
+                    emitirNotificacionGlobal(`⚠️ Error inesperado: ${error.message}`, "error");
+                }
+            } finally {
+                btnGuardar.disabled = false;
+                btnGuardar.innerText = "💾 Guardar Producto (F9)";
+            }
+        });
+    })();
+</script>

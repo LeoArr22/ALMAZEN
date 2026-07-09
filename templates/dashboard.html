@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALMAZEN</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen font-sans antialiased selection:bg-emerald-500/30">
+
+    <nav class="bg-gray-900 border-b border-gray-800 sticky top-0 z-50 px-6 py-2">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+            
+            <div class="flex items-center gap-3 select-none py-1">
+                <div class="bg-gradient-to-br from-emerald-500 to-teal-600 w-9 h-9 rounded-xl shadow-lg shadow-emerald-500/10 animate-pulse flex items-center justify-center text-lg">
+                    💠
+                </div>
+                <div class="flex flex-col leading-none tracking-widest font-black uppercase">
+                    <span class="text-[11px] text-gray-400 font-sans">Alma</span>
+                    <span class="text-[13px] bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent font-mono font-black tracking-wider -mt-0.5">Zen</span>
+                </div>
+            </div>
+            
+            <div class="flex-grow"></div>
+            
+            <div class="flex items-center gap-2 bg-gray-950/60 border border-gray-800 p-1 rounded-xl">
+                <button id="btn-nav-ventas" onclick="irASeccion('ventas')" class="text-xs font-bold px-3.5 py-1.5 rounded-lg transition-all text-gray-400 hover:text-gray-200 cursor-pointer flex items-center gap-1.5">
+                    🛒 Ventas
+                </button>
+                <button id="btn-nav-productos" onclick="irASeccion('productos')" class="text-xs font-bold px-3.5 py-1.5 rounded-lg transition-all text-gray-400 hover:text-gray-200 cursor-pointer flex items-center gap-1.5">
+                    📦 Productos
+                </button>
+                <button id="btn-nav-cajas" onclick="irASeccion('cajas')" class="text-xs font-bold px-3.5 py-1.5 rounded-lg transition-all text-gray-400 hover:text-gray-200 cursor-pointer flex items-center gap-1.5">
+                    🖨️ Cajas
+                </button>
+            </div>
+
+            <div class="relative group ml-2">
+                <div class="flex items-center gap-3 px-3 py-1.5 bg-gray-900 border border-gray-800 rounded-xl cursor-default group-hover:border-gray-700 transition-all">
+                    <div class="flex flex-col items-end leading-none">
+                        <span class="text-[9px] font-bold text-gray-500 uppercase tracking-tighter">Admin</span>
+                        <span class="text-xs font-black text-emerald-400 font-mono">{{ usuario.username }}</span>
+                    </div>
+                    <div class="w-7 h-7 rounded-lg bg-gray-800 flex items-center justify-center text-xs border border-gray-700 shadow-inner">
+                        👤
+                    </div>
+                </div>
+
+                <div class="absolute top-full right-0 mt-1.5 w-full min-w-[140px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-1 group-hover:translate-y-0 z-50">
+                    <div class="bg-gray-900 border border-gray-800 rounded-xl shadow-2xl p-1 overflow-hidden">
+                        <button onclick="cerrarSesion()" class="w-full flex items-center gap-2 px-3 py-2 text-[11px] font-bold text-rose-400 hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer">
+                            <span>🚪</span> Cerrar Sesión
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </nav>
+
+    <main id="contenedor-principal" class="max-w-7xl mx-auto px-6 py-8">
+        <div id="vista-vacia" class="text-center py-20 border border-dashed border-gray-800 rounded-2xl bg-gray-900/20">
+            <p class="text-gray-500 font-medium text-sm">Estructura base iniciada correctamente.</p>
+            <p class="text-[11px] text-gray-600 font-mono mt-1">Seleccioná un módulo arriba para interactuar.</p>
+        </div>
+    </main>
+
+    <div id="contenedor-notificaciones" class="fixed bottom-5 right-5 z-50 space-y-2 pointer-events-none"></div>
+
+    <script>
+        window.moduloActivoLimpieza = null;
+
+        async function irASeccion(moduloDestino) {
+            const contenedor = document.getElementById('contenedor-principal');
+            
+            if (typeof window.moduloActivoLimpieza === 'function') {
+                window.moduloActivoLimpieza();
+                window.moduloActivoLimpieza = null;
+            }
+
+            ['btn-nav-ventas', 'btn-nav-productos', 'btn-nav-cajas'].forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.className = "text-xs font-bold px-3.5 py-1.5 rounded-lg transition-all text-gray-400 hover:text-gray-200 cursor-pointer flex items-center gap-1.5";
+            });
+            
+            const idBotonActivo = (moduloDestino === 'productos' || moduloDestino === 'productos_buscar') ? 'btn-nav-productos' : `btn-nav-${moduloDestino}`;
+            const botonActivo = document.getElementById(idBotonActivo);
+            if (botonActivo) {
+                botonActivo.className = "text-xs font-bold px-3.5 py-1.5 rounded-lg transition-all text-gray-950 bg-gradient-to-r from-emerald-400 to-teal-500 shadow-md shadow-emerald-500/5 cursor-pointer flex items-center gap-1.5";
+            }
+            // PRODUCTOS
+            if (moduloDestino === 'productos') {
+                contenedor.innerHTML = '<div class="text-center text-xs text-gray-500 font-mono py-10">⏳ Cargando componente de alta...</div>';
+                await traerHtmlDinamico('/vistas/productos/carga');
+            } 
+            else if (moduloDestino === 'productos_buscar') {
+                contenedor.innerHTML = '<div class="text-center text-xs text-gray-500 font-mono py-10">⏳ Cargando catálogo de edición...</div>';
+                await traerHtmlDinamico('/vistas/productos/buscar_editar');
+            }
+            // VENTAS
+            else if (moduloDestino === 'ventas' || moduloDestino === 'ventas_pos') {
+                contenedor.innerHTML = '<div class="text-center text-xs text-gray-500 font-mono py-10">⏳ Abriendo Punto de Venta...</div>';
+                await traerHtmlDinamico('/vistas/ventas/pos'); // Llama a tu router_vistas_ventas
+            } 
+            else if (moduloDestino === 'ventas_historial') {
+                contenedor.innerHTML = '<div class="text-center text-xs text-gray-500 font-mono py-10">⏳ Abriendo archivos de auditoría...</div>';
+                await traerHtmlDinamico('/vistas/ventas/historial');
+            }
+            else {
+                contenedor.innerHTML = `
+                    <div class="text-center py-20 border border-dashed border-gray-800 rounded-2xl bg-gray-900/20">
+                        <p class="text-gray-400 font-medium text-sm">Módulo "${moduloDestino.toUpperCase()}" en desarrollo.</p>
+                        <p class="text-[11px] text-gray-600 font-mono mt-1">Acoplaremos este panel en los próximos pasos.</p>
+                    </div>`;
+            }
+            
+        }
+
+        // Helper optimizado para inyectar fragmentos HTML y forzar la ejecución de sus scripts internos
+        async function traerHtmlDinamico(url) {
+            const contenedor = document.getElementById('contenedor-principal');
+            try {
+                const respuesta = await fetch(url);
+                if (respuesta.ok) {
+                    const htmlTexto = await respuesta.text();
+                    const fragmento = document.createRange().createContextualFragment(htmlTexto);
+                    contenedor.innerHTML = "";
+                    contenedor.appendChild(fragmento);
+                } else {
+                    contenedor.innerHTML = `<div class="text-center text-xs text-rose-400 font-mono py-10">❌ Error al traer la vista (Código ${respuesta.status}).</div>`;
+                }
+            } catch (err) {
+                contenedor.innerHTML = '<div class="text-center text-xs text-rose-400 font-mono py-10">⚠️ Error de red al renderizar el componente.</div>';
+            }
+        }
+
+        function emitirNotificacionGlobal(mensaje, tipo) {
+            const contenedor = document.getElementById('contenedor-notificaciones');
+            if (!contenedor) return;
+            const alerta = document.createElement('div');
+            alerta.className = `p-4 rounded-xl text-xs font-semibold shadow-2xl transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto border min-w-[320px] max-w-md ${
+                tipo === 'exito' ? 'bg-emerald-950/95 border-emerald-500/40 text-emerald-200 shadow-emerald-500/10' : 'bg-rose-950/95 border-rose-500/40 text-rose-200 shadow-rose-500/10'
+            }`;
+            alerta.innerText = mensaje;
+            contenedor.appendChild(alerta);
+            setTimeout(() => { alerta.classList.remove('opacity-0', 'translate-y-2'); }, 10);
+            setTimeout(() => {
+                alerta.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => { alerta.remove(); }, 300);
+            }, 4000);
+        }
+
+        function cerrarSesion() {
+            // 1. Borrar la cookie access_token poniéndole una fecha de expiración pasada
+            document.cookie = "access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Strict";
+            
+            // 2. Opcional: Feedback visual antes de salir
+            emitirNotificacionGlobal("Cerrando sesión...", "exito");
+            
+            // 3. Redirigir al login
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 600);
+        }
+    </script>
+</body>
+</html>

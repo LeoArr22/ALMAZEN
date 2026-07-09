@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALMAZEN - Iniciar Sesión</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Definimos la animación de entrada suave (fade-in) */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeIn {
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen flex items-center justify-center font-sans antialiased selection:bg-emerald-500/30 p-4">
+
+    <div class="w-full max-w-md p-8 bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl space-y-6 opacity-0 animate-fadeIn">
+        
+        <div class="flex flex-col items-center text-center select-none">
+            <div class="bg-gradient-to-br from-emerald-500 to-teal-600 w-12 h-12 rounded-2xl shadow-lg shadow-emerald-500/10 flex items-center justify-center text-2xl mb-3 animate-pulse">
+                💠
+            </div>
+            <h1 class="text-xl font-black tracking-widest uppercase">
+                ALMA<span class="bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent font-mono font-black tracking-wider -mt-0.5">ZEN</span>
+            </h1>
+            <p class="text-[11px] text-gray-400 font-mono mt-1 tracking-tight">Gestión de Stock, Cajas y Ventas</p>
+        </div>
+
+        <form id="form-login" class="space-y-4">
+            <div>
+                <label class="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Usuario</label>
+                <input type="text" id="username" required autocomplete="username"
+                    class="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-xs text-gray-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all placeholder:text-gray-600"
+                    placeholder="Ingrese su usuario...">
+            </div>
+
+            <div class="relative">
+                <label class="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Contraseña</label>
+                <input type="password" id="password" required autocomplete="current-password"
+                    class="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-xs text-gray-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all placeholder:text-gray-600"
+                    placeholder="••••••••">
+            </div>
+
+            <div id="error-message" class="hidden text-center text-xs text-rose-400 bg-rose-950/30 border border-rose-500/20 py-2.5 rounded-lg font-mono"></div>
+
+            <button type="submit" id="btn-ingresar"
+                class="w-full text-xs font-extrabold py-3 rounded-xl transition-all text-gray-950 bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-300 hover:to-teal-400 shadow-lg shadow-emerald-500/10 cursor-pointer flex items-center justify-center gap-1.5">
+                🚀 Ingresar al Sistema
+            </button>
+        </form>
+        
+        <div class="text-center pt-2">
+            <p class="text-[10px] text-gray-600 font-mono">v2.0.0 | AlmaZen Software © 2026</p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('form-login').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const usernameInput = document.getElementById('username').value;
+            const passwordInput = document.getElementById('password').value;
+            const errorDiv = document.getElementById('error-message');
+            const btn = document.getElementById('btn-ingresar');
+
+            // Limpieza previa
+            errorDiv.classList.add('hidden');
+            errorDiv.innerText = "";
+            btn.disabled = true;
+            btn.innerText = "⏳ Autenticando...";
+
+            // Armamos el formulario compatible con OAuth2 password flow (x-www-form-urlencoded)
+            const formData = new URLSearchParams();
+            formData.append('username', usernameInput);
+            formData.append('password', passwordInput);
+
+            try {
+                // Endpoint de tu backend que genera el token JSON
+                const respuesta = await fetch('/usuarios/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData
+                });
+
+                const datos = await respuesta.json();
+
+                if (respuesta.ok) {
+                    // Seteamos la Cookie 'access_token' con el Bearer prefijo
+                    // path=/ para que sea válida en todo el dominio
+                    // max-age=86400 es 1 día en segundos
+                    document.cookie = `access_token=Bearer ${datos.access_token}; path=/; max-age=86400; SameSite=Strict`;
+                    
+                    // Pequeño delay visual antes de redirigir para dar feedback de éxito
+                    btn.innerText = "✨ ¡Éxito! Redirigiendo...";
+                    btn.className = btn.className.replace("bg-gradient-to-r from-emerald-400 to-teal-500", "bg-emerald-600");
+
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 500);
+                } else {
+                    // Manejo avanzado de errores del backend
+                    let mensajeError = datos.detail;
+                    if (Array.isArray(datos.detail)) {
+                        // Si Pydantic devuelve una lista de errores
+                        mensajeError = datos.detail.map(err => err.msg).join(", ");
+                    }
+                    errorDiv.innerText = mensajeError || 'Credenciales inválidas o cuenta inactiva';
+                    errorDiv.classList.remove('hidden');
+                    btn.disabled = false;
+                    btn.innerText = "🚀 Ingresar al Sistema";
+                }
+            } catch (err) {
+                errorDiv.innerText = '⚠️ Error crítico: No se puede conectar con el backend de AlmaZen';
+                errorDiv.classList.remove('hidden');
+                btn.disabled = false;
+                btn.innerText = "🚀 Ingresar al Sistema";
+            }
+        });
+    </script>
+</body>
+</html>

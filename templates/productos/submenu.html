@@ -1,0 +1,62 @@
+<div class="max-w-7xl mx-auto flex items-center justify-between gap-4 mb-6 border-b border-gray-800 pb-4 select-none">
+    
+    <div>
+        <h2 id="titulo-modulo-productos" class="text-base font-black tracking-wide uppercase flex items-center gap-2">
+            </h2>
+        <p id="leyenda-modulo-productos" class="text-xs text-gray-400 mt-0.5">
+            </p>
+    </div>
+    
+    <div class="flex items-center gap-1.5 bg-gray-900/50 border border-gray-800 p-1.5 rounded-xl flex-shrink-0">
+        <button id="btn-prod-alta" onclick="irASeccion('productos')" class="text-xs font-bold px-3.5 py-2 rounded-lg transition-all text-gray-400 hover:text-gray-200 hover:bg-gray-800/40 cursor-pointer flex items-center gap-1">
+            ➕ Alta
+        </button>
+        <button id="btn-prod-buscar" onclick="irASeccion('productos_buscar')" class="text-xs font-bold px-3.5 py-2 rounded-lg transition-all text-gray-400 hover:text-gray-200 hover:bg-gray-800/40 cursor-pointer flex items-center gap-1">
+            🔍 Buscar / Editar
+        </button>
+        <button id="btn-prod-alertas" onclick="emitirNotificacionGlobal('Módulo de Alertas de Stock en desarrollo', 'error')" class="text-xs font-bold px-3.5 py-2 rounded-lg transition-all text-gray-400 hover:text-gray-200 hover:bg-gray-800/40 cursor-pointer flex items-center gap-1">
+            ⚠️ Alertas Stock
+        </button>
+        <button id="btn-prod-stats" onclick="emitirNotificacionGlobal('Módulo de Estadísticas en desarrollo', 'error')" class="text-xs font-bold px-3.5 py-2 rounded-lg transition-all text-gray-400 hover:text-gray-200 hover:bg-gray-800/40 cursor-pointer flex items-center gap-1">
+            📊 Estadísticas
+        </button>
+        <button id="btn-prod-precios" onclick="emitirNotificacionGlobal('Módulo de Lista de Precios en desarrollo', 'error')" class="text-xs font-bold px-3.5 py-2 rounded-lg transition-all text-gray-400 hover:text-gray-200 hover:bg-gray-800/40 cursor-pointer flex items-center gap-1">
+            📋 Precios
+        </button>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // Le damos un respiro mínimo de 1 milisegundo para asegurarnos de que el DOM viejo se destruyó por completo
+        setTimeout(() => {
+            const titulo = document.getElementById('titulo-modulo-productos');
+            const leyenda = document.getElementById('leyenda-modulo-productos');
+
+            // Buscamos de forma precisa las estructuras para evitar colisiones
+            const esVistaBuscar = document.getElementById('input-busqueda-productos');
+            const esVistaAlta = document.getElementById('form-carga-producto');
+
+            if (esVistaBuscar && !esVistaAlta) {
+                // CONFIGURACIÓN PARA BUSCAR / EDITAR
+                if(titulo) titulo.innerHTML = "🔍 Catálogo de Productos";
+                if(leyenda) leyenda.innerHTML = "Búsqueda en tiempo real, control de costos y edición de stock rápido.";
+                marcarBotonActivo('btn-prod-buscar');
+            } 
+            else if (esVistaAlta && !esVistaBuscar) {
+                // CONFIGURACIÓN PARA ALTA DE PRODUCTOS
+                if(titulo) titulo.innerHTML = "📦 Alta Productos";
+                if(leyenda) leyenda.innerHTML = 'Presioná <kbd class="px-1.5 py-0.5 bg-gray-800 border border-gray-700 rounded font-mono text-emerald-400 font-bold">F9</kbd> para guardar.';
+                marcarBotonActivo('btn-prod-alta');
+            }
+        }, 1);
+
+        function marcarBotonActivo(idBoton) {
+            const btn = document.getElementById(idBoton);
+            if (btn) {
+                btn.className = "text-xs font-extrabold px-3.5 py-2 rounded-lg transition-all text-gray-950 bg-gradient-to-r from-emerald-400 to-teal-500 shadow-md cursor-default flex items-center gap-1";
+                btn.removeAttribute('onclick');
+            }
+        }
+    })();
+</script>
