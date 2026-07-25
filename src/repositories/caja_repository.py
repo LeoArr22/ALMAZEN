@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 from src.models.caja import Caja
 from src.schemas.caja_schema import CajaCreate
+from datetime import date
+from src.models.usuario import Usuario
 
 class CajaRepository:
 
@@ -47,3 +49,40 @@ class CajaRepository:
     @staticmethod
     def obtener_todas(db: Session, skip: int = 0, limit: int = 100) -> list[Caja]:
         return db.query(Caja).order_by(Caja.id.desc()).offset(skip).limit(limit).all()
+    
+    @staticmethod
+    def obtener_activa_por_usuario(db: Session, usuario_id: int) -> Optional[Caja]:
+        """
+        Busca si el usuario en cuestión tiene un turno de caja abierto actualmente.
+        """
+        return db.query(Caja).filter(
+            Caja.usuario_apertura_id == usuario_id,
+            Caja.estado == "ABIERTA"
+        ).first()
+        
+    @staticmethod
+    def obtener_historial_filtrado(
+        db: Session, 
+        caja_id: Optional[int] = None,
+        nombre_operario: Optional[str] = None, # Ahora recibimos un string
+        fecha_desde: Optional[date] = None, 
+        fecha_hasta: Optional[date] = None, 
+        skip: int = 0, 
+        limit: int = 500
+    ) -> list[Caja]:
+        
+        query = db.query(Caja).join(Caja.usuario_apertura) # Necesario para filtrar por nombre
+        
+        if caja_id:
+            query = query.filter(Caja.id == caja_id)
+        
+        if nombre_operario:
+            # Busca si el nombre coincide parcialmente (ignora mayúsculas/minúsculas)
+            query = query.filter(Usuario.username.ilike(f"%{nombre_operario}%"))
+        
+        if fecha_desde:
+            query = query.filter(Caja.fecha_apertura >= fecha_desde)
+        if fecha_hasta:
+            query = query.filter(Caja.fecha_apertura <= fecha_hasta)
+            
+        return query.order_by(Caja.id.desc()).offset(skip).limit(limit).all()

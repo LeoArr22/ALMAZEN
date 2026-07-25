@@ -12,13 +12,13 @@ class VentaService:
 
     @staticmethod
     def registrar_venta(db: Session, venta_in: VentaCreate, usuario_id: int) -> Venta:
-        # 🔍 Validamos que exista una caja abierta antes de tocar nada
-        caja_abierta = CajaRepository.obtener_activa(db)
+        # 🔍 VALIDACIÓN CLAVE: Buscamos la caja abierta ESPECÍFICA del usuario actual
+        caja_abierta = CajaRepository.obtener_activa_por_usuario(db, usuario_id)
         
         if not caja_abierta:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No se puede registrar la venta: No existe ninguna caja abierta actualmente en el sistema."
+                detail="No podés registrar la venta: No tenés un turno de caja abierto a tu nombre."
             )
 
         # Inicializamos los acumuladores para la cabecera de la venta
@@ -60,7 +60,7 @@ class VentaService:
                     "costo_historico": float(producto.costo)
                 })
 
-            # 2. SEGUNDO PASO: Persistencia de la cabecera vinculando el usuario que opera
+            # 2. SEGUNDO PASO: Persistencia de la cabecera vinculando a LA CAJA DEL USUARIO
             db_venta = VentaRepository.crear_cabecera(
                 db=db, 
                 total=total_venta, 
@@ -95,7 +95,6 @@ class VentaService:
         
     @staticmethod
     def obtener_venta(db: Session, venta_id: int) -> Venta:
-        # Llama al repositorio que ya viene con el joinedload incorporado
         db_venta = VentaRepository.obtener_por_id(db, venta_id)
         if not db_venta:
             raise HTTPException(
@@ -106,13 +105,7 @@ class VentaService:
     
     @staticmethod
     def listar_ventas_por_vendedor(db: Session, usuario_id: int, skip: int = 0, limit: int = 100) -> list[Venta]:
-        """
-        Recupera el historial de operaciones de venta filtrado por el identificador del vendedor.
-        Pasa la solicitud directamente al repositorio aplicando paginación estándar.
-        """
         return VentaRepository.obtener_por_vendedor(db, usuario_id, skip, limit)
-
-    # En src/services/venta_service.py
 
     @staticmethod
     def listar_ventas(
@@ -122,24 +115,17 @@ class VentaService:
         caja_id: Optional[int] = None, 
         fecha: Optional[str] = None
     ) -> list[Venta]:
-        """Recupera el historial delegando los filtros al repositorio."""
         return VentaRepository.obtener_todas(db, skip, limit, caja_id, fecha)
 
     @staticmethod
     def cancelar_venta(db: Session, venta_id: int) -> None:
-        """
-        Cancela una venta: devuelve el stock a los productos y elimina el registro.
-        """
-        # El método ya valida de forma nativa si no existe la venta lanzando un 404 prolijo
         db_venta = VentaService.obtener_venta(db, venta_id)
         
-        # Devolvemos la mercadería al stock antes de borrar los renglones
         for detalle in db_venta.detalles:
-            # Validamos que el producto_id exista (que no sea None) antes de llamar al repositorio
             if detalle.producto_id is not None:
                 producto = ProductoRepository.obtener_por_id(db, detalle.producto_id)
                 if producto:
                     producto.stock += detalle.cantidad
                 
         VentaRepository.eliminar(db, db_venta)
-        db.commit()  # Aseguramos el impacto definitivo del borrado y la devolución del stock
+        db.commit()

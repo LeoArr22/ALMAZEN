@@ -1,0 +1,306 @@
+<div id="modulo-gestion-cajas" class="max-w-7xl mx-auto space-y-6 opacity-0 translate-y-2 transition-all duration-300 p-4">
+    
+    {% include "cajas/submenu.html" %}
+    
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-gray-800 pb-5">
+        <div>
+            <h2 class="text-2xl font-black tracking-tight text-gray-100">Control y Auditoría de Cajas</h2>
+            <p class="text-xs text-gray-500">Supervisión en tiempo real de aperturas, cierres físicos de turnos y arqueos de caja de los vendedores.</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <button onclick="cargarListadoCajas()" class="bg-gray-900 hover:bg-gray-800 text-gray-300 font-bold px-4 py-2.5 rounded-xl text-xs border border-gray-800 hover:border-gray-750 transition-all flex items-center gap-2 shadow-lg">
+                <i class="fa-solid fa-rotate-right text-[10px]"></i>
+                <span>Sincronizar Datos</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="bg-gray-950 border border-gray-800 rounded-2xl p-5 mb-6 shadow-xl">
+    <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+        <i class="fa-solid fa-user-magnifying-glass"></i> Auditoría por Operario (Nombre)
+    </h3>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <input type="text" id="f-nombre" placeholder="Nombre del operario..." class="bg-gray-900 border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-200 outline-none focus:border-emerald-500">
+            <input type="date" id="f-desde" class="bg-gray-900 border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-400 outline-none focus:border-emerald-500">
+            <input type="date" id="f-hasta" class="bg-gray-900 border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-400 outline-none focus:border-emerald-500">
+            <button onclick="ejecutarBusquedaProfunda()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl text-sm transition-all shadow-lg">
+                <i class="fa-solid fa-magnifying-glass mr-2"></i>Buscar
+            </button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 shadow-lg flex items-center justify-between">
+            <div class="space-y-1">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-gray-500">En Cajas Activas</span>
+                <h4 id="kpi-monto-activas" class="text-2xl font-black text-emerald-400 font-mono">$0.00</h4>
+                <p class="text-[10px] text-gray-400"><span id="kpi-cant-activas" class="font-bold">0</span> turnos abiertos ahora</p>
+            </div>
+            <div class="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-xl flex items-center justify-center text-lg border border-emerald-500/20">
+                <i class="fa-solid fa-cash-register"></i>
+            </div>
+        </div>
+
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 shadow-lg flex items-center justify-between">
+            <div class="space-y-1">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Arqueos de Cajas Cerradas</span>
+                <h4 id="kpi-monto-cerradas" class="text-2xl font-black text-gray-200 font-mono">$0.00</h4>
+                <p class="text-[10px] text-gray-400"><span id="kpi-cant-cerradas" class="font-bold">0</span> turnos finalizados</p>
+            </div>
+            <div class="w-12 h-12 bg-gray-800 text-gray-400 rounded-xl flex items-center justify-center text-lg border border-gray-700">
+                <i class="fa-solid fa-vault"></i>
+            </div>
+        </div>
+
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 shadow-lg flex items-center justify-between">
+            <div class="space-y-1">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Balance de Desajustes</span>
+                <h4 id="kpi-diferencia-total" class="text-2xl font-black font-mono text-gray-200">$0.00</h4>
+                <p class="text-[10px] text-gray-400">Diferencia acumulada global</p>
+            </div>
+            <div id="kpi-diferencia-icono" class="w-12 h-12 bg-gray-800 text-gray-400 rounded-xl flex items-center justify-center text-lg border border-gray-700">
+                <i class="fa-solid fa-scale-balanced"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4 grid grid-cols-1 md:grid-cols-3 gap-4 shadow-lg">
+        <div class="flex flex-col gap-1.5">
+            <label class="text-[10px] font-bold uppercase tracking-wider text-gray-550">Filtrar por Operario</label>
+            <select id="filtro-operario" onchange="aplicarFiltrosYRenderizar()" class="bg-gray-950 border border-gray-850 rounded-xl px-3 py-2.5 text-xs text-gray-300 focus:outline-none focus:border-emerald-500/50 transition-all cursor-pointer">
+                <option value="todos">Todos los operarios</option>
+            </select>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+            <label class="text-[10px] font-bold uppercase tracking-wider text-gray-550">Filtrar por Estado o Balance</label>
+            <select id="filtro-balance" onchange="aplicarFiltrosYRenderizar()" class="bg-gray-950 border border-gray-850 rounded-xl px-3 py-2.5 text-xs text-gray-300 focus:outline-none focus:border-emerald-500/50 transition-all cursor-pointer">
+                <option value="todos">Todos los balances</option>
+                <option value="abiertas">Cajas abiertas (En curso)</option>
+                <option value="cerradas">Cajas cerradas</option>
+                <option value="ok">Cerradas: Arqueo OK (Sin diferencias)</option>
+                <option value="faltantes">Cerradas con Faltante (Negativo)</option>
+                <option value="sobrantes">Cerradas con Sobrante (Positivo)</option>
+            </select>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+            <label class="text-[10px] font-bold uppercase tracking-wider text-gray-550">Ordenar por</label>
+            <select id="filtro-orden" onchange="aplicarFiltrosYRenderizar()" class="bg-gray-950 border border-gray-850 rounded-xl px-3 py-2.5 text-xs text-gray-300 focus:outline-none focus:border-emerald-500/50 transition-all cursor-pointer">
+                <option value="recientes">Fecha de apertura: Recientes primero</option>
+                <option value="antiguas">Fecha de apertura: Antiguas primero</option>
+                <option value="mayor_faltante">Diferencia: Mayor faltante primero</option>
+                <option value="mayor_sobrante">Diferencia: Mayor sobrante primero</option>
+                <option value="monto_inicial_desc">Monto Inicial: Mayor a menor</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl flex flex-col overflow-hidden shadow-xl">
+        <div class="p-5 border-b border-gray-800 bg-gray-950/20 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+                <h3 class="text-sm font-bold text-gray-200">Historial de Turnos de Trabajo</h3>
+                <p class="text-xs text-gray-500">Visualizá quién abrió la caja, el monto de apertura, lo que el sistema esperaba recaudar y el efectivo real entregado.</p>
+            </div>
+            <div id="contador-filas" class="text-[11px] bg-gray-800 text-gray-400 font-semibold px-2.5 py-1 rounded-full border border-gray-750 self-start sm:self-center">
+                Mostrando 0 cajas
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse min-w-[800px]">
+                <thead>
+                    <tr class="border-b border-gray-800 text-[10px] font-bold uppercase tracking-wider text-gray-400 bg-gray-950/40">
+                        <th class="py-4 px-5 w-20">ID Caja</th>
+                        <th class="py-4 px-4 w-28">Estado</th>
+                        <th class="py-4 px-4 min-w-[180px]">Operarios (Apertura / Cierre)</th>
+                        <th class="py-4 px-4 min-w-[165px]">Tiempos de Turno</th>
+                        <th class="py-4 px-4 text-right w-32">M. Inicial</th>
+                        <th class="py-4 px-4 text-right w-32">Esperado</th>
+                        <th class="py-4 px-4 text-right w-32">Arqueo Real</th>
+                        <th class="py-4 px-4 text-right w-36">Diferencia</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-cajas-cuerpo" class="divide-y divide-gray-800/50 text-sm">
+                    </tbody>
+            </table>
+
+            <div id="tabla-cajas-vacia" class="hidden flex flex-col items-center justify-center text-center p-16">
+                <div class="text-3xl mb-2">📥</div>
+                <p class="text-xs text-gray-500 italic">No se encontraron cajas con los filtros aplicados</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        const modulo = document.getElementById('modulo-gestion-cajas');
+        setTimeout(() => { if(modulo) modulo.classList.remove('opacity-0', 'translate-y-2'); }, 50);
+
+        window.cacheCajas = [];
+        cargarListadoCajas();
+
+        async function cargarListadoCajas() {
+            const cuerpo = document.getElementById('tabla-cajas-cuerpo');
+            const avisoVacio = document.getElementById('tabla-cajas-vacia');
+            if(!cuerpo) return;
+            cuerpo.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-xs text-gray-500 italic">Consultando servidor central...</td></tr>`;
+            if(avisoVacio) avisoVacio.classList.add('hidden');
+            try {
+                const r = await fetch('/cajas/historial');
+                if (!r.ok) throw new Error("Error de respuesta");
+                const cajas = await r.json();
+                window.cacheCajas = cajas || [];
+                renderizarKPIs(window.cacheCajas);
+                cargarFiltroOperarios(window.cacheCajas);
+                aplicarFiltrosYRenderizar();
+            } catch (err) {
+                if(cuerpo) cuerpo.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-xs text-red-400 italic">⚠️ Fallo al conectar con la API.</td></tr>`;
+            }
+        }
+
+        // --- NUEVA FUNCIÓN DE BÚSQUEDA PROFUNDA ---
+        async function ejecutarBusquedaProfunda() {
+            const btn = event.target;
+            const id = document.getElementById('f-id').value;
+            const desde = document.getElementById('f-desde').value;
+            const hasta = document.getElementById('f-hasta').value;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            try {
+                let url = new URL('/cajas/historial', window.location.origin);
+                if (id) url.searchParams.append('caja_id', id);
+                if (desde) url.searchParams.append('fecha_desde', desde);
+                if (hasta) url.searchParams.append('fecha_hasta', hasta);
+                url.searchParams.append('limit', 500); 
+                const res = await fetch(url);
+                const data = await res.json();
+                window.cacheCajas = data;
+                renderizarKPIs(data);
+                cargarFiltroOperarios(data);
+                aplicarFiltrosYRenderizar();
+            } catch (e) {
+                alert("Error al buscar en la BD");
+            } finally {
+                btn.innerHTML = '<i class="fa-solid fa-magnifying-glass mr-2"></i>Buscar';
+            }
+        }
+        window.ejecutarBusquedaProfunda = ejecutarBusquedaProfunda;
+
+        function cargarFiltroOperarios(cajas) {
+            const select = document.getElementById('filtro-operario');
+            if(!select) return;
+            const valorPrevio = select.value;
+            const operariosSet = new Set();
+            cajas.forEach(c => {
+                if(c.usuario_apertura) operariosSet.add(c.usuario_apertura.nombre || c.usuario_apertura.username);
+                if(c.usuario_cierre) operariosSet.add(c.usuario_cierre.nombre || c.usuario_cierre.username);
+            });
+            select.innerHTML = `<option value="todos">Todos los operarios</option>`;
+            Array.from(operariosSet).sort().forEach(op => {
+                const opt = document.createElement('option');
+                opt.value = op; opt.innerText = op;
+                select.appendChild(opt);
+            });
+            select.value = Array.from(operariosSet).includes(valorPrevio) ? valorPrevio : "todos";
+        }
+
+        function aplicarFiltrosYRenderizar() {
+            const filtroOperario = document.getElementById('filtro-operario').value;
+            const filtroBalance = document.getElementById('filtro-balance').value;
+            const filtroOrden = document.getElementById('filtro-orden').value;
+            let filtradas = [...window.cacheCajas];
+            if (filtroOperario !== 'todos') {
+                filtradas = filtradas.filter(c => {
+                    const opA = c.usuario_apertura ? (c.usuario_apertura.nombre || c.usuario_apertura.username) : '';
+                    const opC = c.usuario_cierre ? (c.usuario_cierre.nombre || c.usuario_cierre.username) : '';
+                    return opA === filtroOperario || opC === filtroOperario;
+                });
+            }
+            if (filtroBalance !== 'todos') {
+                filtradas = filtradas.filter(c => {
+                    const inicial = parseFloat(c.monto_inicial || 0);
+                    const finalReal = parseFloat(c.monto_final_real || 0);
+                    const esperado = parseFloat(c.monto_final_estimado !== undefined ? c.monto_final_estimado : (inicial + (c.total_ventas || 0)));
+                    const abierta = (c.activa === true || !c.fecha_cierre);
+                    if (filtroBalance === 'abiertas') return abierta;
+                    if (filtroBalance === 'cerradas') return !abierta;
+                    if (!abierta) {
+                        const diff = finalReal - esperado;
+                        if (filtroBalance === 'ok') return Math.abs(diff) < 0.01;
+                        if (filtroBalance === 'faltantes') return diff < -0.01;
+                        if (filtroBalance === 'sobrantes') return diff > 0.01;
+                    }
+                    return false;
+                });
+            }
+            filtradas.sort((a, b) => {
+                if (filtroOrden === 'recientes') return new Date(b.fecha_apertura) - new Date(a.fecha_apertura);
+                if (filtroOrden === 'antiguas') return new Date(a.fecha_apertura) - new Date(b.fecha_apertura);
+                return 0;
+            });
+            renderizarFilas(filtradas);
+        }
+
+        function renderizarFilas(cajas) {
+            const cuerpo = document.getElementById('tabla-cajas-cuerpo');
+            const avisoVacio = document.getElementById('tabla-cajas-vacia');
+            const contadorFilas = document.getElementById('contador-filas');
+            if (!cuerpo) return;
+            cuerpo.innerHTML = '';
+            if(contadorFilas) contadorFilas.innerText = `Mostrando ${cajas.length} turno${cajas.length === 1 ? '' : 's'}`;
+            if (cajas.length === 0) { if (avisoVacio) avisoVacio.classList.remove('hidden'); return; }
+            if (avisoVacio) avisoVacio.classList.add('hidden');
+            cajas.forEach(c => {
+                const inicial = parseFloat(c.monto_inicial || 0);
+                const finalReal = (c.monto_final_real !== null) ? parseFloat(c.monto_final_real) : null;
+                const esperado = parseFloat(c.monto_final_estimado !== undefined ? c.monto_final_estimado : (inicial + (c.total_ventas || 0)));
+                const nombreApertura = c.usuario_apertura ? (c.usuario_apertura.nombre || c.usuario_apertura.username) : `Operario #${c.usuario_apertura_id}`;
+                const nombreCierre = c.fecha_cierre ? (c.usuario_cierre ? (c.usuario_cierre.nombre || c.usuario_cierre.username) : `Operario #${c.usuario_cierre_id || '?'}`) : '<span class="text-emerald-500/50 italic">Sin cerrar</span>';
+                
+                let diffContent = '-';
+                if (finalReal !== null) {
+                    const diff = finalReal - esperado;
+                    diffContent = Math.abs(diff) < 0.01 ? '✨ OK' : (diff > 0 ? `+$${diff.toFixed(2)}` : `-$${Math.abs(diff).toFixed(2)}`);
+                }
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="py-4 px-5 font-mono font-bold text-gray-400">#${String(c.id).padStart(4, '0')}</td>
+                    <td class="py-4 px-4">${(c.activa || !c.fecha_cierre) ? '<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold px-2 py-0.5 rounded-md">Abierta</span>' : '<span class="bg-gray-800 text-gray-400 border border-gray-750 text-[10px] font-bold px-2 py-0.5 rounded-md">Cerrada</span>'}</td>
+                    <td class="py-4 px-4 text-xs font-bold text-gray-200">Apertura: ${nombreApertura} / Cierre: ${nombreCierre}</td>
+                    <td class="py-4 px-4 text-xs">${formatearFechaISO(c.fecha_apertura)}</td>
+                    <td class="py-4 px-4 text-right font-mono text-gray-400">$${inicial.toFixed(2)}</td>
+                    <td class="py-4 px-4 text-right font-mono text-gray-400">$${esperado.toFixed(2)}</td>
+                    <td class="py-4 px-4 text-right font-mono font-black text-gray-100">${(finalReal !== null) ? '$' + finalReal.toFixed(2) : '-'}</td>
+                    <td class="py-4 px-4 text-right text-xs">${diffContent}</td>
+                `;
+                cuerpo.appendChild(tr);
+            });
+        }
+
+        function renderizarKPIs(cajas) {
+            let totalActivas = 0, cantActivas = 0, totalCerradasHoy = 0, cantCerradasHoy = 0, diffAcumulada = 0;
+            cajas.forEach(c => {
+                const inicial = parseFloat(c.monto_inicial || 0);
+                const finalReal = (c.monto_final_real !== null) ? parseFloat(c.monto_final_real) : null;
+                const esperado = parseFloat(c.monto_final_estimado !== undefined ? c.monto_final_estimado : (inicial + (c.total_ventas || 0)));
+                if (c.activa || !c.fecha_cierre) { totalActivas += esperado; cantActivas++; }
+                else { totalCerradasHoy += finalReal; cantCerradasHoy++; diffAcumulada += (finalReal - esperado); }
+            });
+            document.getElementById('kpi-monto-activas').innerText = `$${totalActivas.toFixed(2)}`;
+            document.getElementById('kpi-cant-activas').innerText = cantActivas;
+            document.getElementById('kpi-monto-cerradas').innerText = `$${totalCerradasHoy.toFixed(2)}`;
+            document.getElementById('kpi-cant-cerradas').innerText = cantCerradasHoy;
+            document.getElementById('kpi-diferencia-total').innerText = (diffAcumulada >= 0 ? '+$' : '-$') + Math.abs(diffAcumulada).toFixed(2);
+        }
+
+        function formatearFechaISO(stringISO) {
+            const d = new Date(stringISO);
+            return isNaN(d.getTime()) ? stringISO : d.toLocaleDateString('es-AR') + ' ' + d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        window.cargarListadoCajas = cargarListadoCajas;
+        window.aplicarFiltrosYRenderizar = aplicarFiltrosYRenderizar;
+    })();
+</script>

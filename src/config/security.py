@@ -35,8 +35,7 @@ def crear_token_acceso(data: dict, expires_delta: Optional[timedelta] = None) ->
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    
+        expire = datetime.now(timezone.utc) + timedelta(hours=12)    
     # El campo 'exp' le dice a JWT cuándo deja de ser válido el token
     to_encode.update({"exp": expire})
     

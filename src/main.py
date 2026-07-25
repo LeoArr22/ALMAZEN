@@ -1,5 +1,6 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles 
 from src.config.database import engine, Base 
 
 # 🌟 IMPORTACIÓN CRÍTICA DE MODELOS PARA SQLALCHEMY
@@ -12,10 +13,12 @@ from src.models.usuario import Usuario
 from src.controllers import producto_controller, venta_controller, caja_controller, usuario_controller
 
 # 🖥️ Router de la Interfaz Web HTML
-# Importación de las vistas modulares
 from src.views.core_views import router_core
 from src.views.producto_views import router_vistas_productos
 from src.views.venta_views import router_vistas_ventas
+from src.views.usuario_views import router_vistas_usuarios
+from src.views.caja_views import router_vistas_cajas
+
 # 🛡️ DEPENDENCIAS DE ROLES
 from src.dependencies.roles import RoleChecker
 
@@ -38,6 +41,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 🎨 Servir archivos estáticos (CSS, JS, Imágenes)
+app.mount("/static", StaticFiles(directory="static"), name="static")  
+
 # Guardián para endpoints que requieran permisos elevados de administrador
 solo_admin = RoleChecker(["ADMIN", "admin"])
 
@@ -47,20 +53,13 @@ solo_admin = RoleChecker(["ADMIN", "admin"])
 app.include_router(router_core)
 app.include_router(router_vistas_productos)
 app.include_router(router_vistas_ventas)
+app.include_router(router_vistas_usuarios)
+app.include_router(router_vistas_cajas)
 
 # ==========================================
 # 🔌 ENRUTAMIENTO DE LA API REST (JSON DATA)
 # ==========================================
-app.include_router(producto_controller.router, dependencies=[Depends(solo_admin)])
-app.include_router(caja_controller.router, dependencies=[Depends(solo_admin)])
+app.include_router(producto_controller.router)
+app.include_router(caja_controller.router)
 app.include_router(venta_controller.router) 
 app.include_router(usuario_controller.router)
-
-# Endpoint raíz informativo del estado del servidor
-@app.get("/", tags=["Root"])
-def read_root():
-    return {
-        "status": "online",
-        "message": "Bienvenido a la API de AlmaZen",
-        "version": "2.0.0"
-    }

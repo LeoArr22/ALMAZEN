@@ -9,52 +9,26 @@ from src.dependencies.roles import RoleChecker
 from src.models.usuario import Usuario
 
 router = APIRouter(prefix="/usuarios", tags=["Usuarios & Autenticación"])
-
-# Definimos el verificador local para endpoints específicos
 solo_admin = RoleChecker(["ADMIN", "admin"])
 
-# ==========================================
-# 1. ENDPOINT: REGISTRO DE USUARIOS (PROTEGIDO)
-# ==========================================
+# 🛡️ PROTEGIDO: Solo administradores pueden crear nuevos usuarios en AlmaZen
 @router.post("/registrar", response_model=UsuarioResponse, status_code=status.HTTP_201_CREATED)
 def registrar_usuario(
     usuario_in: UsuarioCreate, 
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(solo_admin)  # 🌟 Solo administradores pueden crear usuarios
+    current_user: Usuario = Depends(solo_admin)
 ):
-    """
-    Registra un nuevo usuario en el sistema. 
-    Transforma la contraseña recibida en un hash seguro antes de guardarla.
-    """
+    """Registra un nuevo usuario en el sistema aplicando hasheo."""
     return UsuarioService.registrar_usuario(db, usuario_in)
 
-
-# ==========================================
-# 2. ENDPOINT: LOGIN (TOTALMENTE PÚBLICO Y COMPATIBLE CON EL CANDADO)
-# ==========================================
+# 🔓 COMPLETO PÚBLICO: El login debe ser abierto para que todos inicien sesión
 @router.post("/login", response_model=TokenResponse)
-def login(
-    form_data: OAuth2PasswordRequestForm = Depends(), 
-    db: Session = Depends(get_db)
-):
-    """
-    Autentica al usuario mediante username y password (enviados como Form Data).
-    Retorna un JSON Web Token (JWT) válido si las credenciales coinciden.
-    Compatible con el botón 'Authorize' (candado) de Swagger.
-    """
-    return UsuarioService.autenticar_usuario(
-        db, 
-        username=form_data.username, 
-        password=form_data.password
-    )
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    """Autentica al usuario mediante username y password."""
+    return UsuarioService.autenticar_usuario(db, username=form_data.username, password=form_data.password)
 
-
-# ==========================================
-# 3. ENDPOINT: PERFIL ACTUAL (PROTEGIDO)
-# ==========================================
+# 🔓 LIBRE (CON LOGIN): Cualquiera puede ver quién está autenticado en su terminal
 @router.get("/me", response_model=UsuarioResponse)
 def obtener_perfil_actual(current_user: Usuario = Depends(get_current_user)):
-    """
-    Endpoint de prueba para verificar si el token actual es válido y ver los datos del usuario logueado.
-    """
+    """Retorna los datos del usuario dueño del JWT provisto en los headers."""
     return current_user

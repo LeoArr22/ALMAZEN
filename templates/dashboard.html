@@ -78,7 +78,6 @@
 
     <script>
         window.moduloActivoLimpieza = null;
-
         async function irASeccion(moduloDestino) {
             const contenedor = document.getElementById('contenedor-principal');
             
@@ -87,7 +86,8 @@
                 window.moduloActivoLimpieza = null;
             }
 
-            ['btn-nav-ventas', 'btn-nav-productos', 'btn-nav-cajas'].forEach(id => {
+            // 🟢 Agregamos 'btn-nav-usuarios' y 'btn-nav-configuracion' a la lista de limpieza
+            ['btn-nav-ventas', 'btn-nav-productos', 'btn-nav-cajas', 'btn-nav-usuarios', 'btn-nav-configuracion'].forEach(id => {
                 const btn = document.getElementById(id);
                 if (btn) btn.className = "text-xs font-bold px-3.5 py-1.5 rounded-lg transition-all text-gray-400 hover:text-gray-200 cursor-pointer flex items-center gap-1.5";
             });
@@ -97,6 +97,7 @@
             if (botonActivo) {
                 botonActivo.className = "text-xs font-bold px-3.5 py-1.5 rounded-lg transition-all text-gray-950 bg-gradient-to-r from-emerald-400 to-teal-500 shadow-md shadow-emerald-500/5 cursor-pointer flex items-center gap-1.5";
             }
+            
             // PRODUCTOS
             if (moduloDestino === 'productos') {
                 contenedor.innerHTML = '<div class="text-center text-xs text-gray-500 font-mono py-10">⏳ Cargando componente de alta...</div>';
@@ -115,6 +116,26 @@
                 contenedor.innerHTML = '<div class="text-center text-xs text-gray-500 font-mono py-10">⏳ Abriendo archivos de auditoría...</div>';
                 await traerHtmlDinamico('/vistas/ventas/historial');
             }
+            // 🖨️ MÓDULO CAJAS
+            else if (moduloDestino === 'cajas') {
+                contenedor.innerHTML = '<div class="text-center text-xs text-gray-500 font-mono py-10">⏳ Cargando gestión de cajas y tickets...</div>';
+                await traerHtmlDinamico('/vistas/cajas'); 
+            }
+            else if (moduloDestino === 'cajas_apertura') {
+                contenedor.innerHTML = '<div class="text-center text-xs text-gray-500 font-mono py-10">⏳ Cargando apertura y cierre de caja...</div>';
+                await traerHtmlDinamico('/vistas/cajas_apertura'); 
+            }
+            // 👥 MÓDULO USUARIOS
+            else if (moduloDestino === 'usuarios') {
+                contenedor.innerHTML = '<div class="text-center text-xs text-gray-500 font-mono py-10">⏳ Cargando gestión de personal y roles...</div>';
+                await traerHtmlDinamico('/vistas/usuarios'); // La ruta que definamos en tu router de vistas
+            }
+            // ⚙️ MÓDULO CONFIGURACIÓN
+            else if (moduloDestino === 'configuracion') {
+                contenedor.innerHTML = '<div class="text-center text-xs text-gray-500 font-mono py-10">⏳ Abriendo parámetros del sistema...</div>';
+                await traerHtmlDinamico('/vistas/configuracion');
+            }
+            // CUALQUIER OTRO MÓDULO NO DISEÑADO AÚN
             else {
                 contenedor.innerHTML = `
                     <div class="text-center py-20 border border-dashed border-gray-800 rounded-2xl bg-gray-900/20">
@@ -122,7 +143,6 @@
                         <p class="text-[11px] text-gray-600 font-mono mt-1">Acoplaremos este panel en los próximos pasos.</p>
                     </div>`;
             }
-            
         }
 
         // Helper optimizado para inyectar fragmentos HTML y forzar la ejecución de sus scripts internos

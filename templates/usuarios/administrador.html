@@ -1,0 +1,125 @@
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in">
+    
+    <div class="lg:col-span-1 bg-gray-900 border border-gray-800 rounded-2xl p-5 flex flex-col justify-between">
+        <div>
+            <div class="flex items-center gap-2 mb-4">
+                <span class="text-xl">👥</span>
+                <h2 class="text-sm font-black uppercase tracking-wider text-gray-200">Registrar Personal</h2>
+            </div>
+            <p class="text-[11px] text-gray-500 mb-5 leading-relaxed">
+                Da de alta nuevos usuarios en el sistema. Los administradores heredan control total, mientras que los vendedores acceden directo al terminal de facturación.
+            </p>
+
+            <form id="form-crear-usuario" class="space-y-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Nombre de Usuario</label>
+                    <input type="text" id="user-username" required minlength="3" maxlength="50" autocomplete="off"
+                           placeholder="Ej: vendedor_juan" 
+                           class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3.5 py-2 text-xs font-medium text-gray-200 placeholder-gray-600 focus:outline-none focus:border-emerald-500 transition-colors font-mono">
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Contraseña Inicial</label>
+                    <input type="password" id="user-password" required minlength="6"
+                           placeholder="Mínimo 6 caracteres" 
+                           class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3.5 py-2 text-xs font-medium text-gray-200 placeholder-gray-600 focus:outline-none focus:border-emerald-500 transition-colors font-mono">
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Rol de Acceso</label>
+                    <select id="user-role" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs font-bold text-gray-300 focus:outline-none focus:border-emerald-500 transition-colors cursor-pointer">
+                        <option value="vendedor" selected>🛠️ VENDEDOR (Punto de Venta)</option>
+                        <option value="admin">🛡️ ADMIN (Control de Gestión)</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+
+        <div class="pt-6">
+            <button type="button" onclick="enviarRegistroUsuario()" class="w-full bg-gradient-to-r from-emerald-400 to-teal-500 text-gray-950 text-xs font-black uppercase tracking-wider py-2.5 rounded-xl shadow-md shadow-emerald-500/5 hover:opacity-90 transition-all cursor-pointer">
+                Guardar Usuario
+            </button>
+        </div>
+    </div>
+
+    <div class="lg:col-span-2 space-y-6">
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+            <div class="flex items-center gap-2 mb-3">
+                <span class="text-sm">🛡️</span>
+                <h3 class="text-xs font-black uppercase tracking-wider text-gray-300">Políticas de Criptografía</h3>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-[11px] text-gray-400 font-medium leading-relaxed">
+                <div class="bg-gray-950/40 p-3 rounded-xl border border-gray-800/60">
+                    <p class="text-emerald-400 font-bold mb-1">Hasheo Seguro (Bcrypt)</p>
+                    Las contraseñas se interceptan en la capa de servicio y se transforman mediante un algoritmo criptográfico antes de guardarse en la base de datos. Nadie puede verlas en texto plano.
+                </div>
+                <div class="bg-gray-950/40 p-3 rounded-xl border border-gray-800/60">
+                    <p class="text-teal-400 font-bold mb-1">Trazabilidad de Caja</p>
+                    Toda apertura, cierre de turno de caja o confirmación de venta quedará encuadrada de forma inmutable al ID del usuario que inició la sesión.
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 font-mono text-[11px] text-gray-500">
+            <div class="flex items-center justify-between border-b border-gray-800 pb-2 mb-2">
+                <span>API Target:</span>
+                <span class="text-gray-400 font-bold">POST /usuarios/registrar</span>
+            </div>
+            <div class="flex items-center justify-between">
+                <span>Filtro de Seguridad:</span>
+                <span class="text-amber-500 font-bold">Depends(solo_admin)</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Inyección de limpieza al cambiar de módulo en el dashboard
+    window.moduloActivoLimpieza = function() {
+        console.log("Limpiando módulo de administración de usuarios.");
+    };
+
+    async function enviarRegistroUsuario() {
+        const usernameInput = document.getElementById('user-username');
+        const passwordInput = document.getElementById('user-password');
+        const roleSelect = document.getElementById('user-role');
+
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value;
+        const role = roleSelect.value;
+
+        // Validaciones del cliente en espejo con las de tus esquemas Pydantic
+        if (username.length < 3 || username.length > 50) {
+            emitirNotificacionGlobal("El nombre de usuario debe tener entre 3 y 50 caracteres.", "error");
+            return;
+        }
+        if (password.length < 6) {
+            emitirNotificacionGlobal("La contraseña debe tener al menos 6 caracteres.", "error");
+            return;
+        }
+
+        try {
+            // Petición directa a tu controlador de usuarios
+            const respuesta = await fetch('/usuarios/registrar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password, role })
+            });
+
+            const datos = await respuesta.json();
+
+            if (respuesta.ok) {
+                emitirNotificacionGlobal(`Usuario "${datos.username}" creado con éxito como ${datos.role.toUpperCase()}.`, "exito");
+                // Limpieza del formulario
+                usernameInput.value = "";
+                passwordInput.value = "";
+                roleSelect.value = "vendedor";
+            } else {
+                emitirNotificacionGlobal(`Error: ${datos.detail || 'No se pudo registrar.'}`, "error");
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            emitirNotificacionGlobal("Error de red al intentar conectar con el servidor.", "error");
+        }
+    }
+</script>

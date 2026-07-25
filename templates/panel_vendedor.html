@@ -6,367 +6,519 @@
     <title>AlmaZen - Terminal POS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Ajuste fino para forzar scroll interno perfecto y evitar desbordes globales */
+        body, html { height: 100vh; max-height: 100vh; margin: 0; padding: 0; overflow: hidden; }
+    </style>
 </head>
-<body class="bg-gray-950 text-gray-100 min-h-screen font-sans overflow-hidden">
+<body class="bg-gray-950 text-gray-100 font-sans flex flex-col min-h-screen">
 
-    <div id="pantalla-apertura" class="fixed inset-0 bg-gray-950 flex items-center justify-center z-50 transition-opacity duration-300">
-        <div class="bg-gray-900 border border-gray-800 p-8 rounded-2xl w-full max-w-md shadow-2xl text-center">
-            <div class="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center text-2xl mx-auto mb-4 border border-emerald-500/20">
-                <i class="fa-solid fa-cash-register"></i>
+    <div class="bg-gray-900 border-b border-gray-800 px-6 py-3.5 flex items-center justify-between z-50 shadow-md shrink-0">
+        <div class="flex items-center space-x-3">
+            <span class="text-xl font-black tracking-tight text-emerald-400">AlmaZen</span>
+            <span id="indicador-seccion" class="bg-gray-800 text-xs px-2.5 py-1 rounded-md font-medium text-gray-400 border border-gray-700">Apertura de Caja</span>
+        </div>
+        
+        <div class="flex items-center space-x-4">
+            <div id="contenedor-info-caja" style="display: none;" class="bg-gray-950/50 border border-gray-800 px-4 py-1.5 rounded-xl flex items-center space-x-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span id="info-caja" class="text-xs font-mono font-bold text-gray-300">Cargando turno...</span>
             </div>
-            <h2 class="text-xl font-black tracking-tight mb-1 text-gray-200">Iniciar Turno de Trabajo</h2>
-            <p class="text-xs text-gray-500 mb-6">Ingresá el efectivo disponible en caja para cambio</p>
-            
-            <div class="mb-6 text-left">
-                <label class="text-xs font-bold text-gray-400 block mb-2 uppercase tracking-wider">Monto Inicial en Efectivo</label>
-                <div class="relative">
-                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-lg">$</span>
-                    <input type="number" id="monto-inicial" value="0.00" class="w-full bg-gray-950 border border-gray-800 rounded-xl py-3 pl-10 pr-4 text-xl font-mono text-emerald-400 focus:outline-none focus:border-emerald-500 transition-colors">
-                </div>
-            </div>
-            <button onclick="abrirCajaVendedor()" class="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-gray-950 font-black rounded-xl transition-all shadow-lg shadow-emerald-500/10 cursor-pointer">
-                ABRIR CAJA Y EMPEZAR
+
+            <button id="btn-cierre-global" style="display: none;" onclick="mostrarModalCierre()" class="bg-gray-800 hover:bg-red-500/20 text-gray-400 hover:text-red-400 px-3 py-1.5 rounded-xl border border-gray-700 hover:border-red-500/30 text-xs font-bold transition-all flex items-center space-x-1.5">
+                <i class="fa-solid fa-lock text-[10px]"></i>
+                <span>Cerrar Turno</span>
+            </button>
+
+            <button onclick="solicitarCerrarSesion()" class="bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white px-3 py-1.5 rounded-xl border border-red-500/20 text-xs font-bold transition-all flex items-center space-x-1">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Salir</span>
             </button>
         </div>
     </div>
 
-    <div id="interfaz-pos" class="hidden h-screen flex flex-col opacity-0 transition-opacity duration-300">
-        
-        <header class="bg-gray-900/50 border-b border-gray-800 px-6 py-3 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <span class="text-lg font-black tracking-wider bg-gradient-to-r from-emerald-400 to-teal-500 bg-clip-text text-transparent">ALMAZEN</span>
-                <span class="text-xs bg-gray-800 px-2.5 py-1 rounded-md text-gray-400 border border-gray-700/50 font-mono">TERMINAL VENDEDOR</span>
-            </div>
-            <div class="flex items-center gap-6">
-                <div class="text-right">
-                    <p class="text-xs text-gray-500 font-bold uppercase tracking-wider">Caja Activa</p>
-                    <p id="info-caja" class="text-sm text-emerald-400 font-mono font-bold">#----</p>
-                </div>
-                <button onclick="mostrarModalCierre()" class="px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl text-xs font-bold transition-all cursor-pointer">
-                    <i class="fa-solid fa-power-off mr-1.5"></i> Cerrar Caja
-                </button>
-            </div>
-        </header>
+    <div class="flex-1 relative overflow-hidden w-full">
 
-        <main class="flex-1 flex overflow-hidden">
-            
-            <section class="w-3/5 p-6 flex flex-col gap-4 border-r border-gray-950">
-                <div class="relative">
-                    <i class="fa-solid fa-barcode absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 text-xl"></i>
-                    <input type="text" id="buscador-laser" placeholder="Escanear código de barras o presionar Enter para buscar..." class="w-full bg-gray-900 border border-gray-800 rounded-2xl py-4 pl-14 pr-4 text-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-emerald-500/50 transition-all font-sans shadow-inner">
+        <div id="pantalla-apertura" style="display: none;" class="absolute inset-0 bg-gray-950 flex items-center justify-center z-40">
+            <div class="bg-gray-900 border border-gray-800 p-8 rounded-2xl w-full max-w-md shadow-2xl text-center">
+                <div class="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center text-2xl mx-auto mb-4 border border-emerald-500/20">
+                    <i class="fa-solid fa-cash-register"></i>
                 </div>
-
-                <div class="flex-1 bg-gray-900/10 border border-gray-900 rounded-2xl overflow-y-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="border-b border-gray-900 text-xs font-bold text-gray-500 uppercase tracking-wider bg-gray-900/20 sticky top-0">
-                                <th class="p-4">Producto</th>
-                                <th class="p-4 text-center w-32">Cantidad</th>
-                                <th class="p-4 text-right w-32">Precio Unit.</th>
-                                <th class="p-4 text-right w-32">Subtotal</th>
-                                <th class="p-4 text-center w-16"></th>
-                            </tr>
-                        </thead>
-                        <tbody id="carrito-cuerpo">
-                            </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <section class="w-2/5 bg-gray-900/10 p-6 flex flex-col justify-between border-l border-gray-900">
+                <h2 class="text-xl font-black tracking-tight mb-1 text-gray-200">Iniciar Turno de Trabajo</h2>
+                <p class="text-sm text-gray-400 mb-6">Ingresá el dinero disponible en la caja física para comenzar a operar.</p>
                 
-                <div class="space-y-6">
-                    <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Opciones de Pago</h3>
-                    
-                    <div class="grid grid-cols-2 gap-3">
-                        <button class="py-4 rounded-xl border-2 border-emerald-500 bg-emerald-500/5 text-emerald-400 font-bold flex flex-col items-center gap-2 transition-all">
-                            <i class="fa-solid fa-money-bill-wave text-xl"></i> Efectivo
-                        </button>
-                        <button class="py-4 rounded-xl border border-gray-800 bg-gray-900/40 text-gray-400 font-bold flex flex-col items-center gap-2 opacity-50 cursor-not-allowed" disabled>
-                            <i class="fa-solid fa-credit-card text-xl"></i> Débito/Crédito
-                        </button>
-                    </div>
-
-                    <div class="bg-gray-900/40 border border-gray-800 rounded-2xl p-4 space-y-3">
-                        <div class="flex justify-between items-center">
-                            <span class="text-xs text-gray-400 font-bold">Paga con:</span>
-                            <input type="number" id="paga-con" value="0" class="bg-gray-950 border border-gray-800 text-right font-mono font-bold text-gray-200 px-3 py-1.5 rounded-lg w-32 focus:outline-none focus:border-emerald-500 text-sm">
-                        </div>
-                        <div class="flex justify-between items-center border-t border-gray-800/60 pt-3">
-                            <span class="text-xs text-gray-400 font-bold">Su vuelto:</span>
-                            <span id="vuelto-total" class="font-mono font-black text-amber-400 text-lg">$ 0.00</span>
+                <div class="space-y-4 text-left">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1.5">Monto Inicial en Efectivo</label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-mono font-bold">$</span>
+                            <input type="number" id="monto-inicial-input" value="0" class="w-full bg-gray-950 border border-gray-800 rounded-xl py-3 pl-9 pr-4 text-gray-100 font-mono font-bold focus:outline-none focus:border-emerald-500" placeholder="0.00">
                         </div>
                     </div>
-                </div>
-
-                <div class="space-y-4">
-                    <div class="flex justify-between items-end px-2">
-                        <span class="text-sm text-gray-400 font-black uppercase tracking-wider">Total a Cobrar</span>
-                        <span id="monto-total-gigante" class="text-5xl font-mono font-black text-emerald-400 tracking-tight">$ 0.00</span>
-                    </div>
-
-                    <button onclick="confirmarVentaVendedor()" class="w-full py-5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-gray-950 text-xl font-black tracking-wide rounded-2xl transition-all shadow-xl shadow-emerald-500/10 flex items-center justify-center gap-3 cursor-pointer">
-                        <i class="fa-solid fa-print"></i> CONFIRMAR VENTA [F9]
+                    <button onclick="abrirCajaVendedor()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-black py-3 rounded-xl transition-all shadow-lg flex items-center justify-center space-x-2">
+                        <span>Abrir Turno de Caja</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
                     </button>
                 </div>
+            </div>
+        </div>
 
-            </section>
-        </main>
+        <div id="interfaz-pos" style="display: none;" class="w-full h-full flex flex-col lg:flex-row gap-6 p-6 overflow-hidden">
+            
+            <div class="lg:col-span-2 flex-1 flex flex-col h-full overflow-hidden">
+                
+                <div class="relative bg-gray-900 border border-gray-800 rounded-2xl p-4 flex items-center gap-3 focus-within:border-emerald-500/50 transition-all shadow-lg shrink-0 mb-4">
+                    <div class="text-xl pl-1 select-none text-gray-400">🔍</div>
+                    <input type="text" id="input-busqueda-pos" autocomplete="off" oninput="realizarBusquedaDinamica(this.value)" onkeydown="manejarTeclasBusqueda(event)"
+                        placeholder="Escaneá con la pistola o escribí el nombre del artículo..." 
+                        class="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-sm text-gray-200 focus:outline-none focus:border-emerald-500 transition-all placeholder:text-gray-600 font-mono">
+                    
+                    <div id="dropdown-resultados-pos" class="hidden absolute top-full left-0 w-full mt-2 bg-gray-900 border border-gray-800 rounded-xl shadow-2xl max-h-60 overflow-y-auto z-50 divide-y divide-gray-800/60 font-mono text-xs">
+                    </div>
+                </div>
+
+                <div class="flex-1 bg-gray-900 border border-gray-800 rounded-2xl flex flex-col overflow-hidden shadow-xl min-h-0">
+                    <div class="overflow-y-auto flex-1 relative min-h-0">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="sticky top-0 bg-gray-900 z-10 border-b border-gray-800">
+                                <tr class="text-[10px] font-bold uppercase tracking-wider text-gray-400 bg-gray-950/40">
+                                    <th class="py-4 px-5">Detalle del Producto</th>
+                                    <th class="py-4 px-4 text-center w-32">Cantidad</th>
+                                    <th class="py-4 px-4 text-right w-36">Precio Unitario</th>
+                                    <th class="py-4 px-4 text-right w-36">Total</th>
+                                    <th class="py-4 px-4 text-center w-16"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-carrito-cuerpo" class="divide-y divide-gray-800/50 text-sm">
+                                </tbody>
+                        </table>
+                        
+                        <div id="carrito-vacio-aviso" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center p-16">
+                            <div class="text-3xl mb-2">🛒</div>
+                            <p class="text-xs text-gray-500 italic">No hay productos cargados en la transacción actual</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="w-full lg:w-[420px] h-full flex flex-col overflow-hidden shrink-0">
+                <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 flex flex-col justify-between h-full shadow-xl">
+                    
+                    <div class="space-y-5 flex-1">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 border-b border-gray-800 pb-2 flex items-center justify-between">
+                            <span>Resumen de Cobro</span>
+                            <button onclick="vaciarCarrito()" class="text-[10px] text-red-400/70 hover:text-red-400 font-medium normal-case transition-colors">Limpiar todo</button>
+                        </h3>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1.5">Importe Abonado</label>
+                                <div class="relative">
+                                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-mono font-bold">$</span>
+                                    <input type="number" id="paga-con" oninput="calcularVuelto()" value="0" 
+                                        class="w-full bg-gray-950 border border-gray-800 rounded-xl py-4 pl-9 pr-4 text-gray-100 font-mono font-bold text-2xl focus:outline-none focus:border-emerald-500 transition-all">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1.5">Vuelto a entregar</label>
+                                <div id="vuelto-txt" class="w-full bg-gray-950 border border-gray-800 rounded-xl py-4 px-4 text-emerald-400 font-mono font-black text-2xl flex items-center shadow-inner">$0.00</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-5 border-t border-gray-800 space-y-4 bg-gray-900">
+                        <div class="font-mono space-y-1">
+                            <div class="flex justify-between text-xs text-gray-500">
+                                <span>Subtotal Bruto</span>
+                                <span id="subtotal-txt">$0.00</span>
+                            </div>
+                            <div class="pt-2 flex justify-between items-baseline">
+                                <span class="text-xs font-sans font-bold text-gray-300 uppercase">Total a Liquidar</span>
+                                <span id="total-txt" class="text-4xl font-black text-emerald-400 tracking-tight">$0.00</span>
+                            </div>
+                        </div>
+
+                        <button id="btn-finalizar-venta" onclick="procesarCobro()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-black py-4.5 rounded-xl transition-all shadow-lg shadow-emerald-500/10 flex items-center justify-center space-x-2 text-sm uppercase tracking-wide">
+                            <i class="fa-solid fa-bolt text-xs"></i>
+                            <span>Confirmar Transacción (F10)</span>
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
     </div>
 
     <div id="modal-cierre" class="fixed inset-0 bg-gray-950/80 backdrop-blur-sm hidden items-center justify-center z-50">
-        <div class="bg-gray-900 border border-gray-800 p-6 rounded-2xl w-full max-w-sm">
-            <h3 class="text-lg font-bold text-gray-200 mb-2">Cerrar Turno Actual</h3>
-            <p class="text-xs text-gray-500 mb-4">Ingresá el total de efectivo físico que dejas en la caja para la auditoría.</p>
-            
-            <div class="mb-4">
-                <input type="number" id="monto-final" placeholder="Efectivo en caja" class="w-full bg-gray-950 border border-gray-800 rounded-xl py-3 px-4 font-mono text-rose-400 text-lg focus:outline-none focus:border-rose-500">
+        <div class="bg-gray-900 border border-gray-800 p-6 rounded-2xl w-full max-w-sm shadow-2xl">
+            <div class="text-center mb-4">
+                <div class="w-12 h-12 bg-red-500/10 text-red-400 rounded-full flex items-center justify-center text-lg mx-auto mb-2 border border-red-500/20">
+                    <i class="fa-solid fa-vault"></i>
+                </div>
+                <h3 class="text-lg font-black text-gray-200">Arqueo y Cierre de Caja</h3>
+                <p class="text-xs text-gray-400">Contá el dinero total en la caja física para finalizar el turno.</p>
             </div>
-
-            <div class="flex gap-3">
-                <button onclick="ocultarModalCierre()" class="w-1/2 py-2.5 bg-gray-800 text-gray-400 font-bold rounded-xl text-xs hover:bg-gray-700 transition-all">Cancelar</button>
-                <button onclick="cerrarCajaVendedor()" class="w-1/2 py-2.5 bg-rose-500 text-gray-950 font-black rounded-xl text-xs hover:bg-rose-600 transition-all">CONFIRMAR CIERRE</button>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Efectivo Real en Caja</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-mono font-bold">$</span>
+                        <input type="number" id="monto-final" class="w-full bg-gray-950 border border-gray-800 rounded-xl py-2.5 pl-9 pr-4 text-gray-100 font-mono font-bold focus:outline-none focus:border-red-500" placeholder="0.00">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 pt-2">
+                    <button onclick="ocultarModalCierre()" class="bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold py-2.5 rounded-xl text-xs border border-gray-700">Cancelar</button>
+                    <button onclick="cerrarCajaVendedor()" class="bg-red-500 hover:bg-red-400 text-gray-950 font-black py-2.5 rounded-xl text-xs shadow-lg shadow-red-500/10">Cerrar Caja</button>
+                </div>
             </div>
         </div>
     </div>
 
+    <div id="modal-confirmar-salida" class="fixed inset-0 bg-gray-950/80 backdrop-blur-sm hidden items-center justify-center z-50">
+        <div class="bg-gray-900 border border-gray-800 p-6 rounded-2xl w-full max-w-sm shadow-2xl text-center">
+            <div class="w-12 h-12 bg-amber-500/10 text-amber-400 rounded-full flex items-center justify-center text-lg mx-auto mb-3 border border-amber-500/20">
+                <i class="fa-solid fa-circle-question"></i>
+            </div>
+            <h3 class="text-lg font-black text-gray-200 mb-1">¿Cerrar sesión de la Terminal?</h3>
+            <p class="text-xs text-gray-400 mb-5">Se limpiarán las credenciales locales de acceso.</p>
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="ocultarModalSalida()" class="bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold py-2 rounded-xl text-xs border border-gray-700">Cancelar</button>
+                <button onclick="ejecutarCerrarSesion()" class="bg-amber-500 hover:bg-amber-400 text-gray-950 font-black py-2 rounded-xl text-xs transition-all shadow-lg">Confirmar Salida</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="contenedor-toast" class="fixed bottom-5 right-5 space-y-2 z-50 pointer-events-none"></div>
+
     <script>
         let cajaActualId = null;
         let carrito = [];
+        let productosSugeridosEnMemoria = [];
 
-        window.addEventListener('DOMContentLoaded', async () => {
-            await verificarCajaActiva();
-            
-            // Listener para capturar el Enter o Escáner Láser en el buscador
-            document.getElementById('buscador-laser').addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    buscarYAgregarProducto(this.value.trim());
-                }
-            });
+        document.addEventListener('DOMContentLoaded', () => { verificarCajaActiva(); });
 
-            // Listener para calcular vuelto en vivo
-            document.getElementById('paga-con').addEventListener('input', calcularVuelto);
+        function lanzarToast(mensaje, tipo = 'info') {
+            const contenedor = document.getElementById('contenedor-toast');
+            const toast = document.createElement('div');
+            toast.className = `transform translate-y-4 opacity-0 transition-all duration-300 pointer-events-auto min-w-[300px] max-w-md bg-gray-900 border p-4 rounded-xl shadow-2xl flex items-center space-x-3 text-sm font-semibold`;
+            if (tipo === 'success') { toast.classList.add('border-emerald-500/30', 'text-emerald-400'); toast.innerHTML = `<i class="fa-solid fa-circle-check"></i><span>${mensaje}</span>`; }
+            else if (tipo === 'error') { toast.classList.add('border-red-500/30', 'text-red-400'); toast.innerHTML = `<i class="fa-solid fa-circle-xmark"></i><span>${mensaje}</span>`; }
+            else { toast.classList.add('border-amber-500/30', 'text-amber-400'); toast.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i><span>${mensaje}</span>`; }
+            contenedor.appendChild(toast);
+            setTimeout(() => { toast.classList.remove('translate-y-4', 'opacity-0'); }, 10);
+            setTimeout(() => { toast.classList.add('opacity-0', 'translate-y-2'); setTimeout(() => { toast.remove(); }, 300); }, 4000);
+        }
 
-            // Atajo de teclado: F9 para cobrar rápido
-            window.addEventListener('keydown', function(e) {
-                if (e.key === 'F9' && cajaActualId !== null && carrito.length > 0) {
-                    e.preventDefault();
-                    confirmarVentaVendedor();
-                }
-            });
-        });
-
-        // 🔍 1. GET /cajas/activa - Verificar estado al arrancar
         async function verificarCajaActiva() {
             try {
                 const respuesta = await fetch('/cajas/activa');
                 if (respuesta.ok) {
                     const caja = await respuesta.json();
                     if (caja && caja.id) {
-                        mudarAInterfazPOS(caja.id, caja.monto_inicial);
+                        mudarAInterfazPOS(caja.id, caja.monto_inicial ? parseFloat(caja.monto_inicial) : 0);
+                        return;
                     }
                 }
-            } catch (err) {
-                console.error("Error al verificar caja activa:", err);
-            }
+                irAPantallaAperturaEstado();
+            } catch (err) { irAPantallaAperturaEstado(); }
         }
 
-        // 🟢 2. POST /cajas/ - Abrir turno de caja
+        function irAPantallaAperturaEstado() {
+            document.getElementById('indicador-seccion').innerText = "Apertura de Caja";
+            document.getElementById('contenedor-info-caja').style.display = 'none';
+            document.getElementById('btn-cierre-global').style.display = 'none';
+            document.getElementById('pantalla-apertura').style.display = 'flex';
+            document.getElementById('interfaz-pos').style.display = 'none';
+        }
+
         async function abrirCajaVendedor() {
-            const montoInicial = parseFloat(document.getElementById('monto-inicial').value) || 0;
+            const montoInicial = parseFloat(document.getElementById('monto-inicial-input').value) || 0;
             try {
                 const respuesta = await fetch('/cajas/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ monto_inicial: montoInicial })
                 });
-
-                if (!respuesta.ok) {
-                    const errorData = await respuesta.json();
-                    alert(`Error: ${errorData.detail || 'No se pudo abrir la caja.'}`);
+                if (respuesta.status === 201 || respuesta.status === 200) {
+                    try {
+                        const nuevaCaja = await respuesta.json();
+                        lanzarToast("Turno de caja inicializado.", "success");
+                        mudarAInterfazPOS(nuevaCaja.id, nuevaCaja.monto_inicial);
+                    } catch (e) { mudarAInterfazPOS("Activa", montoInicial); }
                     return;
                 }
+                const err = await respuesta.json();
+                if ((err.detail || "").toLowerCase().includes("ya tenés")) {
+                    mudarAInterfazPOS("Activa", montoInicial);
+                    return;
+                }
+                lanzarToast(err.detail || 'Error al abrir caja.', "error");
+            } catch (err) { mudarAInterfazPOS("Activa", montoInicial); }
+        }
 
-                const cajaCreada = await respuesta.json();
-                mudarAInterfazPOS(cajaCreada.id, cajaCreada.monto_inicial);
-            } catch (err) {
-                alert("Error de red al intentar abrir caja.");
+        function mudarAInterfazPOS(idCaja, montoInicial) {
+            cajaActualId = (idCaja === "Activa") ? 1 : idCaja;
+            document.getElementById('indicador-seccion').innerText = "Terminal POS";
+            document.getElementById('info-caja').innerText = `# ${String(cajaActualId).padStart(4, '0')}`;
+            document.getElementById('contenedor-info-caja').style.display = 'flex';
+            document.getElementById('btn-cierre-global').style.display = 'flex';
+            
+            document.getElementById('pantalla-apertura').style.display = 'none';
+            document.getElementById('interfaz-pos').style.display = 'flex';
+            
+            setTimeout(() => { document.getElementById('input-busqueda-pos').focus(); }, 100);
+            renderizarCarrito();
+        }
+
+        async function realizarBusquedaDinamica(query) {
+            const dropdown = document.getElementById('dropdown-resultados-pos');
+            const termino = query.trim();
+            
+            if (!termino) {
+                dropdown.classList.add('hidden');
+                dropdown.innerHTML = '';
+                productosSugeridosEnMemoria = [];
+                return;
+            }
+
+            try {
+                const respuesta = await fetch(`/productos/?skip=0&limit=50`);
+                if (respuesta.ok) {
+                    const todos = await respuesta.json();
+                    productosSugeridosEnMemoria = todos.filter(p => 
+                        (p.codigo_barras && p.codigo_barras.includes(termino)) || 
+                        p.nombre.toLowerCase().includes(termino.toLowerCase())
+                    );
+
+                    const coincidenciaExactaCodigo = todos.find(p => p.codigo_barras === termino);
+                    if (coincidenciaExactaCodigo) {
+                        agregarAlCarrito(coincidenciaExactaCodigo);
+                        document.getElementById('input-busqueda-pos').value = '';
+                        dropdown.classList.add('hidden');
+                        return;
+                    }
+
+                    renderizarDropdownSugerencias(productosSugeridosEnMemoria);
+                }
+            } catch (err) { console.error("Fallo de red en predictivo."); }
+        }
+
+        function renderizarDropdownSugerencias(lista) {
+            const dropdown = document.getElementById('dropdown-resultados-pos');
+            dropdown.innerHTML = '';
+
+            if (lista.length === 0) {
+                dropdown.innerHTML = `<div class="p-4 text-center text-gray-500 italic">No se encontraron productos.</div>`;
+                dropdown.classList.remove('hidden');
+                return;
+            }
+
+            lista.slice(0, 15).forEach((p, index) => {
+                const precio = parseFloat(p.precio_venta || p.precio || 0);
+                const itemDiv = document.createElement('div');
+                itemDiv.className = `p-3 flex justify-between items-center cursor-pointer transition-colors ${index === 0 ? 'bg-gray-800/40' : 'hover:bg-gray-800/30'}`;
+                itemDiv.setAttribute('onclick', `seleccionarProductoDropdown(${JSON.stringify(p)})`);
+                itemDiv.innerHTML = `
+                    <div class="flex flex-col">
+                        <span class="font-bold text-gray-200">${p.nombre}</span>
+                        <span class="text-[10px] text-gray-500 font-mono">Cód: ${p.codigo_barras || 'S/C'} | Stock: ${p.stock}</span>
+                    </div>
+                    <span class="font-black text-emerald-400 font-mono">$${precio.toFixed(2)}</span>`;
+                dropdown.appendChild(itemDiv);
+            });
+            dropdown.classList.remove('hidden');
+        }
+
+        function manejarTeclasBusqueda(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const input = document.getElementById('input-busqueda-pos');
+                
+                if (productosSugeridosEnMemoria.length > 0) {
+                    agregarAlCarrito(productosSugeridosEnMemoria[0]);
+                    input.value = '';
+                    document.getElementById('dropdown-resultados-pos').classList.add('hidden');
+                    productosSugeridosEnMemoria = [];
+                } else if (input.value.trim() !== '') {
+                    lanzarToast("Ningún producto coincide para añadir.", "warning");
+                }
             }
         }
 
-        // 🟥 3. PUT /cajas/cerrar - Guardar balance final
+        function seleccionarProductoDropdown(p) {
+            agregarAlCarrito(p);
+            const input = document.getElementById('input-busqueda-pos');
+            input.value = '';
+            document.getElementById('dropdown-resultados-pos').classList.add('hidden');
+            input.focus();
+        }
+
+        function agregarAlCarrito(p) {
+            const precioDefinido = parseFloat(p.precio_venta !== undefined ? p.precio_venta : (p.precio !== undefined ? p.precio : 0));
+            if (isNaN(precioDefinido)) return;
+
+            const idx = carrito.findIndex(item => item.id === p.id);
+            if (idx !== -1) {
+                carrito[idx].cantidad += 1;
+            } else {
+                carrito.push({ id: p.id, nombre: p.nombre, precio: precioDefinido, cantidad: 1 });
+            }
+            renderizarCarrito();
+        }
+
+        function modificarCantidad(id, delta) {
+            const idx = carrito.findIndex(i => i.id === id);
+            if (idx !== -1) {
+                carrito[idx].cantidad += delta;
+                if (carrito[idx].cantidad <= 0) carrito.splice(idx, 1);
+            }
+            renderizarCarrito();
+        }
+
+        function removerItemCarrito(id) {
+            carrito = carrito.filter(i => i.id !== id);
+            renderizarCarrito();
+        }
+
+        function vaciarCarrito() { carrito = []; renderizarCarrito(); }
+
+        function renderizarCarrito() {
+            const cuerpo = document.getElementById('tabla-carrito-cuerpo');
+            const avisoVacio = document.getElementById('carrito-vacio-aviso');
+            cuerpo.innerHTML = '';
+            let subtotal = 0;
+
+            if (carrito.length === 0) {
+                avisoVacio.classList.remove('hidden');
+                document.getElementById('subtotal-txt').innerText = '$0.00';
+                document.getElementById('total-txt').innerText = '$0.00';
+                calcularVuelto();
+                return;
+            }
+
+            avisoVacio.classList.add('hidden');
+
+            carrito.forEach(item => {
+                const itemTotal = item.precio * item.cantidad;
+                subtotal += itemTotal;
+                
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-900/30 transition-colors group";
+                tr.innerHTML = `
+                    <td class="py-3.5 px-5">
+                        <div class="font-bold text-gray-200">${item.nombre}</div>
+                    </td>
+                    <td class="py-3.5 px-4 text-center">
+                        <div class="inline-flex items-center bg-gray-950 border border-gray-800 rounded-lg overflow-hidden">
+                            <button onclick="modificarCantidad(${item.id}, -1)" class="px-2.5 py-1 hover:bg-gray-800 text-gray-500 hover:text-gray-300 font-bold transition-colors">-</button>
+                            <span class="px-1 text-gray-200 min-w-[24px] text-center font-mono font-bold text-xs">${item.cantidad}</span>
+                            <button onclick="modificarCantidad(${item.id}, 1)" class="px-2.5 py-1 hover:bg-gray-800 text-gray-500 hover:text-gray-300 font-bold transition-colors">+</button>
+                        </div>
+                    </td>
+                    <td class="py-3.5 px-4 text-right font-mono font-semibold text-gray-400">$${item.precio.toFixed(2)}</td>
+                    <td class="py-3.5 px-4 text-right font-mono font-bold text-emerald-400">$${itemTotal.toFixed(2)}</td>
+                    <td class="py-3.5 px-4 text-center">
+                        <button onclick="removerItemCarrito(${item.id})" class="text-gray-600 hover:text-red-400 p-1 opacity-0 group-hover:opacity-100 transition-all">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
+                        </button>
+                    </td>`;
+                cuerpo.appendChild(tr);
+            });
+
+            document.getElementById('subtotal-txt').innerText = `$${subtotal.toFixed(2)}`;
+            document.getElementById('total-txt').innerText = `$${subtotal.toFixed(2)}`;
+            calcularVuelto();
+        }
+
+        function calcularVuelto() {
+            const total = parseFloat(document.getElementById('total-txt').innerText.replace('$', '')) || 0;
+            const pagaCon = parseFloat(document.getElementById('paga-con').value) || 0;
+            const vuelto = pagaCon - total;
+            document.getElementById('vuelto-txt').innerText = vuelto > 0 ? `$${vuelto.toFixed(2)}` : '$0.00';
+        }
+
+        async function procesarCobro() {
+            if (carrito.length === 0 || !cajaActualId) return;
+            const btn = document.getElementById('btn-finalizar-venta');
+            btn.disabled = true;
+            btn.innerText = "Procesando...";
+
+            const payload = {
+                caja_id: cajaActualId,
+                detalles: carrito.map(i => ({ producto_id: i.id, cantidad: i.cantidad }))
+            };
+            try {
+                const r = await fetch('/ventas/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!r.ok) {
+                    const err = await r.json();
+                    lanzarToast(err.detail || 'No se pudo procesar la venta.', "error");
+                    btn.disabled = false;
+                    btn.innerHTML = `<i class="fa-solid fa-bolt text-xs"></i><span>Confirmar Transacción (F10)</span>`;
+                    return;
+                }
+                lanzarToast("¡Venta liquidada con éxito!", "success");
+                carrito = [];
+                document.getElementById('paga-con').value = 0;
+                renderizarCarrito();
+                document.getElementById('input-busqueda-pos').focus();
+            } catch (err) { lanzarToast("Error de comunicación en cobro.", "error"); }
+            
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fa-solid fa-bolt text-xs"></i><span>Confirmar Transacción (F10)</span>`;
+        }
+
         async function cerrarCajaVendedor() {
             const montoFinal = parseFloat(document.getElementById('monto-final').value) || 0;
             try {
                 const respuesta = await fetch('/cajas/cerrar', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ monto_final: montoFinal })
+                    body: JSON.stringify({ monto_final_real: montoFinal })
                 });
-
-                if (!respuesta.ok) {
-                    const errorData = await respuesta.json();
-                    alert(`Error al cerrar: ${errorData.detail || 'Verificá los datos.'}`);
-                    return;
-                }
-
-                alert("Turno de caja cerrado con éxito.");
-                window.location.reload();
-            } catch (err) {
-                alert("Error de red al cerrar la caja.");
-            }
-        }
-
-        // 🛒 4. BUSCADOR LÁSER - Conexión con tu API de productos
-        async function buscarYAgregarProducto(query) {
-            if (!query) return;
-            const inputBuscador = document.getElementById('buscador-laser');
-
-            try {
-                // Le pega a tu endpoint actual de productos pasándole el query (código o nombre)
-                const respuesta = await fetch(`/productos/?query=${encodeURIComponent(query)}`);
-                if (!respuesta.ok) throw new Error();
-                
-                const productos = await respuesta.json();
-
-                if (productos.length === 0) {
-                    alert("Producto no registrado o sin stock.");
-                    inputBuscador.select();
-                    return;
-                }
-
-                // Tomamos el primer resultado que coincida (ideal para código de barras único)
-                const prod = productos[0];
-                
-                // Verificamos si ya está metido en el carrito para sumarle 1
-                const indexExistente = carrito.findIndex(item => item.id === prod.id);
-                if (indexExistente !== -1) {
-                    carrito[indexExistente].cantidad += 1;
-                } else {
-                    carrito.push({
-                        id: prod.id,
-                        nombre: prod.nombre,
-                        precio: parseFloat(prod.precio),
-                        cantidad: 1
-                    });
-                }
-
-                inputBuscador.value = ''; // Limpia el lector láser para el próximo producto
-                renderizarCarrito();
-
-            } catch (err) {
-                console.error("Error en búsqueda:", err);
-            }
-        }
-
-        // 🔄 5. Renderizar los ítems en la tabla gigante
-        function renderizarCarrito() {
-            const cuerpo = document.getElementById('carrito-cuerpo');
-            if (carrito.length === 0) {
-                cuerpo.innerHTML = `<tr><td colspan="5" class="text-center py-20 text-gray-600 text-xs font-sans">📥 Escaneá un producto para iniciar la venta...</td></tr>`;
-                actualizarTotales(0);
-                return;
-            }
-
-            cuerpo.innerHTML = carrito.map((item, idx) => {
-                const subtotal = item.precio * item.cantidad;
-                return `
-                    <tr class="border-b border-gray-900 hover:bg-gray-900/20 transition-colors">
-                        <td class="p-4 font-bold text-gray-200 text-sm">${item.nombre}</td>
-                        <td class="p-4 text-center">
-                            <div class="flex items-center justify-center gap-2">
-                                <button onclick="cambiarCantidad(${idx}, -1)" class="w-7 h-7 bg-gray-950 border border-gray-800 rounded-md text-gray-400 hover:bg-gray-900 text-xs font-bold">-</button>
-                                <span class="font-mono font-bold text-sm w-8 text-center">${item.cantidad}</span>
-                                <button onclick="cambiarCantidad(${idx}, 1)" class="w-7 h-7 bg-gray-950 border border-gray-800 rounded-md text-gray-400 hover:bg-gray-900 text-xs font-bold">+</button>
-                            </div>
-                        </td>
-                        <td class="p-4 text-right font-mono text-gray-400 text-sm">$ ${item.precio.toFixed(2)}</td>
-                        <td class="p-4 text-right font-mono font-bold text-emerald-400 text-sm">$ ${subtotal.toFixed(2)}</td>
-                        <td class="p-4 text-center">
-                            <button onclick="eliminarItem(${idx})" class="text-rose-500 hover:text-rose-400 transition-colors cursor-pointer"><i class="fa-solid fa-trash-can"></i></button>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-
-            const totalGeneral = carrito.reduce((acc, item) => acc + (item.precio * item.cantidad), 0);
-            actualizarTotales(totalGeneral);
-        }
-
-        function cambiarCantidad(idx, cambio) {
-            carrito[idx].cantidad += cambio;
-            if (carrito[idx].cantidad <= 0) {
-                carrito.splice(idx, 1);
-            }
-            renderizarCarrito();
-        }
-
-        function eliminarItem(idx) {
-            carrito.splice(idx, 1);
-            renderizarCarrito();
-        }
-
-        function actualizarTotales(total) {
-            document.getElementById('monto-total-gigante').innerText = `$ ${total.toFixed(2)}`;
-            calcularVuelto();
-        }
-
-        function calcularVuelto() {
-            const total = carrito.reduce((acc, item) => acc + (item.precio * item.cantidad), 0);
-            const pagaCon = parseFloat(document.getElementById('paga-con').value) || 0;
-            const vuelto = pagaCon - total;
-            document.getElementById('vuelto-total').innerText = `$ ${vuelto > 0 ? vuelto.toFixed(2) : '0.00'}`;
-        }
-
-        // 💰 6. POST /ventas/ - Confirmar preventa e impactar en backend
-        async function confirmarVentaVendedor() {
-            if (carrito.length === 0) return;
-
-            const payloadVenta = {
-                caja_id: cajaActualId,
-                items: carrito.map(item => ({
-                    producto_id: item.id,
-                    cantidad: item.cantidad
-                }))
-            };
-
-            try {
-                const respuesta = await fetch('/ventas/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payloadVenta)
-                });
-
                 if (!respuesta.ok) {
                     const err = await respuesta.json();
-                    alert(`Error en venta: ${err.detail || 'No se pudo procesar.'}`);
+                    lanzarToast(err.detail || 'Verificá los montos.', "error");
                     return;
                 }
-
-                alert("¡Venta procesada e impresa con éxito!");
+                ocultarModalCierre();
+                lanzarToast("Turno finalizado con éxito.", "success");
+                cajaActualId = null;
                 carrito = [];
-                document.getElementById('paga-con').value = 0;
-                renderizarCarrito();
-                document.getElementById('buscador-laser').focus();
-
-            } catch (err) {
-                alert("Error de red al procesar el cobro.");
-            }
+                document.getElementById('monto-inicial-input').value = 0;
+                document.getElementById('monto-final').value = '';
+                irAPantallaAperturaEstado();
+            } catch (err) { lanzarToast("Error al comunicar el arqueo.", "error"); }
         }
 
-        function mudarAInterfazPOS(idCaja, montoInicial) {
-            cajaActualId = idCaja;
-            document.getElementById('info-caja').innerText = `# ${String(idCaja).padStart(4, '0')} (Inició con: $${montoInicial.toFixed(2)})`;
-            document.getElementById('pantalla-apertura').style.display = 'none';
-            const iPos = document.getElementById('interfaz-pos');
-            iPos.classList.remove('hidden');
-            setTimeout(() => { iPos.classList.remove('opacity-0'); document.getElementById('buscador-laser').focus(); }, 50);
-            renderizarCarrito();
+        function solicitarCerrarSesion() { document.getElementById('modal-confirmar-salida').style.display = 'flex'; }
+        function ocultarModalSalida() { document.getElementById('modal-confirmar-salida').style.display = 'none'; }
+        function ejecutarCerrarSesion() {
+            document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            window.location.href = "/login";
         }
 
         function mostrarModalCierre() { document.getElementById('modal-cierre').style.display = 'flex'; }
         function ocultarModalCierre() { document.getElementById('modal-cierre').style.display = 'none'; }
+
+        document.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('dropdown-resultados-pos');
+            if (e.target.id !== 'input-busqueda-pos') {
+                dropdown.classList.add('hidden');
+            }
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'F10') { e.preventDefault(); if (carrito.length > 0) procesarCobro(); }
+            if (document.getElementById('interfaz-pos').style.display !== 'none') {
+                if (document.activeElement.tagName !== 'INPUT') { document.getElementById('input-busqueda-pos').focus(); }
+            }
+        });
     </script>
 </body>
 </html>

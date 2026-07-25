@@ -10,11 +10,11 @@ templates = Jinja2Templates(directory="templates")
 
 @router_core.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
-    return templates.TemplateResponse("login/login.html", {"request": request})
+    return templates.TemplateResponse(request, "login/login.html")
 
 @router_core.get("/dashboard", response_class=HTMLResponse)
 async def get_dashboard(request: Request, current_user: Usuario = Depends(get_current_user)):
     if current_user.role == "ADMIN":
-        return templates.TemplateResponse("dashboard.html", {"request": request, "usuario": current_user})
+        return templates.TemplateResponse(request, "dashboard.html", {"usuario": current_user})
     else:
-        return templates.TemplateResponse("panel_vendedor.html", {"request": request, "usuario": current_user})
+        return templates.TemplateResponse(request, "panel_vendedor.html", {"usuario": current_user})
