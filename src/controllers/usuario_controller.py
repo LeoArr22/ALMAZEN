@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from src.config.database import get_db
@@ -23,9 +23,27 @@ def registrar_usuario(
 
 # 🔓 COMPLETO PÚBLICO: El login debe ser abierto para que todos inicien sesión
 @router.post("/login", response_model=TokenResponse)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    """Autentica al usuario mediante username y password."""
-    return UsuarioService.autenticar_usuario(db, username=form_data.username, password=form_data.password)
+def login(
+    response: Response,  # 👈 Inyectamos la Response de FastAPI
+    form_data: OAuth2PasswordRequestForm = Depends(), 
+    db: Session = Depends(get_db)
+):
+    """Autentica al usuario mediante username y password y setea la cookie HttpOnly."""
+    
+    # 1. Llamamos a tu servicio tal cual está hoy
+    token_dto = UsuarioService.autenticar_usuario(db, username=form_data.username, password=form_data.password)
+    
+    # 2. Seteamos la cookie HttpOnly directamente en la respuesta HTTP
+    response.set_cookie(
+        key="access_token",
+        value=f"Bearer {token_dto.access_token}", # O el token limpio según prefieras
+        httponly=True,  # 🔒 Impide lectura desde JS (protección XSS)
+        samesite="lax",  # 🛡️ Protección contra CSRF
+        path="/"         # Disponible para todas las rutas del sistema
+    )
+    
+    # 3. Retornamos el mismo DTO (el cliente sigue recibiendo el JSON si lo necesita)
+    return token_dto
 
 # 🔓 LIBRE (CON LOGIN): Cualquiera puede ver quién está autenticado en su terminal
 @router.get("/me", response_model=UsuarioResponse)

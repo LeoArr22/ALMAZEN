@@ -24,7 +24,7 @@ def abrir_caja(
 @router.get("/activa", response_model=CajaResponse)
 def obtener_caja_activa(
     db: Session = Depends(get_db), 
-    current_user: Usuario = Depends(get_current_user) # 👈 ¡ESTO FALTABA! Así sabe de quién es la cookie
+    current_user: Usuario = Depends(get_current_user) # 👈  Lee quién es por la cookie
 ):
     """Trae los datos del turno de caja activo para el usuario actual."""
     # Nota: Asegurate de que tu CajaService tenga este método implementado

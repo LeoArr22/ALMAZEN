@@ -89,11 +89,7 @@
                 const datos = await respuesta.json();
 
                 if (respuesta.ok) {
-                    // Seteamos la Cookie 'access_token' con el Bearer prefijo
-                    // path=/ para que sea válida en todo el dominio
-                    // max-age=86400 es 1 día en segundos
-                    document.cookie = `access_token=Bearer ${datos.access_token}; path=/; max-age=86400; SameSite=Strict`;
-                    
+                
                     // Pequeño delay visual antes de redirigir para dar feedback de éxito
                     btn.innerText = "✨ ¡Éxito! Redirigiendo...";
                     btn.className = btn.className.replace("bg-gradient-to-r from-emerald-400 to-teal-500", "bg-emerald-600");
