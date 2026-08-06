@@ -9,6 +9,8 @@ if TYPE_CHECKING:
     from src.models.caja import Caja
     from src.models.producto import Producto
     from src.models.usuario import Usuario
+    from src.models.venta_pago import VentaPago
+
 
 class Venta(Base):
     """
@@ -54,6 +56,13 @@ class Venta(Base):
         cascade="all, delete-orphan"
     )
 
+    # Relación bidireccional 1-N (Una venta madre posee n pagos asociados)
+    pagos: Mapped[List["VentaPago"]] = relationship(
+        "VentaPago",
+        back_populates="venta_cabecera",
+        cascade="all, delete-orphan"
+    )
+
 
 class VentaDetalle(Base):
     """
@@ -70,8 +79,8 @@ class VentaDetalle(Base):
     # nullable=True por si se borra el producto pero queremos el historial íntegro
     producto_id: Mapped[Optional[int]] = mapped_column(ForeignKey("productos.id"), nullable=True) 
     
-    # Atributo de Cantidad (entero)
-    cantidad: Mapped[int] = mapped_column(nullable=False)
+    # Atributo de Cantidad
+    cantidad: Mapped[Decimal] = mapped_column(Numeric(10, 3), nullable=False)
     
     # --- Atributos Financieros (Usa tipo Numeric para precisión decimal exacta) ---
     # Precios congelados al momento exacto de la venta (no cambian si cambia el producto luego)

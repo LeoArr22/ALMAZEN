@@ -8,10 +8,12 @@ class ProductoBase(BaseModel):
     nombre: str = Field(..., min_length=2, max_length=100, examples=["Fideos Marolio 500g"])
     descripcion: Optional[str] = Field(None, max_length=255, examples=["Fideos tallarín"])
     categoria: str = Field(..., min_length=2, max_length=50, examples=["Almacén"])
-    stock: int = Field(default=0, ge=0, examples=[50])
+    stock: Decimal = Field(default=Decimal("0.000"), ge=0)  
     costo: Decimal = Field(..., gt=0, examples=[450.00])
     precio: Decimal = Field(..., gt=0, examples=[750.00])
     codigo_barras: Optional[str] = Field(default=None)
+    es_fraccionable: bool = Field(default=False)
+    unidad_medida: str = Field(default="UNIDAD")
 
     # 🌟 VALIDACIÓN INTELIGENTE
     @field_validator('codigo_barras')
@@ -41,7 +43,9 @@ class ProductoUpdate(BaseModel):
     codigo_barras: Optional[str] = Field(None, min_length=8, max_length=14)
     descripcion: Optional[str] = Field(None, max_length=255)
     categoria: Optional[str] = Field(None, min_length=2, max_length=50)
-    stock: Optional[int] = Field(None, ge=0)
+    stock: Decimal = Field(default=Decimal("0.000"), ge=0)  
+    es_fraccionable: Optional[bool] = Field(None)
+    unidad_medida: Optional[str] = Field(None, min_length=2, max_length=20)
     costo: Optional[Decimal] = Field(None, gt=0)
     precio: Optional[Decimal] = Field(None, gt=0)
 

@@ -29,10 +29,15 @@
                    placeholder="Ej. Packs de fideos secos tallarín">
         </div>
 
+        <div class="flex items-center gap-2 mt-2">
+            <input type="checkbox" id="prod-fraccionable" name="es_fraccionable" class="rounded bg-gray-950 border-gray-800 text-emerald-500">
+            <label for="prod-fraccionable" class="text-xs text-gray-300">¿Es producto fraccionable? (Venta por Kg / Litro)</label>
+        </div>
+
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
                 <label for="prod-stock" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Stock Inicial</label>
-                <input type="number" id="prod-stock" name="stock" value="0" min="0" required autocomplete="off"
+                <input type="number" id="prod-stock" name="stock" value="0" min="0" required autocomplete="off" step="any"  min="0"
                        class="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all font-mono"
                        placeholder="0">
             </div>
@@ -100,7 +105,9 @@
                 nombre: raw.nombre,
                 descripcion: raw.descripcion.trim() === "" ? null : raw.descripcion.trim(),
                 categoria: normalizarCategoria(raw.categoria),
-                stock: parseInt(raw.stock) || 0,
+                es_fraccionable: document.getElementById('prod-fraccionable').checked,
+                unidad_medida: document.getElementById('prod-fraccionable').checked ? "KG" : "UNIDAD",
+                stock: parseFloat(document.getElementById('prod-stock').value) || 0.0,
                 costo: parseFloat(raw.costo) || 0.0,
                 precio: parseFloat(raw.precio) || 0.0,
                 codigo_barras: raw.codigo_barras.trim() === "" ? null : raw.codigo_barras.trim()

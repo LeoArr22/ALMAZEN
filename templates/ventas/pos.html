@@ -2,72 +2,183 @@
 
 <div id="modulo-punto-venta" class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6 opacity-0 translate-y-2 transition-all duration-300">
     
-    <div class="lg:col-span-2 space-y-4">
-        
-        <div class="relative bg-gray-900 border border-gray-800 rounded-2xl p-4 flex items-center gap-3 focus-within:border-emerald-500/50 transition-all">
-            <div class="text-xl pl-1 select-none">🔍</div>
-            <input type="text" id="input-busqueda-pos" autofocus autocomplete="off"
-                placeholder="Escaneá con la pistola o escribí el nombre del artículo..." 
-                class="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-sm text-gray-200 focus:outline-none focus:border-emerald-500 transition-all placeholder:text-gray-600 font-mono">
-            
-            <div id="dropdown-resultados-pos" class="hidden absolute top-full left-0 w-full mt-2 bg-gray-900 border border-gray-800 rounded-xl shadow-2xl max-h-60 overflow-y-auto z-50 divide-y divide-gray-800/60 font-mono text-xs">
+    <!-- COLUMNA IZQUIERDA: BUSCADOR + TABLA + BARRA DE ATAJOS -->
+    <div class="lg:col-span-2 space-y-4 flex flex-col justify-between">
+        <div class="space-y-4">
+            <!-- BUSCADOR CON BOTÓN CATÁLOGO (F2) -->
+            <div class="flex gap-3 items-center">
+                <div class="relative flex-1 bg-gray-900 border border-gray-800 rounded-xl p-3.5 flex items-center gap-3 focus-within:border-emerald-500/50 transition-all">
+                    <span class="text-gray-500 text-base select-none">║▌║</span>
+                    <input type="text" id="input-busqueda-pos" autofocus autocomplete="off"
+                        placeholder="Buscar por código o nombre (ej: jamon)..." 
+                        class="w-full bg-transparent border-none text-base text-gray-200 focus:outline-none placeholder:text-gray-600 font-mono">
+                    
+                    <div id="dropdown-resultados-pos" class="hidden absolute top-full left-0 w-full mt-2 bg-gray-900 border border-gray-800 rounded-xl shadow-2xl max-h-64 overflow-y-auto z-50 divide-y divide-gray-800/60 font-mono text-sm">
+                    </div>
                 </div>
+                <button type="button" onclick="abrirModalCatalogo()" class="bg-gray-900 border border-gray-800 hover:bg-gray-800 text-gray-300 font-bold px-5 py-3.5 rounded-xl flex items-center gap-2 text-xs md:text-sm transition-all cursor-pointer">
+                    🔍 Catálogo <span class="bg-gray-800 text-gray-400 text-[11px] px-2 py-0.5 rounded border border-gray-700">F2</span>
+                </button>
+            </div>
+
+            <!-- TABLA DE PRODUCTOS -->
+            <div class="bg-gray-900/80 border border-gray-800 rounded-2xl overflow-hidden shadow-xl min-h-[400px] flex flex-col justify-between">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-950/80 text-[11px] uppercase tracking-wider text-gray-400 font-bold border-b border-gray-800 select-none">
+                                <th class="p-3.5">CÓDIGO / PRODUCTO</th>
+                                <th class="p-3.5 text-center">STOCK</th>
+                                <th class="p-3.5 text-center">CANT. / UNIDADES</th>
+                                <th class="p-3.5 text-center">MONTO VENTA ($)</th>
+                                <th class="p-3.5 text-right">P. UNITARIO</th>
+                                <th class="p-3.5 text-right">SUBTOTAL</th>
+                                <th class="p-3.5 text-center">ACCIONES</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-carrito-pos" class="divide-y divide-gray-800/50 text-xs md:text-sm font-mono">
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div id="carrito-vacio-msg" class="p-16 text-center text-gray-600 select-none my-auto">
+                    <div class="text-6xl mb-3 opacity-40">🛒</div>
+                    <p class="text-sm text-gray-500 font-sans">El carrito está vacío. Escaneá o buscá un producto para comenzar.</p>
+                </div>
+            </div>
         </div>
 
-        <div class="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden min-h-[380px] flex flex-col justify-between shadow-xl">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="border-b border-gray-800 bg-gray-950/40 text-gray-400 font-mono text-xs uppercase tracking-wider">
-                            <th class="p-4 font-bold">Artículo</th>
-                            <th class="p-4 font-bold text-center w-36">Cantidad</th>
-                            <th class="p-4 font-bold text-right">P. Unitario</th>
-                            <th class="p-4 font-bold text-right">Subtotal</th>
-                            <th class="p-4 font-bold text-center w-20"></th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabla-items-venta" class="divide-y divide-gray-800/40 text-gray-200 font-mono text-sm">
-                        <tr>
-                            <td colspan="5" class="text-center py-24 text-gray-600 tracking-tight font-sans text-xs">
-                                <span class="text-3xl block mb-2">🛒</span> Carrito vacío. Escaneá un código para comenzar.
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+        <!-- BARRA INFERIOR -->
+        <div class="flex justify-between items-center bg-gray-950/60 border border-gray-800/80 rounded-xl p-2.5 px-4 text-xs font-mono text-gray-400">
+            <div class="flex gap-3 items-center">
+                <span class="font-bold text-gray-500">Atajos:</span>
+                <span><kbd class="bg-gray-800 text-gray-300 px-2 py-0.5 rounded border border-gray-700 font-bold">F2</kbd> Catálogo</span>
+                <span>|</span>
+                <span><kbd class="bg-gray-800 text-gray-300 px-2 py-0.5 rounded border border-gray-700 font-bold">F10</kbd> Cobrar</span>
+                <span>|</span>
+                <span><kbd class="bg-gray-800 text-gray-300 px-2 py-0.5 rounded border border-gray-700 font-bold">Supr</kbd> Vaciar</span>
             </div>
+            <button onclick="vaciarCarritoPOS()" class="text-red-400 hover:text-red-300 flex items-center gap-1 font-sans text-xs md:text-sm font-bold transition-colors cursor-pointer">
+                🗑️ Vaciar Carrito
+            </button>
         </div>
     </div>
 
+    <!-- COLUMNA DERECHA: PANELS INTERCAMBIABLES -->
     <div class="space-y-4">
-        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 flex flex-col justify-between min-h-[468px] shadow-xl">
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between min-h-[480px]">
             
-            <div class="space-y-6">
-                <h3 class="text-xs font-mono font-bold uppercase text-gray-500 tracking-wider border-b border-gray-800 pb-2">Resumen de Compra</h3>
-                
-                <div class="bg-gray-950 border border-gray-800 rounded-xl p-5 text-center select-none shadow-inner border-l-4 border-l-emerald-500">
-                    <span class="block text-[10px] font-mono font-bold uppercase tracking-widest text-gray-500">Total General</span>
-                    <span id="pos-total-gigante" class="text-4xl font-black font-mono text-emerald-400 tracking-tight">$ 0.00</span>
+            <!-- VISTA 1: RESUMEN DE OPERACIÓN -->
+            <div id="vista-resumen-operacion" class="space-y-6 flex-1 flex flex-col justify-between">
+                <div class="space-y-6">
+                    <h2 class="text-xs md:text-sm font-bold uppercase tracking-wider text-gray-300 border-b border-gray-800 pb-3 select-none flex items-center gap-2">
+                        🧾 Resumen de Operación
+                    </h2>
+
+                    <div class="space-y-4 font-mono text-sm">
+                        <div class="flex justify-between text-gray-400">
+                            <span>Items en carrito:</span>
+                            <span id="pos-cant-items" class="text-gray-200 font-bold text-base">0</span>
+                        </div>
+                        <div class="flex justify-between text-gray-400">
+                            <span>Unidades totales:</span>
+                            <span id="pos-unidades-totales" class="text-gray-200 font-bold text-base">0</span>
+                        </div>
+                    </div>
+
+                    <div class="pt-6 border-t border-gray-800/80">
+                        <span class="text-xs uppercase font-bold text-gray-500 tracking-wider block mb-1">MONTO TOTAL A COBRAR</span>
+                        <span class="text-4xl md:text-5xl font-black text-emerald-400 font-mono" id="pos-total-monto">$0.00</span>
+                    </div>
                 </div>
 
-                <div class="space-y-2.5 font-mono text-xs bg-gray-950/40 p-4 border border-gray-800/80 rounded-xl">
-                    <div class="flex justify-between text-gray-400">
-                        <span>Variedad de artículos:</span>
-                        <span id="pos-total-lineas" class="text-gray-200 font-bold">0 de productos</span>
-                    </div>
-                    <div class="flex justify-between text-gray-400">
-                        <span>Cantidad total de bultos:</span>
-                        <span id="pos-total-unidades" class="text-gray-200 font-bold">0 u.</span>
-                    </div>
-                </div>
+                <button id="btn-ir-a-cobrar" onclick="mostrarPantallaPago()" disabled
+                    class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-800/60 disabled:text-gray-600 disabled:cursor-not-allowed text-white font-black rounded-xl shadow-lg transition-all text-sm uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2">
+                    💳 IR A COBRAR (F10)
+                </button>
             </div>
 
-            <div class="space-y-2 pt-6 border-t border-gray-800/60">
-                <button id="btn-finalizar-venta" onclick="procesarEnvioVenta()" disabled
-                    class="w-full text-xs font-extrabold py-3.5 rounded-xl transition-all text-gray-500 bg-gray-800/40 border border-gray-800 cursor-not-allowed flex items-center justify-center gap-1.5 shadow-md uppercase tracking-wider">
-                    💵 Confirmar Transacción (F10)
-                </button>
-                <button onclick="cancelarVentaActual()" class="w-full text-xs font-bold py-2.5 text-gray-500 hover:text-rose-400 rounded-xl transition-colors font-mono tracking-tight cursor-pointer">
-                    ❌ Vaciar Carrito
+            <!-- VISTA 2: PROCESAR PAGO (PAGOS MÚLTIPLES) -->
+            <div id="vista-procesar-pago" class="hidden space-y-4 flex-1 flex flex-col justify-between font-mono">
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+                        <h2 class="text-xs md:text-sm font-bold uppercase tracking-wider text-gray-300 font-sans flex items-center gap-2">
+                            💳 Procesar Pago
+                        </h2>
+                        <button onclick="volverAResumen()" class="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1.5 rounded-lg border border-gray-700 font-sans transition-colors">
+                            ← Volver
+                        </button>
+                    </div>
+
+                    <!-- TOTAL A PAGAR -->
+                    <div class="bg-gray-950/80 border border-gray-800 rounded-xl p-3.5 flex justify-between items-center">
+                        <span class="text-xs md:text-sm text-gray-400 font-sans font-bold">Total a Pagar:</span>
+                        <span id="monto-total-pago" class="text-2xl md:text-3xl font-black text-emerald-400">$0.00</span>
+                    </div>
+
+                    <!-- CONSUMO INTERNO -->
+                    <div class="bg-amber-950/20 border border-amber-500/30 rounded-xl p-3 font-sans">
+                        <label class="flex items-center justify-between cursor-pointer">
+                            <span class="text-xs md:text-sm font-bold text-amber-300 uppercase">
+                                📦 Consumo Interno
+                            </span>
+                            <input type="checkbox" id="check-consumo-interno-pos" onchange="toggleModoConsumoInternoPOS()" class="w-5 h-5 accent-amber-500 cursor-pointer">
+                        </label>
+                    </div>
+
+                    <div id="bloque-pagos-combinados" class="space-y-3">
+                        <!-- LISTA DE PAGOS APLICADOS -->
+                        <div>
+                            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1 font-sans">PAGOS APLICADOS</span>
+                            <div id="lista-pagos-agregados" class="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                                <div class="text-xs text-gray-600 italic">No hay pagos agregados aún.</div>
+                            </div>
+                        </div>
+
+                        <!-- AGREGAR / MODIFICAR MÉTODO DE PAGO -->
+                        <div class="space-y-1.5 pt-2 border-t border-gray-800/60 font-sans">
+                            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider block">Agregar / Modificar Método de Pago</span>
+                            <div class="flex gap-2">
+                                <select id="select-medio-pago-nuevo" class="bg-gray-950 border border-gray-800 text-gray-200 rounded-xl p-2.5 text-xs md:text-sm focus:outline-none focus:border-emerald-500">
+                                    <option value="Efectivo">Efectivo</option>
+                                    <option value="Transferencia">Transferencia</option>
+                                    <option value="Tarjeta de Débito">T. Débito</option>
+                                    <option value="Tarjeta de Crédito">T. Crédito</option>
+                                </select>
+                                <input type="number" id="input-monto-pago-nuevo" placeholder="0.00" step="0.01"
+                                    class="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-sm text-emerald-400 font-mono font-bold focus:outline-none focus:border-emerald-500">
+                                <button type="button" onclick="agregarMetodoPago()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-colors cursor-pointer">
+                                    +
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- CÁLCULO DE VUELTO Y RESUMEN DE SALDO -->
+                        <div class="bg-gray-950/60 border border-gray-800 rounded-xl p-3 space-y-1.5 text-xs md:text-sm">
+                            <div id="box-efectivo-aportado" class="flex justify-between items-center text-gray-400">
+                                <span class="font-sans">Vuelto sobre Efectivo:</span>
+                                <input type="number" id="input-efectivo-recibido" oninput="recalcularTotalesPago()" placeholder="Recibido" class="w-24 bg-gray-900 border border-gray-800 text-right px-2 py-1 text-emerald-400 font-bold rounded">
+                            </div>
+                            <div class="flex justify-between text-gray-400">
+                                <span>Total Abonado:</span>
+                                <span id="monto-total-abonado" class="text-gray-200 font-bold">$0.00</span>
+                            </div>
+                            <div class="flex justify-between text-gray-400">
+                                <span>Resta Asignar:</span>
+                                <span id="monto-resta-asignar" class="text-amber-400 font-bold">$0.00</span>
+                            </div>
+                            <div class="flex justify-between text-emerald-400 font-bold pt-1 border-t border-gray-800/60 text-sm">
+                                <span>Vuelto:</span>
+                                <span id="monto-vuelto-calculado">$0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BOTÓN CONFIRMAR VENTA -->
+                <button id="btn-confirmar-venta-final" onclick="procesarEnvioVenta()" disabled
+                    class="w-full py-4 bg-emerald-500 hover:bg-emerald-400 disabled:bg-gray-800 disabled:text-gray-600 disabled:cursor-not-allowed text-gray-950 font-black rounded-xl shadow-lg transition-all text-sm uppercase tracking-wider font-sans cursor-pointer">
+                    Confirmar Venta
                 </button>
             </div>
 
@@ -75,283 +186,424 @@
     </div>
 </div>
 
+<!-- CONTENEDOR TOAST (MENSAJES ABAJO A LA DERECHA) -->
+<div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
 <script>
     (function() {
         let carrito = [];
-        let productosFiltradosActuales = []; // Guardamos los resultados en memoria para el Enter inmediato
-        
+        let productosCatalogo = [];
+        let pagosAgregados = [];
+        let primerProductoFiltrado = null;
+
         const inputBusqueda = document.getElementById('input-busqueda-pos');
-        const dropdownResultados = document.getElementById('dropdown-resultados-pos');
-        const tablaItems = document.getElementById('tabla-items-venta');
-        const totalGigante = document.getElementById('pos-total-gigante');
-        const totalLineas = document.getElementById('pos-total-lineas');
-        const totalUnidades = document.getElementById('pos-total-unidades');
-        const btnFinalizar = document.getElementById('btn-finalizar-venta');
-        const moduloContenedor = document.getElementById('modulo-punto-venta');
+        const dropdown = document.getElementById('dropdown-resultados-pos');
+        const tablaBody = document.getElementById('tabla-carrito-pos');
+        const msgVacio = document.getElementById('carrito-vacio-msg');
+        const cantItemsElem = document.getElementById('pos-cant-items');
+        const unidadesTotalesElem = document.getElementById('pos-unidades-totales');
+        const totalMontoElem = document.getElementById('pos-total-monto');
+        const btnIrACobrar = document.getElementById('btn-ir-a-cobrar');
+
+        function mostrarToast(mensaje, tipo = 'success') {
+            if (typeof window.mostrarNotificacion === 'function') {
+                window.mostrarNotificacion(mensaje, tipo);
+                return;
+            }
+
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            const bgClass = tipo === 'success' 
+                ? 'bg-emerald-950/90 border-emerald-500/50 text-emerald-200' 
+                : 'bg-red-950/90 border-red-500/50 text-red-200';
+
+            toast.className = `pointer-events-auto flex items-center gap-2 border px-4 py-3 rounded-xl shadow-2xl text-xs md:text-sm font-bold transition-all duration-300 transform translate-y-4 opacity-0 ${bgClass}`;
+            toast.innerHTML = `<span>${tipo === 'success' ? '✅' : '⚠️'}</span> <span>${mensaje}</span>`;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-4', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
 
         setTimeout(() => {
-            moduloContenedor.classList.remove('opacity-0', 'translate-y-2');
+            const mod = document.getElementById('modulo-punto-venta');
+            if (mod) mod.classList.remove('opacity-0', 'translate-y-2');
         }, 50);
 
-        if (inputBusqueda) inputBusqueda.focus();
-
-        // 🟢 BUSCADOR: Capturar evento de escritura
-        inputBusqueda.addEventListener('input', async (e) => {
-            const termino = e.target.value.trim();
-            if (termino.length < 2) {
-                dropdownResultados.classList.add('hidden');
-                productosFiltradosActuales = [];
-                return;
-            }
-
+        async function cargarCatalogo() {
             try {
-                const respuesta = await fetch(`/productos/?search=${encodeURIComponent(termino)}`);
-                if (respuesta.ok) {
-                    productosFiltradosActuales = await respuesta.json();
-                    renderizarDropdown(productosFiltradosActuales);
+                const res = await fetch('/productos/?limit=1000');
+                if (res.ok) {
+                    const data = await res.json();
+                    productosCatalogo = Array.isArray(data) ? data : (data.items || []);
                 }
             } catch (err) {
-                console.error("Error buscando productos:", err);
+                console.error("Error cargando productos:", err);
             }
-        });
+        }
+        cargarCatalogo();
 
-        // ⚡ CAPTURA DEL ENTER EN EL BUSCADOR (Pistola Láser o Teclado)
-        inputBusqueda.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault(); // Evitamos que refresque el formulario
-                
-                // Si la lista tiene al menos un resultado, tomamos el primero automáticamente
-                if (productosFiltradosActuales && productosFiltradosActuales.length > 0) {
-                    const p = productosFiltradosActuales[0];
-                    agregarAlCarrito(parseInt(p.id), p.nombre, parseFloat(p.precio), parseInt(p.stock));
-                    
-                    // Limpieza inmediata del buscador para el siguiente escaneo
-                    dropdownResultados.classList.add('hidden');
-                    inputBusqueda.value = "";
-                    productosFiltradosActuales = [];
-                    inputBusqueda.focus();
-                } else {
-                    emitirNotificacionGlobal("❌ No se encontró ningún producto con ese código/nombre", "error");
+        if (inputBusqueda) {
+            inputBusqueda.addEventListener('input', (e) => {
+                const query = e.target.value.trim().toLowerCase();
+                if (!query) {
+                    dropdown.classList.add('hidden');
+                    primerProductoFiltrado = null;
+                    return;
                 }
-            }
-        });
 
-        function renderizarDropdown(productos) {
-            if (productos.length === 0) {
-                dropdownResultados.innerHTML = `<div class="p-3 text-gray-500 italic text-center">Sin resultados coincidentes</div>`;
-                dropdownResultados.classList.remove('hidden');
-                return;
-            }
+                const coincidenciaBarra = productosCatalogo.find(p => p.codigo_barras && String(p.codigo_barras).toLowerCase() === query);
+                if (coincidenciaBarra) {
+                    agregarAlCarrito(coincidenciaBarra);
+                    inputBusqueda.value = '';
+                    dropdown.classList.add('hidden');
+                    primerProductoFiltrado = null;
+                    return;
+                }
 
-            // El primer elemento se destaca sutilmente (border-l-4) indicando que es el que se elegirá al dar Enter
-            dropdownResultados.innerHTML = productos.map((p, index) => `
-                <div class="p-3 hover:bg-gray-800/80 cursor-pointer flex justify-between items-center transition-colors ${index === 0 ? 'bg-gray-950/40 border-l-2 border-l-emerald-500' : ''}" 
-                     data-id="${p.id}" data-nombre="${p.nombre}" data-precio="${p.precio}" data-stock="${p.stock}">
-                    <div>
-                        <span class="text-gray-200 font-bold">${p.nombre}</span> ${index === 0 ? '<span class="text-[9px] bg-emerald-500/10 text-emerald-400 px-1 py-0.5 rounded ml-1 font-sans">Enter para cargar</span>' : ''}
-                        <span class="text-[10px] text-gray-500 block">Cód: ${p.codigo_barras || 'N/A'}</span>
-                    </div>
-                    <div class="text-right">
-                        <span class="text-emerald-400 font-bold font-mono">$ ${parseFloat(p.precio).toFixed(2)}</span>
-                        <span class="text-[10px] text-gray-400 block">Stock: ${p.stock}</span>
-                    </div>
-                </div>
-            `).join('');
-            dropdownResultados.classList.remove('hidden');
+                const filtrados = productosCatalogo.filter(p => {
+                    const nom = p.nombre && p.nombre.toLowerCase().includes(query);
+                    const cod = p.codigo_barras && String(p.codigo_barras).toLowerCase().includes(query);
+                    return nom || cod;
+                }).slice(0, 8);
 
-            // Selección manual con click por si acaso
-            dropdownResultados.querySelectorAll('[data-id]').forEach(elem => {
-                elem.addEventListener('click', () => {
-                    const id = parseInt(elem.getAttribute('data-id'));
-                    const nombre = elem.getAttribute('data-nombre');
-                    const precio = parseFloat(elem.getAttribute('data-precio'));
-                    const stock = parseInt(elem.getAttribute('data-stock'));
-                    
-                    agregarAlCarrito(id, nombre, precio, stock);
-                    dropdownResultados.classList.add('hidden');
-                    inputBusqueda.value = "";
-                    productosFiltradosActuales = [];
-                    inputBusqueda.focus();
-                });
+                if (filtrados.length > 0) {
+                    primerProductoFiltrado = filtrados[0];
+                    dropdown.innerHTML = filtrados.map((p, idx) => `
+                        <div onclick="seleccionarProductoDropdown(${p.id})" class="p-3 hover:bg-gray-800 cursor-pointer flex justify-between items-center border-b border-gray-800/40 ${idx === 0 ? 'bg-gray-800/50' : ''}">
+                            <div>
+                                <div class="font-bold text-gray-200 text-sm md:text-base">${p.nombre} ${p.es_fraccionable ? '<span class="text-[10px] bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-800">Fraccionable</span>' : ''}</div>
+                                <div class="text-xs text-gray-500">${p.codigo_barras || 'S/C'}</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-bold text-emerald-400 text-sm md:text-base">$${parseFloat(p.precio_venta || p.precio || 0).toFixed(2)}</div>
+                                <div class="text-xs text-gray-400 font-bold">Stock: ${p.stock || 0}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                    dropdown.classList.remove('hidden');
+                } else {
+                    primerProductoFiltrado = null;
+                    dropdown.classList.add('hidden');
+                }
+            });
+
+            inputBusqueda.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (primerProductoFiltrado) {
+                        agregarAlCarrito(primerProductoFiltrado);
+                        inputBusqueda.value = '';
+                        dropdown.classList.add('hidden');
+                        primerProductoFiltrado = null;
+                    }
+                } else if (e.key === 'Escape') {
+                    dropdown.classList.add('hidden');
+                }
             });
         }
 
-        // Ocultar al hacer clic fuera
-        document.addEventListener('click', (e) => {
-            if (dropdownResultados && !inputBusqueda.contains(e.target) && !dropdownResultados.contains(e.target)) {
-                dropdownResultados.classList.add('hidden');
+        window.seleccionarProductoDropdown = function(id) {
+            const prod = productosCatalogo.find(p => p.id === id);
+            if (prod) {
+                agregarAlCarrito(prod);
+                inputBusqueda.value = '';
+                dropdown.classList.add('hidden');
+                inputBusqueda.focus();
             }
-        });
+        };
 
-        // 🛒 LÓGICA DEL CARRITO
-        function agregarAlCarrito(id, nombre, precio, stockMax) {
-            const itemExistente = carrito.find(item => item.producto_id === id);
+        function agregarAlCarrito(prod) {
+            const precio = parseFloat(prod.precio_venta || prod.precio || 0);
+            const idx = carrito.findIndex(i => i.producto_id === prod.id);
 
-            if (itemExistente) {
-                if (itemExistente.cantidad >= stockMax) {
-                    emitirNotificacionGlobal(`⚠️ Stock tope alcanzado para: ${nombre}`, "error");
-                    return;
-                }
-                itemExistente.cantidad++;
+            if (idx !== -1) {
+                carrito[idx].cantidad += 1;
             } else {
-                if (stockMax <= 0) {
-                    emitirNotificacionGlobal(`❌ El artículo '${nombre}' no cuenta con stock disponible`, "error");
-                    return;
-                }
                 carrito.push({
-                    producto_id: id,
-                    nombre: nombre,
-                    precio: precio,
+                    producto_id: prod.id,
+                    codigo: prod.codigo_barras || 'N/A',
+                    nombre: prod.nombre,
+                    stock: prod.stock || 0,
                     cantidad: 1,
-                    stock_max: stockMax
+                    precio: precio,
+                    es_fraccionable: prod.es_fraccionable || false
                 });
             }
-            renderizarTablaCarrito();
-            emitirNotificacionGlobal(`➕ ${nombre} sumado al carro`, "exito");
+            renderizarCarrito();
         }
 
-        window.cambiarCantidadItem = function(id, delta) {
-            const item = carrito.find(i => i.producto_id === id);
-            if (!item) return;
-
-            const nuevaCant = item.cantidad + delta;
-            if (nuevaCant <= 0) {
-                eliminarItemCarrito(id);
-                return;
-            }
-            if (nuevaCant > item.stock_max) {
-                emitirNotificacionGlobal(`⚠️ Límite de stock excedido (${item.stock_max} disponibles)`, "error");
-                return;
-            }
-            item.cantidad = nuevaCant;
-            renderizarTablaCarrito();
-        };
-
-        window.eliminarItemCarrito = function(id) {
-            carrito = carrito.filter(i => i.producto_id !== id);
-            renderizarTablaCarrito();
-            emitirNotificacionGlobal("Artículo removido de la lista", "error");
-        };
-
-        function renderizarTablaCarrito() {
+        function renderizarCarrito() {
             if (carrito.length === 0) {
-                tablaItems.innerHTML = `
-                    <tr>
-                        <td colspan="5" class="text-center py-24 text-gray-600 tracking-tight font-sans text-xs">
-                            <span class="text-3xl block mb-2">🛒</span> Carrito vacío. Escaneá un código para comenzar.
-                        </td>
-                    </tr>`;
-                totalGigante.innerText = "$ 0.00";
-                totalLineas.innerText = "0 de productos";
-                totalUnidades.innerText = "0 u.";
-                
-                btnFinalizar.disabled = true;
-                btnFinalizar.className = "w-full text-xs font-extrabold py-3.5 rounded-xl transition-all text-gray-500 bg-gray-800/40 border border-gray-800 cursor-not-allowed flex items-center justify-center gap-1.5 shadow-md uppercase tracking-wider";
+                tablaBody.innerHTML = '';
+                msgVacio.classList.remove('hidden');
+                cantItemsElem.innerText = '0';
+                unidadesTotalesElem.innerText = '0';
+                totalMontoElem.innerText = '$0.00';
+                btnIrACobrar.disabled = true;
                 return;
             }
 
-            let acumuladoDinero = 0;
-            let acumuladoUnidades = 0;
+            msgVacio.classList.add('hidden');
+            let totalMonto = 0;
+            let totalUnidades = 0;
 
-            // Renderizado con tipografía más grande e impactante (text-base para nombres y subtotales)
-            tablaItems.innerHTML = carrito.map(item => {
+            tablaBody.innerHTML = carrito.map((item, index) => {
                 const subtotal = item.precio * item.cantidad;
-                acumuladoDinero += subtotal;
-                acumuladoUnidades += item.cantidad;
+                totalMonto += subtotal;
+                totalUnidades += item.cantidad;
 
                 return `
-                    <tr class="hover:bg-gray-900/40 transition-colors">
-                        <td class="p-4">
-                            <span class="font-black text-gray-100 text-base block tracking-tight">${item.nombre}</span>
-                            <span class="text-[10px] text-gray-500 font-mono">Ref ID: ${item.producto_id}</span>
+                    <tr class="hover:bg-gray-800/30 transition-colors">
+                        <td class="p-3.5">
+                            <div class="font-bold text-gray-200 text-xs md:text-sm">${item.nombre}</div>
+                            <div class="text-xs text-gray-500">${item.codigo} • ${item.es_fraccionable ? 'Fraccionable' : 'Entero'}</div>
                         </td>
-                        <td class="p-4 text-center">
-                            <div class="flex items-center justify-center gap-2 bg-gray-950 border border-gray-800 p-1 rounded-xl max-w-[120px] mx-auto">
-                                <button onclick="cambiarCantidadItem(${item.producto_id}, -1)" class="w-7 h-7 rounded-lg bg-gray-900 hover:bg-gray-800 text-gray-300 font-bold transition-colors select-none cursor-pointer text-sm">-</button>
-                                <span class="font-black text-gray-100 text-sm px-1">${item.cantidad}</span>
-                                <button onclick="cambiarCantidadItem(${item.producto_id}, 1)" class="w-7 h-7 rounded-lg bg-gray-900 hover:bg-gray-800 text-gray-300 font-bold transition-colors select-none cursor-pointer text-sm">+</button>
-                            </div>
+                        <td class="p-3.5 text-center text-gray-300 font-bold">${item.stock}</td>
+                        <td class="p-3.5 text-center">
+                            <input type="number" step="${item.es_fraccionable ? '0.001' : '1'}" min="0.001" value="${item.es_fraccionable ? parseFloat(item.cantidad).toFixed(3) : item.cantidad}" 
+                                onchange="actualizarCantidad(${index}, this.value)"
+                                class="w-24 bg-gray-950 border border-gray-800 rounded-lg px-2 py-1.5 text-center text-emerald-400 font-bold text-xs md:text-sm focus:outline-none focus:border-emerald-500">
                         </td>
-                        <td class="p-4 text-right text-gray-400 text-sm">$ ${item.precio.toFixed(2)}</td>
-                        <td class="p-4 text-right font-black text-emerald-400 text-base">$ ${subtotal.toFixed(2)}</td>
-                        <td class="p-4 text-center">
-                            <button onclick="eliminarItemCarrito(${item.producto_id})" class="text-gray-600 hover:text-rose-400 transition-colors cursor-pointer text-base">🗑️</button>
+                        <td class="p-3.5 text-center">
+                            ${item.es_fraccionable 
+                                ? `<input type="number" step="0.01" value="${subtotal.toFixed(2)}" onchange="actualizarMontoVentaFraccionable(${index}, this.value)" class="w-28 bg-gray-950 border border-gray-800 rounded-lg px-2 py-1.5 text-center text-emerald-400 font-bold text-xs md:text-sm focus:outline-none focus:border-emerald-500">`
+                                : `<span class="text-gray-500 italic text-xs">No fraccionable</span>`
+                            }
+                        </td>
+                        <td class="p-3.5 text-right text-gray-300 text-xs md:text-sm">$${item.precio.toFixed(2)}</td>
+                        <td class="p-3.5 text-right font-bold text-emerald-400 text-xs md:text-sm">$${subtotal.toFixed(2)}</td>
+                        <td class="p-3.5 text-center">
+                            <button onclick="eliminarItem(${index})" class="text-red-400 hover:text-red-300 font-bold px-2 text-sm">✕</button>
                         </td>
                     </tr>
                 `;
             }).join('');
 
-            totalGigante.innerText = `$ ${acumuladoDinero.toFixed(2)}`;
-            totalLineas.innerText = `${carrito.length} ${carrito.length === 1 ? 'tipo' : 'tipos'}`;
-            totalUnidades.innerText = `${acumuladoUnidades} u.`;
-
-            btnFinalizar.disabled = false;
-            btnFinalizar.className = "w-full text-xs font-extrabold py-3.5 rounded-xl transition-all text-gray-950 bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-300 hover:to-teal-400 shadow-lg shadow-emerald-500/10 cursor-pointer flex items-center justify-center gap-1.5 uppercase tracking-wider";
+            cantItemsElem.innerText = carrito.length;
+            unidadesTotalesElem.innerText = itemEsFraccionablePresente(carrito) ? totalUnidades.toFixed(3) : totalUnidades;
+            totalMontoElem.innerText = `$${totalMonto.toFixed(2)}`;
+            document.getElementById('monto-total-pago').innerText = `$${totalMonto.toFixed(2)}`;
+            btnIrACobrar.disabled = false;
         }
 
-        window.cancelarVentaActual = function() {
+        function itemEsFraccionablePresente(arr) {
+            return arr.some(i => i.es_fraccionable);
+        }
+
+        window.actualizarCantidad = function(idx, val) {
+            let num = parseFloat(val);
+            if (isNaN(num) || num <= 0) num = 1;
+            carrito[idx].cantidad = num;
+            renderizarCarrito();
+        };
+
+        window.actualizarMontoVentaFraccionable = function(idx, nuevoMontoVal) {
+            let monto = parseFloat(nuevoMontoVal);
+            if (isNaN(monto) || monto <= 0) return renderizarCarrito();
+
+            const precioUnitario = carrito[idx].precio;
+            if (precioUnitario > 0) {
+                carrito[idx].cantidad = monto / precioUnitario;
+            }
+            renderizarCarrito();
+        };
+
+        window.eliminarItem = function(idx) {
+            carrito.splice(idx, 1);
+            renderizarCarrito();
+        };
+
+        window.vaciarCarritoPOS = function() {
+            carrito = [];
+            pagosAgregados = [];
+            renderizarCarrito();
+            volverAResumen();
+        };
+
+        window.mostrarPantallaPago = function() {
             if (carrito.length === 0) return;
-            if (confirm("¿Estás seguro de que querés vaciar por completo el carrito actual?")) {
-                carrito = [];
-                renderizarTablaCarrito();
-                emitirNotificacionGlobal("Operación cancelada y carrito vaciado", "error");
+            const total = carrito.reduce((acc, i) => acc + (i.precio * i.cantidad), 0);
+            
+            if (pagosAgregados.length === 0) {
+                pagosAgregados = [{ medio_pago: 'Efectivo', monto: total }];
+            }
+            renderizarListaPagos();
+
+            document.getElementById('vista-resumen-operacion').classList.add('hidden');
+            document.getElementById('vista-procesar-pago').classList.remove('hidden');
+        };
+
+        window.volverAResumen = function() {
+            document.getElementById('vista-procesar-pago').classList.add('hidden');
+            document.getElementById('vista-resumen-operacion').classList.remove('hidden');
+        };
+
+        window.agregarMetodoPago = function() {
+            const medio = document.getElementById('select-medio-pago-nuevo').value;
+            const inputMonto = document.getElementById('input-monto-pago-nuevo');
+            const monto = parseFloat(inputMonto.value);
+
+            if (isNaN(monto) || monto <= 0) return;
+
+            const idxExistente = pagosAgregados.findIndex(p => p.medio_pago === medio);
+            if (idxExistente !== -1) {
+                pagosAgregados[idxExistente].monto += monto;
+            } else {
+                pagosAgregados.push({ medio_pago: medio, monto: monto });
+            }
+
+            inputMonto.value = '';
+            renderizarListaPagos();
+        };
+
+        window.eliminarMetodoPago = function(idx) {
+            pagosAgregados.splice(idx, 1);
+            renderizarListaPagos();
+        };
+
+        function renderizarListaPagos() {
+            const contenedor = document.getElementById('lista-pagos-agregados');
+            if (pagosAgregados.length === 0) {
+                contenedor.innerHTML = `<div class="text-xs text-gray-600 italic">No hay pagos agregados aún.</div>`;
+            } else {
+                contenedor.innerHTML = pagosAgregados.map((p, i) => `
+                    <div class="flex justify-between items-center bg-gray-950/80 border border-gray-800/80 px-3 py-2 rounded-lg text-xs md:text-sm">
+                        <span class="text-gray-300 font-sans font-bold">${p.medio_pago}</span>
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-emerald-400">$${p.monto.toFixed(2)}</span>
+                            <button onclick="eliminarMetodoPago(${i})" class="text-red-400 hover:text-red-300 text-xs">🗑️</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            recalculateSaldosAutofill();
+            recalcularTotalesPago();
+        }
+
+        function recalculateSaldosAutofill() {
+            const total = carrito.reduce((acc, i) => acc + (i.precio * i.cantidad), 0);
+            const abonado = pagosAgregados.reduce((acc, p) => acc + p.monto, 0);
+            const resta = total - abonado;
+            const inputMontoNuevo = document.getElementById('input-monto-pago-nuevo');
+            if (resta > 0) {
+                inputMontoNuevo.value = resta.toFixed(2);
+            } else {
+                inputMontoNuevo.value = '';
+            }
+        }
+
+        window.recalcularTotalesPago = function() {
+            const total = carrito.reduce((acc, i) => acc + (i.precio * i.cantidad), 0);
+            const abonado = pagosAgregados.reduce((acc, p) => acc + p.monto, 0);
+            const resta = total - abonado;
+
+            document.getElementById('monto-total-abonado').innerText = `$${abonado.toFixed(2)}`;
+            document.getElementById('monto-resta-asignar').innerText = `$${(resta > 0 ? resta : 0).toFixed(2)}`;
+
+            const efectivoAportadoVal = parseFloat(document.getElementById('input-efectivo-recibido').value || 0);
+            const pagoEfectivoEnLista = pagosAgregados.find(p => p.medio_pago === 'Efectivo');
+            const montoEfectivoEsperado = pagoEfectivoEnLista ? pagoEfectivoEnLista.monto : 0;
+
+            let vuelto = 0;
+            if (efectivoAportadoVal > montoEfectivoEsperado) {
+                vuelto = efectivoAportadoVal - montoEfectivoEsperado;
+            }
+
+            document.getElementById('monto-vuelto-calculado').innerText = `$${vuelto.toFixed(2)}`;
+
+            const btnConfirmar = document.getElementById('btn-confirmar-venta-final');
+            const esConsumo = document.getElementById('check-consumo-interno-pos').checked;
+
+            if (esConsumo) {
+                btnConfirmar.disabled = false;
+            } else {
+                btnConfirmar.disabled = (abonado < total);
             }
         };
 
-        // 🚀 ENVIAR VENTA A BASE DE DATOS
+        window.toggleModoConsumoInternoPOS = function() {
+            const esConsumo = document.getElementById('check-consumo-interno-pos').checked;
+            const bloquePagos = document.getElementById('bloque-pagos-combinados');
+
+            if (esConsumo) {
+                bloquePagos.classList.add('opacity-30', 'pointer-events-none');
+            } else {
+                bloquePagos.classList.remove('opacity-30', 'pointer-events-none');
+            }
+            recalcularTotalesPago();
+        };
+
         window.procesarEnvioVenta = async function() {
             if (carrito.length === 0) return;
-
-            btnFinalizar.disabled = true;
-            btnFinalizar.innerText = "⏳ Impactando en Caja...";
+            const esConsumo = document.getElementById('check-consumo-interno-pos').checked;
 
             const payload = {
-                detalles: carrito.map(item => ({
-                    producto_id: item.producto_id,
-                    cantidad: item.cantidad
-                }))
+                detalles: carrito.map(i => ({ producto_id: i.producto_id, cantidad: i.cantidad })),
+                pagos: esConsumo ? [{ medio_pago: "CONSUMO_INTERNO", monto: 0 }] : pagosAgregados
             };
 
             try {
-                const respuesta = await fetch('/ventas/', {
+                const res = await fetch('/ventas/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
+                const data = await res.json();
 
-                const resultado = await respuesta.json();
+                if (res.ok) {
+                    // DESCUENTO REACTIVO EN TIEMPO REAL DEL STOCK EN EL FRONTEND
+                    carrito.forEach(itemVendido => {
+                        const prodEnCat = productosCatalogo.find(p => p.id === itemVendido.producto_id);
+                        if (prodEnCat) {
+                            prodEnCat.stock = Math.max(0, (prodEnCat.stock || 0) - itemVendido.cantidad);
+                        }
+                    });
 
-                if (respuesta.ok) {
-                    emitirNotificacionGlobal(`✨ ¡Venta N° ${resultado.id} registrada con éxito!`, "exito");
-                    carrito = [];
-                    renderizarTablaCarrito();
+                    mostrarToast(esConsumo ? "Consumo interno registrado con éxito" : `Venta N° ${data.id} registrada con éxito`, 'success');
+                    vaciarCarritoPOS();
                     if (inputBusqueda) inputBusqueda.focus();
                 } else {
-                    let mensajeError = resultado.detail && typeof resultado.detail === 'string' ? resultado.detail : "Fallo de operación";
-                    emitirNotificacionGlobal(`❌ Servidor: ${mensajeError}`, "error");
-                    btnFinalizar.disabled = false;
-                    btnFinalizar.innerText = "💵 Confirmar Transacción (F10)";
+                    mostrarToast(data.detail || "No se pudo procesar la venta", 'error');
                 }
-            } catch (err) {
-                emitirNotificacionGlobal("⚠️ Error crítico de conexión al procesar la venta", "error");
-                btnFinalizar.disabled = false;
-                btnFinalizar.innerText = "💵 Confirmar Transacción (F10)";
+            } catch (e) {
+                mostrarToast("Error de conexión al procesar la venta", 'error');
             }
         };
 
+        // ATAJOS TECLADO
         const manejarAtajosPOS = function(e) {
-            if (e.key === "F10") {
+            if (e.key === 'F2') {
                 e.preventDefault();
-                if (carrito.length > 0 && !btnFinalizar.disabled) {
-                    procesarEnvioVenta();
+                if (typeof abrirModalCatalogo === 'function') abrirModalCatalogo();
+            } else if (e.key === 'F10') {
+                e.preventDefault();
+                const vistaPagoVisible = !document.getElementById('vista-procesar-pago').classList.contains('hidden');
+                if (!vistaPagoVisible && carrito.length > 0) {
+                    mostrarPantallaPago();
+                } else if (vistaPagoVisible) {
+                    const btnConfirmar = document.getElementById('btn-confirmar-venta-final');
+                    if (!btnConfirmar.disabled) procesarEnvioVenta();
                 }
+            } else if (e.key === 'Delete' || e.key === 'Supr') {
+                e.preventDefault();
+                vaciarCarritoPOS();
             }
         };
+
         window.addEventListener('keydown', manejarAtajosPOS);
 
         window.moduloActivoLimpieza = function() {
             window.removeEventListener('keydown', manejarAtajosPOS);
         };
-
     })();
 </script>

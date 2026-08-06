@@ -1,13 +1,15 @@
+from decimal import Decimal
 from typing import Optional
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import and_, func
 from src.models.venta import Venta, VentaDetalle
+from src.models.venta_pago import VentaPago
 from datetime import datetime
 
 class VentaRepository:
 
     @staticmethod
-    def crear_cabecera(db: Session, total: float, ganancia_total: float, caja_id: int, usuario_id: int) -> Venta:
+    def crear_cabecera(db: Session, total: Decimal, ganancia_total: Decimal, caja_id: int, usuario_id: int) -> Venta:
         """Crea el registro madre de la venta con los totales finales y la caja asociada."""
         db_venta = Venta(
             caja_id=caja_id,  
@@ -25,12 +27,12 @@ class VentaRepository:
         db: Session, 
         venta_id: int, 
         producto_id: int, 
-        cantidad: int, 
-        precio_historico: float, 
-        costo_historico: float
+        cantidad: Decimal, 
+        precio_historico: Decimal, 
+        costo_historico: Decimal
     ) -> VentaDetalle:
         """Inserta un renglón del carrito asociado a la venta madre con campos calculados."""
-        # Calculamos los montos antes de insertar
+        # Calculamos los montos de forma exacta con Decimal
         subtotal = precio_historico * cantidad
         ganancia_item = (precio_historico - costo_historico) * cantidad
 
@@ -47,21 +49,38 @@ class VentaRepository:
         return db_detalle
 
     @staticmethod
+    def crear_pago(
+        db: Session, 
+        venta_id: int, 
+        medio_pago: str, 
+        monto: Decimal
+    ) -> VentaPago:
+        """Inserta un medio de pago asociado a la venta madre."""
+        db_pago = VentaPago(
+            venta_id=venta_id,
+            medio_pago=medio_pago,
+            monto=monto
+        )
+        db.add(db_pago)
+        return db_pago
+
+    @staticmethod
     def obtener_por_id(db: Session, venta_id: int) -> Venta | None:
-        """Busca una venta específica y trae sus detalles de un solo viaje."""
+        """Busca una venta específica y trae sus detalles y pagos de un solo viaje."""
         return db.query(Venta).options(
-            joinedload(Venta.detalles)
+            joinedload(Venta.detalles),
+            joinedload(Venta.pagos)
         ).filter(Venta.id == venta_id).first()
         
     @staticmethod
     def obtener_por_vendedor(db: Session, usuario_id: int, skip: int = 0, limit: int = 100) -> list[Venta]:
-        """
-        Consulta en la base de datos las ventas asociadas a un vendedor específico.
-        Implementa joinedload para cargar los detalles de los renglones eficientemente.
-        """
+        """Consulta en la base de datos las ventas asociadas a un vendedor específico."""
         return (
             db.query(Venta)
-            .options(joinedload(Venta.detalles))
+            .options(
+                joinedload(Venta.detalles),
+                joinedload(Venta.pagos)
+            )
             .filter(Venta.usuario_id == usuario_id)
             .order_by(Venta.fecha_venta.desc())
             .offset(skip)
@@ -78,7 +97,10 @@ class VentaRepository:
         fecha: Optional[str] = None
     ) -> list[Venta]:
         """Trae el historial de ventas aplicando filtros dinámicos desde la BD."""
-        query = db.query(Venta).options(joinedload(Venta.detalles))
+        query = db.query(Venta).options(
+            joinedload(Venta.detalles),
+            joinedload(Venta.pagos)
+        )
         
         filtros = []
         
@@ -97,10 +119,6 @@ class VentaRepository:
     
     @staticmethod
     def eliminar(db: Session, db_venta: Venta) -> None:
-        """
-        Elimina una venta. 
-        Por la configuración de CASCADE en el modelo, SQLAlchemy borrará 
-        automáticamente todos sus detalles asociados.
-        """
+        """Elimina una venta y sus detalles/pagos por cascada."""
         db.delete(db_venta)
         db.commit()

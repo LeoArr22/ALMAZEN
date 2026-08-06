@@ -10,13 +10,13 @@ from decimal import Decimal
 # Lo que nos manda el cliente para un producto del carrito
 class VentaDetalleCreate(BaseModel):
     producto_id: int = Field(..., gt=0, examples=[1])
-    cantidad: int = Field(..., gt=0, examples=[3])
+    cantidad: Decimal = Field(..., gt=0, examples=[0.500])
 
 # Lo que la API devuelve para cada renglón individual de la venta
 class VentaDetalleResponse(BaseModel):
     id: int
-    producto_id: int
-    cantidad: int
+    producto_id: Optional[int]
+    cantidad: Decimal
     precio_historico: Decimal
     costo_historico: Decimal
 
@@ -26,12 +26,33 @@ class VentaDetalleResponse(BaseModel):
 
 
 # ==========================================
-# 2. SCHEMAS PARA LA VENTA (LA CABECERA)
+# 2. SCHEMAS PARA LOS PAGOS (DESGLOSE)
 # ==========================================
 
-# Request DTO: El cliente solo manda la lista de productos y cantidades desde el POS
+# Lo que nos manda el cliente para un desglose de pago
+class VentaPagoCreate(BaseModel):
+    medio_pago: str = Field(..., description="Efectivo, Transferencia, Tarjeta, etc.", examples=["Efectivo"])
+    monto: Decimal = Field(..., ge=0, description="Monto abonado con este medio", examples=[1500.00])
+
+# Lo que la API devuelve para un registro de pago
+class VentaPagoResponse(BaseModel):
+    id: int
+    medio_pago: str
+    monto: Decimal
+
+    model_config = {
+        "from_attributes": True
+    }
+
+
+# ==========================================
+# 3. SCHEMAS PARA LA VENTA (LA CABECERA)
+# ==========================================
+
+# Request DTO: El cliente manda la lista de productos y la lista de medios de pago desde el POS
 class VentaCreate(BaseModel):
     detalles: List[VentaDetalleCreate] = Field(..., min_length=1, description="Lista de productos en el carrito")
+    pagos: List[VentaPagoCreate] = Field(..., min_length=1, description="Lista de pagos realizados")
 
 # Response DTO: Lo que devolvemos al frontend (La venta completa armada)
 class VentaResponse(BaseModel):
@@ -43,6 +64,9 @@ class VentaResponse(BaseModel):
     
     # RELACIÓN ANIDADA: La cabecera agrupa a todos sus renglones hijos
     detalles: List[VentaDetalleResponse] 
+
+    # RELACIÓN ANIDADA: La cabecera agrupa todos los pagos realizados
+    pagos: List[VentaPagoResponse]
 
     # Identificador único del usuario/empleado que procesó la transacción en el sistema
     usuario_id: int

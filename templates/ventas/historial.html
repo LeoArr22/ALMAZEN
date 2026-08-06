@@ -182,11 +182,78 @@
                 `;
             }).join('');
         }
+// 👁️ Ver renglones detallados con resolución de nombres
+        window.abrirDetalleVenta = async function(id) {
+            try {
+                const respuesta = await fetch(`/ventas/${id}`);
+                if (!respuesta.ok) return;
+                
+                const v = await respuesta.json();
 
-        // (El resto de las funciones abrirDetalleVenta y cerrarDrawerDetalle quedan exactamente igual)
-        window.abrirDetalleVenta = async function(id) { /* ... tu lógica del drawer ... */ };
-        window.cerrarDrawerDetalle = function() { /* ... */ };
+                document.getElementById('drawer-id-venta').innerText = `# ${String(v.id).padStart(4, '0')}`;
+                const f = new Date(v.fecha_venta);
+                document.getElementById('drawer-fecha-venta').innerText = f.toLocaleDateString() + ' ' + f.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                document.getElementById('drawer-caja-venta').innerText = v.caja_id;
+                document.getElementById('drawer-total-venta').innerText = `$ ${parseFloat(v.total).toFixed(2)}`;
+
+                const listaArticulos = document.getElementById('drawer-lista-articulos');
+                
+                if (v.detalles && v.detalles.length > 0) {
+                    listaArticulos.innerHTML = `<div class="text-center text-gray-600 py-6 text-xs font-sans">⏳ Recuperando nombres del catálogo...</div>`;
+                    
+                    const promesasDetalles = v.detalles.map(async (d) => {
+                        let nombreProducto = `Producto ID: ${d.producto_id}`;
+                        try {
+                            const resProd = await fetch(`/productos/${d.producto_id}`);
+                            if (resProd.ok) {
+                                const prodData = await resProd.json();
+                                if (prodData && prodData.nombre) nombreProducto = prodData.nombre;
+                            }
+                        } catch (pErr) {
+                            console.error(pErr);
+                        }
+
+                        return `
+                            <div class="py-3 flex justify-between items-center font-mono text-xs">
+                                <div class="pr-2">
+                                    <span class="font-black text-gray-100 block text-sm tracking-tight">${nombreProducto}</span>
+                                    <span class="text-gray-500 font-sans text-[11px]">Código Ref: # ${d.producto_id} — Unitario: $ ${parseFloat(d.precio_historico).toFixed(2)}</span>
+                                </div>
+                                <div class="text-right flex-shrink-0">
+                                    <span class="text-gray-400 block font-bold">x${d.cantidad}</span>
+                                    <span class="text-emerald-400 font-black text-sm">$ ${(parseFloat(d.precio_historico) * d.cantidad).toFixed(2)}</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    const htmlRenglones = await Promise.all(promesasDetalles);
+                    listaArticulos.innerHTML = htmlRenglones.join('');
+
+                } else {
+                    listaArticulos.innerHTML = `<div class="text-center text-gray-600 py-6 text-xs">Comprobante sin artículos asociados</div>`;
+                }
+
+                drawer.classList.remove('invisible');
+                setTimeout(() => {
+                    drawerBackdrop.classList.remove('opacity-0');
+                    drawerPanel.classList.remove('translate-x-full');
+                }, 10);
+
+            } catch (err) {
+                emitirNotificacionGlobal("⚠️ Error al recabar los datos de la venta", "error");
+            }
+        };
+
+        window.cerrarDrawerDetalle = function() {
+            drawerBackdrop.classList.add('opacity-0');
+            drawerPanel.classList.add('translate-x-full');
+            setTimeout(() => {
+                drawer.classList.add('invisible');
+            }, 300);
+        };
 
         cargarHistorialServidor();
+
     })();
 </script>

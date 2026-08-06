@@ -1,4 +1,5 @@
 from typing import Optional
+from decimal import Decimal
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, select
 from src.models.producto import Producto
@@ -81,3 +82,14 @@ class ProductoRepository:
         """Busca un producto por ID aplicando un bloqueo pesimista (FOR UPDATE) 
         para evitar que dos cajas vendan sin stock en simultáneo."""
         return db.query(Producto).filter(Producto.id == producto_id).with_for_update().first()
+    
+    @staticmethod
+    def descontar_stock(db: Session, producto: Producto, cantidad: Decimal) -> Producto:
+        """
+        Descuenta la cantidad vendida del stock actual del producto.
+        Recibe la instancia de la entidad Producto (que idealmente fue obtenida con FOR UPDATE).
+        """
+        producto.stock -= cantidad
+        # No hacemos db.commit() acá porque la transacción completa (venta + pagos + stock)
+        # se confirma mediante el db.commit() atómico dentro del VentaService.
+        return producto

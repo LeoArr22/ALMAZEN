@@ -1,18 +1,33 @@
+from decimal import Decimal
 from typing import Optional
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from src.schemas.venta_schema import VentaCreate
 from src.models.venta import Venta
-from src.models.caja import Caja 
 from src.repositories.venta_repository import VentaRepository
 from src.repositories.producto_repository import ProductoRepository 
 from src.repositories.caja_repository import CajaRepository
+from src.repositories.usuario_repository import UsuarioRepository
 
 class VentaService:
 
     @staticmethod
     def registrar_venta(db: Session, venta_in: VentaCreate, usuario_id: int) -> Venta:
-        # 🔍 VALIDACIÓN CLAVE: Buscamos la caja abierta ESPECÍFICA del usuario actual
+        # 1. Verificar si la venta contiene un consumo interno
+        es_consumo_interno = any(
+            pago.medio_pago.upper() == "CONSUMO_INTERNO" for pago in venta_in.pagos
+        )
+
+        # 2. Si es consumo interno, validar permisos usando el repositorio de usuarios
+        if es_consumo_interno:
+            usuario_actual = UsuarioRepository.obtener_por_id(db, usuario_id)
+            if not usuario_actual or str(usuario_actual.role).lower() != "admin":
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Solo los usuarios con rol ADMINISTRADOR pueden registrar consumos internos."
+                )
+
+        # 3. Buscar turno de caja abierto asignado al usuario
         caja_abierta = CajaRepository.obtener_activa_por_usuario(db, usuario_id)
         
         if not caja_abierta:
@@ -21,15 +36,12 @@ class VentaService:
                 detail="No podés registrar la venta: No tenés un turno de caja abierto a tu nombre."
             )
 
-        # Inicializamos los acumuladores para la cabecera de la venta
-        total_venta = 0.0
-        ganancia_total_venta = 0.0
-        
-        # Estructura temporal para guardar lo que vamos validando antes de escribir en la BD
+        total_venta = Decimal("0.00")
+        ganancia_total_venta = Decimal("0.00")
         productos_a_descontar = []
 
         try:
-            # 1. PRIMER PASO: Validar todo el "carrito" bloqueando las filas desde el Repo
+            # 4. Validar existencia y stock de productos
             for detalle in venta_in.detalles:
                 producto = ProductoRepository.obtener_por_id_para_update(db, detalle.producto_id)
                 
@@ -42,34 +54,33 @@ class VentaService:
                 if producto.stock < detalle.cantidad:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
-                        detail=f"Stock insuficiente para el producto '{producto.nombre}'. Disponible: {producto.stock}, Solicitado: {detalle.cantidad}"
+                        detail=f"Stock insuficiente para '{producto.nombre}'. Disponible: {producto.stock}, Solicitado: {detalle.cantidad}"
                     )
-                
-                # Cálculo de subtotales basados en la información actual del producto
-                subtotal_item = float(producto.precio) * detalle.cantidad
-                costo_total_item = float(producto.costo) * detalle.cantidad
-                
-                total_venta += subtotal_item
-                ganancia_total_venta += (subtotal_item - costo_total_item)
-                
-                # Almacenamos temporalmente los datos validados para su posterior persistencia
+
+                subtotal = producto.precio * detalle.cantidad
+                costo_total = producto.costo * detalle.cantidad
+                ganancia_item = subtotal - costo_total
+
+                total_venta += subtotal
+                ganancia_total_venta += ganancia_item
+
                 productos_a_descontar.append({
                     "producto_obj": producto,
                     "cantidad": detalle.cantidad,
-                    "precio_historico": float(producto.precio),
-                    "costo_historico": float(producto.costo)
+                    "precio_historico": producto.precio,
+                    "costo_historico": producto.costo
                 })
 
-            # 2. SEGUNDO PASO: Persistencia de la cabecera vinculando a LA CAJA DEL USUARIO
+            # 5. Persistir cabecera de venta
             db_venta = VentaRepository.crear_cabecera(
-                db=db, 
-                total=total_venta, 
-                ganancia_total=ganancia_total_venta, 
+                db=db,
+                total=total_venta if not es_consumo_interno else Decimal("0.00"),
+                ganancia_total=Decimal("0.00") if es_consumo_interno else ganancia_total_venta,
                 caja_id=caja_abierta.id,
                 usuario_id=usuario_id
             )
 
-            # 3. TERCER PASO: Registrar cada renglón de detalle y actualizar existencias de inventario
+            # 6. Insertar renglones de detalle y actualizar stock
             for item in productos_a_descontar:
                 VentaRepository.crear_detalle(
                     db=db,
@@ -79,20 +90,35 @@ class VentaService:
                     precio_historico=item["precio_historico"],
                     costo_historico=item["costo_historico"]
                 )
-                
-                # Reducción de existencias en memoria del ORM
-                item["producto_obj"].stock -= item["cantidad"]
+                ProductoRepository.descontar_stock(
+                    db=db,
+                    producto=item["producto_obj"],
+                    cantidad=item["cantidad"]
+                )
 
-            # Confirmación atómica de la transacción completa
+            # 7. Registrar desgloses de pago
+            for pago in venta_in.pagos:
+                VentaRepository.crear_pago(
+                    db=db,
+                    venta_id=db_venta.id,
+                    medio_pago=pago.medio_pago,
+                    monto=pago.monto
+                )
+
             db.commit()
-            
-            return VentaService.obtener_venta(db, db_venta.id)
+            db.refresh(db_venta)
+            return db_venta
 
-        except Exception as e:
-            # Reversión de cualquier cambio ante fallas para preservar la integridad de datos
+        except HTTPException:
             db.rollback()
-            raise e    
-        
+            raise
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error interno al procesar la operación: {str(e)}"
+            )
+
     @staticmethod
     def obtener_venta(db: Session, venta_id: int) -> Venta:
         db_venta = VentaRepository.obtener_por_id(db, venta_id)
@@ -102,7 +128,7 @@ class VentaService:
                 detail=f"La operación de venta N° {venta_id} no existe en el sistema."
             )
         return db_venta
-    
+
     @staticmethod
     def listar_ventas_por_vendedor(db: Session, usuario_id: int, skip: int = 0, limit: int = 100) -> list[Venta]:
         return VentaRepository.obtener_por_vendedor(db, usuario_id, skip, limit)
@@ -121,11 +147,15 @@ class VentaService:
     def cancelar_venta(db: Session, venta_id: int) -> None:
         db_venta = VentaService.obtener_venta(db, venta_id)
         
-        for detalle in db_venta.detalles:
-            if detalle.producto_id is not None:
-                producto = ProductoRepository.obtener_por_id(db, detalle.producto_id)
-                if producto:
-                    producto.stock += detalle.cantidad
-                
-        VentaRepository.eliminar(db, db_venta)
-        db.commit()
+        try:
+            for detalle in db_venta.detalles:
+                if detalle.producto_id:
+                    producto = ProductoRepository.obtener_por_id_para_update(db, detalle.producto_id)
+                    if producto:
+                        producto.stock += Decimal(str(detalle.cantidad))
+
+            VentaRepository.eliminar(db, db_venta)
+            db.commit()
+        except Exception as e:
+            db.rollback()
+            raise e
