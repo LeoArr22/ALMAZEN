@@ -4,10 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from src.config.database import engine, Base 
 
 # 🌟 IMPORTACIÓN CRÍTICA DE MODELOS PARA SQLALCHEMY
-from src.models.producto import Producto
-from src.models.caja import Caja
-from src.models.venta import Venta, VentaDetalle
-from src.models.usuario import Usuario
+import src.models
 
 # Controladores / Routers de la API JSON
 from src.controllers import producto_controller, venta_controller, caja_controller, usuario_controller

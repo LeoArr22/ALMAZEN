@@ -34,6 +34,9 @@ class Venta(Base):
     # nullable=False asegura integridad a nivel BD para la auditoría
     usuario_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id"), nullable=False) # Quién hizo la venta
 
+     # Solo para auditoría: Si la venta fue anulada, este detalle queda marcado como anulado (SoftDelete)
+    es_anulada: Mapped[bool] = mapped_column(default=False, nullable=False)
+
     # --- Relaciones Bidireccionales (ORM) ---
     
     # Relación bidireccional N-1 (Muchas ventas pertenecen a una caja)

@@ -144,18 +144,33 @@ class VentaService:
         return VentaRepository.obtener_todas(db, skip, limit, caja_id, fecha)
 
     @staticmethod
-    def cancelar_venta(db: Session, venta_id: int) -> None:
+    def cancelar_venta(db: Session, venta_id: int) -> Venta:
+        # 1. Obtener la venta
         db_venta = VentaService.obtener_venta(db, venta_id)
         
+        if db_venta.es_anulada:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="La venta ya se encuentra anulada."
+            )
+
         try:
+            # 2. Devolver stock a cada producto
             for detalle in db_venta.detalles:
                 if detalle.producto_id:
                     producto = ProductoRepository.obtener_por_id_para_update(db, detalle.producto_id)
                     if producto:
                         producto.stock += Decimal(str(detalle.cantidad))
 
-            VentaRepository.eliminar(db, db_venta)
+            # 3. Marcar como anulada en lugar de eliminar
+            db_venta.es_anulada = True
+            
             db.commit()
+            db.refresh(db_venta)
+            return db_venta
         except Exception as e:
             db.rollback()
-            raise e
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error al anular la venta: {str(e)}"
+            )

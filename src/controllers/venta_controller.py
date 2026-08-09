@@ -37,3 +37,13 @@ def listar_ventas(
 ):
     """Trae el historial de ventas filtrado y paginado desde el motor de BD."""
     return VentaService.listar_ventas(db, skip, limit, caja_id, fecha)
+
+# 🛡️ PROTEGIDO: Solo un ADMIN puede anular una venta, lo que devuelve el stock y marca la venta como anulada
+@router.post("/{venta_id}/anular", response_model=VentaResponse)
+def anular_venta(
+    venta_id: int, 
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(solo_admin) # Protegido solo para ADMIN
+):
+    """Anula la venta, devuelve el stock y la marca como anulada."""
+    return VentaService.cancelar_venta(db, venta_id)

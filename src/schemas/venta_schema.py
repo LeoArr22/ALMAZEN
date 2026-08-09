@@ -74,6 +74,9 @@ class VentaResponse(BaseModel):
     # Nombre de usuario legible extraído de la relación para renderizar en comprobantes o el historial
     username_vendedor: Optional[str] = None
 
+    # Solo para auditoría: Si la venta fue anulada, este registro queda marcado como anulado (SoftDelete)
+    es_anulada: bool = False
+
     model_config = {
         "from_attributes": True
     }

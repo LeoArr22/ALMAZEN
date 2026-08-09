@@ -71,10 +71,21 @@
             </div>
         </div>
 
-        <div class="border-t border-gray-800 pt-4 bg-gray-950 -mx-6 -mb-6 p-6 rounded-b-2xl border-l border-l-gray-800">
+        <div class="border-t border-gray-800 pt-4 bg-gray-950 -mx-6 -mb-6 p-6 rounded-b-2xl border-l border-l-gray-800 space-y-4">
             <div class="flex justify-between items-center font-mono">
                 <span class="text-xs font-bold text-gray-400 uppercase">Monto Neto Cobrado:</span>
                 <span id="drawer-total-venta" class="text-2xl font-black text-emerald-400">$ 0.00</span>
+            </div>
+
+            <!-- Contenedor del Botón / Estado de Anulación -->
+            <div id="drawer-contenedor-acciones" class="pt-2">
+                <button id="btn-anular-venta" onclick="confirmarAnulacionVenta()" 
+                    class="w-full py-2.5 bg-rose-950/60 hover:bg-rose-900 border border-rose-800/80 text-rose-300 font-mono text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2">
+                    🚫 Anular Venta y Reponer Stock
+                </button>
+                <div id="banner-venta-anulada" class="hidden w-full py-2 bg-rose-950/30 border border-rose-900/50 text-rose-400 font-mono text-xs text-center font-bold rounded-xl">
+                    ⚠️ VENTA ANULADA (Stock Reintegrado)
+                </div>
             </div>
         </div>
     </div>
@@ -182,9 +193,12 @@
                 `;
             }).join('');
         }
-// 👁️ Ver renglones detallados con resolución de nombres
+let ventaSeleccionadaId = null;
+
+        // 👁️ Ver renglones detallados
         window.abrirDetalleVenta = async function(id) {
             try {
+                ventaSeleccionadaId = id; // Guardamos el ID actual
                 const respuesta = await fetch(`/ventas/${id}`);
                 if (!respuesta.ok) return;
                 
@@ -195,6 +209,22 @@
                 document.getElementById('drawer-fecha-venta').innerText = f.toLocaleDateString() + ' ' + f.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                 document.getElementById('drawer-caja-venta').innerText = v.caja_id;
                 document.getElementById('drawer-total-venta').innerText = `$ ${parseFloat(v.total).toFixed(2)}`;
+
+                // Controlar Visibilidad según si está anulada o no
+                const btnAnular = document.getElementById('btn-anular-venta');
+                const bannerAnulada = document.getElementById('banner-venta-anulada');
+
+                if (v.es_anulada) {
+                    btnAnular.classList.add('hidden');
+                    bannerAnulada.classList.remove('hidden');
+                    document.getElementById('drawer-total-venta').classList.replace('text-emerald-400', 'text-gray-500');
+                    document.getElementById('drawer-total-venta').classList.add('line-through');
+                } else {
+                    btnAnular.classList.remove('hidden');
+                    bannerAnulada.classList.add('hidden');
+                    document.getElementById('drawer-total-venta').classList.replace('text-gray-500', 'text-emerald-400');
+                    document.getElementById('drawer-total-venta').classList.remove('line-through');
+                }
 
                 const listaArticulos = document.getElementById('drawer-lista-articulos');
                 
@@ -241,10 +271,40 @@
                 }, 10);
 
             } catch (err) {
-                emitirNotificacionGlobal("⚠️ Error al recabar los datos de la venta", "error");
+                if (typeof emitirNotificacionGlobal === 'function') {
+                    emitirNotificacionGlobal("⚠️ Error al recabar los datos de la venta", "error");
+                }
             }
         };
 
+        // 🚫 Ejecutar Anulación
+        window.confirmarAnulacionVenta = async function() {
+            if (!ventaSeleccionadaId) return;
+
+            const confirmar = confirm(`¿Estás seguro de que deseas anular la Venta #${ventaSeleccionadaId}? El stock de los productos será reintegrado automáticamente.`);
+            if (!confirmar) return;
+
+            try {
+                const res = await fetch(`/ventas/${ventaSeleccionadaId}/anular`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (res.ok) {
+                    if (typeof emitirNotificacionGlobal === 'function') {
+                        emitirNotificacionGlobal("✅ Venta anulada y stock devuelto exitosamente", "exito");
+                    }
+                    cerrarDrawerDetalle();
+                    cargarHistorialServidor(); // Recargar la lista para reflejar los cambios
+                } else {
+                    const errData = await res.json();
+                    alert(`Error: ${errData.detail || "No se pudo anular la venta"}`);
+                }
+            } catch (err) {
+                alert("Ocurrió un error de conexión al intentar anular.");
+            }
+        };
+        
         window.cerrarDrawerDetalle = function() {
             drawerBackdrop.classList.add('opacity-0');
             drawerPanel.classList.add('translate-x-full');
