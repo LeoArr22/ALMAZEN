@@ -3,10 +3,19 @@
 venv/
 env/
 ENV/
+
+# Archivos de compilación y caché de Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 
-# Bases de datos locales (¡Clave para no pisar tus pruebas!)
+# Caché de Testing (Pytest)
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Bases de datos locales (SQLite)
 *.sqlite
 *.sqlite3
 *.db
@@ -14,7 +23,7 @@ __pycache__/
 # Variables de entorno secretas
 .env
 
-# Carpetas de editores o sistema
+# Carpetas de editores y sistema operativo
 .vscode/
 .idea/
 .DS_Store
