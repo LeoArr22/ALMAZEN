@@ -1,3 +1,5 @@
+import os
+
 # main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -41,6 +43,7 @@ app.add_middleware(
 )
 
 # 🎨 Servir archivos estáticos (CSS, JS, Imágenes)
+os.makedirs("static", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")  
 
 # Guardián para endpoints que requieran permisos elevados de administrador
