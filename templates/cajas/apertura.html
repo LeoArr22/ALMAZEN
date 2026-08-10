@@ -66,14 +66,46 @@
 </div>
 
 <script>
-    (function() {
-        const mod = document.getElementById('modulo-apertura-caja');
-        if(mod) {
-            setTimeout(() => {
-                mod.classList.remove('opacity-0', 'translate-y-2');
-            }, 50);
+    // Sistema de notificaciones flotantes (Toast) integrado abajo a la derecha
+    function mostrarNotificacionLocal(mensaje, tipo = "exito") {
+        // Si existe la función global de la app, la usamos preferentemente
+        if (typeof mostrarNotificacion === 'function') {
+            mostrarNotificacion(mensaje, tipo);
+            return;
         }
-    })();
+
+        // Contenedor global de toasts (si no existe, lo creamos)
+        let contenedor = document.getElementById('toast-container-cajas');
+        if (!contenedor) {
+            contenedor = document.createElement('div');
+            contenedor.id = 'toast-container-cajas';
+            contenedor.className = 'fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none';
+            document.body.appendChild(contenedor);
+        }
+
+        // Configuración de colores e íconos según el tipo
+        const esExito = tipo === 'exito';
+        const bgBorder = esExito ? 'bg-gray-900 border-emerald-500/50 text-emerald-400' : 'bg-gray-900 border-rose-500/50 text-rose-400';
+        const icono = esExito ? '<i class="fa-solid fa-circle-check text-emerald-400"></i>' : '<i class="fa-solid fa-circle-xmark text-rose-400"></i>';
+
+        // Elemento Toast
+        const toast = document.createElement('div');
+        toast.className = `flex items-center gap-3 px-4 py-3 rounded-xl border ${bgBorder} shadow-2xl text-xs font-semibold transform translate-y-4 opacity-0 transition-all duration-300 pointer-events-auto max-w-xs`;
+        toast.innerHTML = `${icono} <span class="text-gray-200">${mensaje}</span>`;
+
+        contenedor.appendChild(toast);
+
+        // Animación de entrada
+        requestAnimationFrame(() => {
+            toast.classList.remove('translate-y-4', 'opacity-0');
+        });
+
+        // Autodestrucción a los 3.5 segundos
+        setTimeout(() => {
+            toast.classList.add('translate-y-4', 'opacity-0');
+            setTimeout(() => toast.remove(), 300);
+        }, 3500);
+    }
 
     async function consultarEstadoCaja() {
         try {
@@ -81,17 +113,23 @@
             const cardAbrir = document.getElementById('card-abrir-caja');
             const cardAbierta = document.getElementById('card-caja-abierta');
 
+            if (!cardAbrir || !cardAbierta) return;
+
             if (res.ok) {
                 const caja = await res.json();
                 cardAbrir.classList.add('hidden');
                 cardAbierta.classList.remove('hidden');
 
-                document.getElementById('label-caja-id').innerText = `#${caja.id}`;
-                document.getElementById('label-monto-inicial').innerText = `$${parseFloat(caja.monto_inicial).toFixed(2)}`;
+                const labelId = document.getElementById('label-caja-id');
+                const labelMonto = document.getElementById('label-monto-inicial');
+                const labelFecha = document.getElementById('label-fecha-apertura');
+
+                if (labelId) labelId.innerText = `#${caja.id}`;
+                if (labelMonto) labelMonto.innerText = `$${parseFloat(caja.monto_inicial).toFixed(2)}`;
                 
-                if (caja.fecha_apertura) {
+                if (labelFecha && caja.fecha_apertura) {
                     const fecha = new Date(caja.fecha_apertura);
-                    document.getElementById('label-fecha-apertura').innerText = fecha.toLocaleDateString('es-AR') + ' ' + fecha.toLocaleTimeString('es-AR', {hour: '2-digit', minute:'2-digit'});
+                    labelFecha.innerText = fecha.toLocaleDateString('es-AR') + ' ' + fecha.toLocaleTimeString('es-AR', {hour: '2-digit', minute:'2-digit'});
                 }
             } else {
                 cardAbierta.classList.add('hidden');
@@ -104,7 +142,8 @@
 
     async function procesarAperturaCaja(e) {
         e.preventDefault();
-        const monto = parseFloat(document.getElementById('input-monto-inicial').value) || 0;
+        const inputMonto = document.getElementById('input-monto-inicial');
+        const monto = parseFloat(inputMonto ? inputMonto.value : 0) || 0;
 
         try {
             const res = await fetch('/cajas/', {
@@ -114,21 +153,23 @@
             });
 
             if (res.ok) {
-                mostrarNotificacion("Turno de caja abierto correctamente.", "exito");
-                document.getElementById('input-monto-inicial').value = '';
-                consultarEstadoCaja();
+                if (inputMonto) inputMonto.value = '';
+                await consultarEstadoCaja();
+                mostrarNotificacionLocal("Turno de caja abierto correctamente.", "exito");
             } else {
                 const err = await res.json();
-                mostrarNotificacion(err.detail || "Error al abrir la caja.", "error");
+                mostrarNotificacionLocal(err.detail || "Error al abrir la caja.", "error");
             }
         } catch (e) {
-            mostrarNotificacion("Error de conexión al abrir la caja.", "error");
+            console.error(e);
+            mostrarNotificacionLocal("Error de conexión al abrir la caja.", "error");
         }
     }
 
     async function procesarCierreCaja(e) {
         e.preventDefault();
-        const montoReal = parseFloat(document.getElementById('input-monto-final-real').value) || 0;
+        const inputMontoReal = document.getElementById('input-monto-final-real');
+        const montoReal = parseFloat(inputMontoReal ? inputMontoReal.value : 0) || 0;
 
         try {
             const res = await fetch('/cajas/cerrar', {
@@ -138,18 +179,27 @@
             });
 
             if (res.ok) {
-                mostrarNotificacion("Turno de caja cerrado exitosamente.", "exito");
-                document.getElementById('input-monto-final-real').value = '';
-                consultarEstadoCaja();
+                if (inputMontoReal) inputMontoReal.value = '';
+                await consultarEstadoCaja();
+                mostrarNotificacionLocal("Turno de caja cerrado exitosamente.", "exito");
             } else {
                 const err = await res.json();
-                mostrarNotificacion(err.detail || "Error al cerrar la caja.", "error");
+                mostrarNotificacionLocal(err.detail || "Error al cerrar la caja.", "error");
             }
         } catch (e) {
-            mostrarNotificacion("Error de conexión al cerrar la caja.", "error");
+            console.error(e);
+            mostrarNotificacionLocal("Error de conexión al cerrar la caja.", "error");
         }
     }
 
-    // Consulta inicial al renderizar la vista
-    consultarEstadoCaja();
+    // Inicialización al cargar la vista
+    (function initModuloCaja() {
+        const mod = document.getElementById('modulo-apertura-caja');
+        if (mod) {
+            setTimeout(() => {
+                mod.classList.remove('opacity-0', 'translate-y-2');
+            }, 50);
+        }
+        consultarEstadoCaja();
+    })();
 </script>

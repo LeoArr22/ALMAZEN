@@ -1,6 +1,6 @@
 from typing import List, TYPE_CHECKING
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String
+from sqlalchemy import String, Boolean
 from src.config.database import Base 
 
 
@@ -30,6 +30,9 @@ class Usuario(Base):
     
     # Atributo de Rol para control de acceso (ej: "admin" o "vendedor")
     role: Mapped[str] = mapped_column(String(20), nullable=False) 
+    
+    # Atributo de Estado para habilitar/deshabilitar usuarios sin borrarlos
+    activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     # --- Relaciones Bidireccionales 1-N (Un usuario posee n cajas y n ventas) ---
     

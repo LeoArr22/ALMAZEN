@@ -1,133 +1,138 @@
-<div id="modulo-gestion-cajas" class="max-w-7xl mx-auto space-y-6 opacity-0 translate-y-2 transition-all duration-300 p-4">
+<div id="modulo-gestion-cajas" class="max-w-7xl mx-auto space-y-5 opacity-0 translate-y-2 transition-all duration-300 p-4">
     
     {% include "cajas/submenu.html" %}
     
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-gray-800 pb-5">
+    <!-- Encabezado de Sección -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-gray-800 pb-4">
         <div>
-            <h2 class="text-2xl font-black tracking-tight text-gray-100">Control y Auditoría de Cajas</h2>
-            <p class="text-xs text-gray-500">Supervisión en tiempo real de aperturas, cierres físicos de turnos y arqueos de caja de los vendedores.</p>
+            <h2 class="text-xl font-black tracking-tight text-gray-100 flex items-center gap-2">
+                <i class="fa-solid fa-cash-register text-emerald-400"></i> Control y Auditoría de Cajas
+            </h2>
+            <p class="text-xs text-gray-500 mt-0.5">Supervisión en tiempo real de aperturas, cierres de turnos y arqueos físicos.</p>
         </div>
-        <div class="flex items-center gap-2">
-            <button onclick="cargarListadoCajas()" class="bg-gray-900 hover:bg-gray-800 text-gray-300 font-bold px-4 py-2.5 rounded-xl text-xs border border-gray-800 hover:border-gray-750 transition-all flex items-center gap-2 shadow-lg">
-                <i class="fa-solid fa-rotate-right text-[10px]"></i>
-                <span>Sincronizar Datos</span>
+        <button onclick="cargarListadoCajas()" class="bg-gray-900 hover:bg-gray-800 text-gray-300 font-bold px-3.5 py-2 rounded-xl text-xs border border-gray-800 hover:border-gray-700 transition-all flex items-center gap-2 shadow-md self-start md:self-auto cursor-pointer">
+            <i class="fa-solid fa-rotate-right text-[10px]"></i>
+            <span>Sincronizar Datos</span>
+        </button>
+    </div>
+
+    <!-- Buscador Avanzado / Auditoría por Operario y Fecha -->
+    <div class="bg-gray-950 border border-gray-800 rounded-2xl p-4 shadow-lg">
+        <h3 class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+            <i class="fa-solid fa-user-gear text-emerald-500"></i> Auditoría Histórica por Operario y Período
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <input type="text" id="f-nombre" placeholder="Nombre del operario..." class="bg-gray-900 border border-gray-800 rounded-xl px-3 py-2 text-xs text-gray-200 outline-none focus:border-emerald-500 transition-all">
+            <input type="date" id="f-desde" class="bg-gray-900 border border-gray-800 rounded-xl px-3 py-2 text-xs text-gray-400 outline-none focus:border-emerald-500 transition-all">
+            <input type="date" id="f-hasta" class="bg-gray-900 border border-gray-800 rounded-xl px-3 py-2 text-xs text-gray-400 outline-none focus:border-emerald-500 transition-all">
+            <button id="btn-buscar-profundo" onclick="ejecutarBusquedaProfunda()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <span>Buscar</span>
             </button>
         </div>
     </div>
 
-    <div class="bg-gray-950 border border-gray-800 rounded-2xl p-5 mb-6 shadow-xl">
-    <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-        <i class="fa-solid fa-user-magnifying-glass"></i> Auditoría por Operario (Nombre)
-    </h3>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <input type="text" id="f-nombre" placeholder="Nombre del operario..." class="bg-gray-900 border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-200 outline-none focus:border-emerald-500">
-            <input type="date" id="f-desde" class="bg-gray-900 border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-400 outline-none focus:border-emerald-500">
-            <input type="date" id="f-hasta" class="bg-gray-900 border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-400 outline-none focus:border-emerald-500">
-            <button onclick="ejecutarBusquedaProfunda()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl text-sm transition-all shadow-lg">
-                <i class="fa-solid fa-magnifying-glass mr-2"></i>Buscar
-            </button>
-        </div>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 shadow-lg flex items-center justify-between">
-            <div class="space-y-1">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-gray-500">En Cajas Activas</span>
+    <!-- Tarjetas de Métricas Directas y Claras -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4 shadow-lg flex items-center justify-between">
+            <div class="space-y-0.5">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Efectivo en Cajas Abiertas (Hoy)</span>
                 <h4 id="kpi-monto-activas" class="text-2xl font-black text-emerald-400 font-mono">$0.00</h4>
-                <p class="text-[10px] text-gray-400"><span id="kpi-cant-activas" class="font-bold">0</span> turnos abiertos ahora</p>
+                <p class="text-[10px] text-gray-400"><span id="kpi-cant-activas" class="font-bold text-emerald-400">0</span> turnos en curso</p>
             </div>
-            <div class="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-xl flex items-center justify-center text-lg border border-emerald-500/20">
+            <div class="w-10 h-10 bg-emerald-500/10 text-emerald-400 rounded-xl flex items-center justify-center text-base border border-emerald-500/20">
                 <i class="fa-solid fa-cash-register"></i>
             </div>
         </div>
 
-        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 shadow-lg flex items-center justify-between">
-            <div class="space-y-1">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Arqueos de Cajas Cerradas</span>
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4 shadow-lg flex items-center justify-between">
+            <div class="space-y-0.5">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Recaudación Turnos Cerrados (Hoy)</span>
                 <h4 id="kpi-monto-cerradas" class="text-2xl font-black text-gray-200 font-mono">$0.00</h4>
-                <p class="text-[10px] text-gray-400"><span id="kpi-cant-cerradas" class="font-bold">0</span> turnos finalizados</p>
+                <p class="text-[10px] text-gray-400"><span id="kpi-cant-cerradas" class="font-bold text-gray-300">0</span> turnos finalizados hoy</p>
             </div>
-            <div class="w-12 h-12 bg-gray-800 text-gray-400 rounded-xl flex items-center justify-center text-lg border border-gray-700">
+            <div class="w-10 h-10 bg-gray-800 text-gray-400 rounded-xl flex items-center justify-center text-base border border-gray-700">
                 <i class="fa-solid fa-vault"></i>
             </div>
         </div>
 
-        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 shadow-lg flex items-center justify-between">
-            <div class="space-y-1">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Balance de Desajustes</span>
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4 shadow-lg flex items-center justify-between sm:col-span-2 lg:col-span-1">
+            <div class="space-y-0.5">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Auditoría / Balance de Cierres (Vista Actual)</span>
                 <h4 id="kpi-diferencia-total" class="text-2xl font-black font-mono text-gray-200">$0.00</h4>
-                <p class="text-[10px] text-gray-400">Diferencia acumulada global</p>
+                <p class="text-[10px] text-gray-400">Diferencia neta (Arqueo real vs Esperado)</p>
             </div>
-            <div id="kpi-diferencia-icono" class="w-12 h-12 bg-gray-800 text-gray-400 rounded-xl flex items-center justify-center text-lg border border-gray-700">
+            <div id="kpi-diferencia-icono" class="w-10 h-10 bg-gray-800 text-gray-400 rounded-xl flex items-center justify-center text-base border border-gray-700">
                 <i class="fa-solid fa-scale-balanced"></i>
             </div>
         </div>
     </div>
 
-    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4 grid grid-cols-1 md:grid-cols-3 gap-4 shadow-lg">
-        <div class="flex flex-col gap-1.5">
-            <label class="text-[10px] font-bold uppercase tracking-wider text-gray-550">Filtrar por Operario</label>
-            <select id="filtro-operario" onchange="aplicarFiltrosYRenderizar()" class="bg-gray-950 border border-gray-850 rounded-xl px-3 py-2.5 text-xs text-gray-300 focus:outline-none focus:border-emerald-500/50 transition-all cursor-pointer">
+    <!-- Barra de Filtros Rápidos -->
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-3.5 grid grid-cols-1 sm:grid-cols-3 gap-3 shadow-lg">
+        <div class="flex flex-col gap-1">
+            <label class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Filtrar por Operario</label>
+            <select id="filtro-operario" onchange="aplicarFiltrosYRenderizar()" class="bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs text-gray-300 focus:outline-none focus:border-emerald-500/50 transition-all cursor-pointer">
                 <option value="todos">Todos los operarios</option>
             </select>
         </div>
 
-        <div class="flex flex-col gap-1.5">
-            <label class="text-[10px] font-bold uppercase tracking-wider text-gray-550">Filtrar por Estado o Balance</label>
-            <select id="filtro-balance" onchange="aplicarFiltrosYRenderizar()" class="bg-gray-950 border border-gray-850 rounded-xl px-3 py-2.5 text-xs text-gray-300 focus:outline-none focus:border-emerald-500/50 transition-all cursor-pointer">
-                <option value="todos">Todos los balances</option>
-                <option value="abiertas">Cajas abiertas (En curso)</option>
-                <option value="cerradas">Cajas cerradas</option>
-                <option value="ok">Cerradas: Arqueo OK (Sin diferencias)</option>
-                <option value="faltantes">Cerradas con Faltante (Negativo)</option>
-                <option value="sobrantes">Cerradas con Sobrante (Positivo)</option>
+        <div class="flex flex-col gap-1">
+            <label class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Filtrar por Estado / Balance</label>
+            <select id="filtro-balance" onchange="aplicarFiltrosYRenderizar()" class="bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs text-gray-300 focus:outline-none focus:border-emerald-500/50 transition-all cursor-pointer">
+                <option value="todos">Todos los estados</option>
+                <option value="abiertas">🟢 Cajas abiertas (En curso)</option>
+                <option value="cerradas">⚪ Cajas cerradas</option>
+                <option value="ok">✨ Cerradas: Arqueo perfecto</option>
+                <option value="faltantes">🔻 Cerradas con Faltante</option>
+                <option value="sobrantes">🔺 Cerradas con Sobrante</option>
             </select>
         </div>
 
-        <div class="flex flex-col gap-1.5">
-            <label class="text-[10px] font-bold uppercase tracking-wider text-gray-550">Ordenar por</label>
-            <select id="filtro-orden" onchange="aplicarFiltrosYRenderizar()" class="bg-gray-950 border border-gray-850 rounded-xl px-3 py-2.5 text-xs text-gray-300 focus:outline-none focus:border-emerald-500/50 transition-all cursor-pointer">
+        <div class="flex flex-col gap-1">
+            <label class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Ordenar por</label>
+            <select id="filtro-orden" onchange="aplicarFiltrosYRenderizar()" class="bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs text-gray-300 focus:outline-none focus:border-emerald-500/50 transition-all cursor-pointer">
                 <option value="recientes">Fecha de apertura: Recientes primero</option>
                 <option value="antiguas">Fecha de apertura: Antiguas primero</option>
-                <option value="mayor_faltante">Diferencia: Mayor faltante primero</option>
-                <option value="mayor_sobrante">Diferencia: Mayor sobrante primero</option>
-                <option value="monto_inicial_desc">Monto Inicial: Mayor a menor</option>
+                <option value="mayor_faltante">Diferencia: Mayor faltante</option>
+                <option value="mayor_sobrante">Diferencia: Mayor sobrante</option>
             </select>
         </div>
     </div>
 
+    <!-- Tabla Principal de Historial de Turnos -->
     <div class="bg-gray-900 border border-gray-800 rounded-2xl flex flex-col overflow-hidden shadow-xl">
-        <div class="p-5 border-b border-gray-800 bg-gray-950/20 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div class="p-4 border-b border-gray-800 bg-gray-950/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
-                <h3 class="text-sm font-bold text-gray-200">Historial de Turnos de Trabajo</h3>
-                <p class="text-xs text-gray-500">Visualizá quién abrió la caja, el monto de apertura, lo que el sistema esperaba recaudar y el efectivo real entregado.</p>
+                <h3 class="text-xs font-mono font-bold uppercase text-gray-300 tracking-wider">Historial de Turnos de Trabajo</h3>
+                <p class="text-[11px] text-gray-500">Apertura, facturación esperada por ventas acumuladas y arqueo real entregado.</p>
             </div>
-            <div id="contador-filas" class="text-[11px] bg-gray-800 text-gray-400 font-semibold px-2.5 py-1 rounded-full border border-gray-750 self-start sm:self-center">
+            <div id="contador-filas" class="text-[10px] font-mono bg-gray-800 text-gray-300 font-bold px-3 py-1 rounded-full border border-gray-700 self-start sm:self-center">
                 Mostrando 0 cajas
             </div>
         </div>
 
         <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse min-w-[800px]">
+            <table class="w-full text-left border-collapse min-w-[850px]">
                 <thead>
-                    <tr class="border-b border-gray-800 text-[10px] font-bold uppercase tracking-wider text-gray-400 bg-gray-950/40">
-                        <th class="py-4 px-5 w-20">ID Caja</th>
-                        <th class="py-4 px-4 w-28">Estado</th>
-                        <th class="py-4 px-4 min-w-[180px]">Operarios (Apertura / Cierre)</th>
-                        <th class="py-4 px-4 min-w-[165px]">Tiempos de Turno</th>
-                        <th class="py-4 px-4 text-right w-32">M. Inicial</th>
-                        <th class="py-4 px-4 text-right w-32">Esperado</th>
-                        <th class="py-4 px-4 text-right w-32">Arqueo Real</th>
-                        <th class="py-4 px-4 text-right w-36">Diferencia</th>
+                    <tr class="border-b border-gray-800 text-[10px] font-mono font-bold uppercase tracking-wider text-gray-400 bg-gray-950/60">
+                        <th class="py-3 px-4 w-20">ID Caja</th>
+                        <th class="py-3 px-4 w-28">Estado</th>
+                        <th class="py-3 px-4 min-w-[200px]">Operarios (Apertura / Cierre)</th>
+                        <th class="py-3 px-4 min-w-[170px]">Apertura / Cierre</th>
+                        <th class="py-3 px-4 text-right w-32">M. Inicial</th>
+                        <th class="py-3 px-4 text-right w-32">Esperado</th>
+                        <th class="py-3 px-4 text-right w-32">Arqueo Real</th>
+                        <th class="py-3 px-4 text-right w-36">Diferencia</th>
                     </tr>
                 </thead>
-                <tbody id="tabla-cajas-cuerpo" class="divide-y divide-gray-800/50 text-sm">
-                    </tbody>
+                <tbody id="tabla-cajas-cuerpo" class="divide-y divide-gray-800/50 text-xs font-mono">
+                </tbody>
             </table>
 
-            <div id="tabla-cajas-vacia" class="hidden flex flex-col items-center justify-center text-center p-16">
-                <div class="text-3xl mb-2">📥</div>
-                <p class="text-xs text-gray-500 italic">No se encontraron cajas con los filtros aplicados</p>
+            <div id="tabla-cajas-vacia" class="hidden flex flex-col items-center justify-center text-center p-12">
+                <div class="text-2xl mb-2">📥</div>
+                <p class="text-xs text-gray-500 italic">No se encontraron cajas con los filtros seleccionados.</p>
             </div>
         </div>
     </div>
@@ -138,51 +143,75 @@
         const modulo = document.getElementById('modulo-gestion-cajas');
         setTimeout(() => { if(modulo) modulo.classList.remove('opacity-0', 'translate-y-2'); }, 50);
 
+        // Helper ultra-seguro para conversión numérica
+        function safeNum(val, defaultVal = 0) {
+            if (val === null || val === undefined) return defaultVal;
+            const parsed = parseFloat(val);
+            return isNaN(parsed) ? defaultVal : parsed;
+        }
+
         window.cacheCajas = [];
         cargarListadoCajas();
 
+        // Carga inicial por defecto: trae solo los turnos del día de HOY
         async function cargarListadoCajas() {
             const cuerpo = document.getElementById('tabla-cajas-cuerpo');
             const avisoVacio = document.getElementById('tabla-cajas-vacia');
             if(!cuerpo) return;
-            cuerpo.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-xs text-gray-500 italic">Consultando servidor central...</td></tr>`;
+            
+            cuerpo.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-xs text-gray-500 italic">Consultando turnos de hoy...</td></tr>`;
             if(avisoVacio) avisoVacio.classList.add('hidden');
+
             try {
-                const r = await fetch('/cajas/historial');
-                if (!r.ok) throw new Error("Error de respuesta");
+                // Generamos la fecha de hoy local en formato YYYY-MM-DD
+                const ahora = new Date();
+                const hoy = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`;
+                
+                // Establecemos la fecha de hoy en el input del filtro por prolijidad visual
+                const inputDesde = document.getElementById('f-desde');
+                if (inputDesde && !inputDesde.value) {
+                    inputDesde.value = hoy;
+                }
+
+                // Petición a la API restringida al día de hoy por defecto
+                const r = await fetch(`/cajas/historial?fecha_desde=${hoy}`);
+                if (!r.ok) throw new Error("Error al obtener cajas");
+                
                 const cajas = await r.json();
                 window.cacheCajas = cajas || [];
-                renderizarKPIs(window.cacheCajas);
                 cargarFiltroOperarios(window.cacheCajas);
                 aplicarFiltrosYRenderizar();
             } catch (err) {
-                if(cuerpo) cuerpo.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-xs text-red-400 italic">⚠️ Fallo al conectar con la API.</td></tr>`;
+                if(cuerpo) cuerpo.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-xs text-rose-400 italic">⚠️ Fallo al conectar con el servidor central.</td></tr>`;
             }
         }
 
-        // --- NUEVA FUNCIÓN DE BÚSQUEDA PROFUNDA ---
         async function ejecutarBusquedaProfunda() {
-            const btn = event.target;
-            const id = document.getElementById('f-id').value;
+            const btn = document.getElementById('btn-buscar-profundo');
+            const nombre = document.getElementById('f-nombre').value.trim();
             const desde = document.getElementById('f-desde').value;
             const hasta = document.getElementById('f-hasta').value;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            
+            if (btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Buscando...';
+
             try {
                 let url = new URL('/cajas/historial', window.location.origin);
-                if (id) url.searchParams.append('caja_id', id);
+                if (nombre) url.searchParams.append('operario', nombre);
                 if (desde) url.searchParams.append('fecha_desde', desde);
                 if (hasta) url.searchParams.append('fecha_hasta', hasta);
-                url.searchParams.append('limit', 500); 
+                url.searchParams.append('limit', 500);
+
                 const res = await fetch(url);
                 const data = await res.json();
-                window.cacheCajas = data;
-                renderizarKPIs(data);
-                cargarFiltroOperarios(data);
+                window.cacheCajas = data || [];
+                cargarFiltroOperarios(window.cacheCajas);
                 aplicarFiltrosYRenderizar();
             } catch (e) {
-                alert("Error al buscar en la BD");
+                if (typeof emitirNotificacionGlobal === 'function') {
+                    emitirNotificacionGlobal("⚠️ Error al buscar en la base de datos", "error");
+                }
             } finally {
-                btn.innerHTML = '<i class="fa-solid fa-magnifying-glass mr-2"></i>Buscar';
+                if (btn) btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i><span>Buscar</span>';
             }
         }
         window.ejecutarBusquedaProfunda = ejecutarBusquedaProfunda;
@@ -192,24 +221,35 @@
             if(!select) return;
             const valorPrevio = select.value;
             const operariosSet = new Set();
+
             cajas.forEach(c => {
                 if(c.usuario_apertura) operariosSet.add(c.usuario_apertura.nombre || c.usuario_apertura.username);
                 if(c.usuario_cierre) operariosSet.add(c.usuario_cierre.nombre || c.usuario_cierre.username);
             });
+
             select.innerHTML = `<option value="todos">Todos los operarios</option>`;
             Array.from(operariosSet).sort().forEach(op => {
                 const opt = document.createElement('option');
-                opt.value = op; opt.innerText = op;
+                opt.value = op; 
+                opt.innerText = op;
                 select.appendChild(opt);
             });
-            select.value = Array.from(operariosSet).includes(valorPrevio) ? valorPrevio : "todos";
+
+            if (Array.from(operariosSet).includes(valorPrevio)) {
+                select.value = valorPrevio;
+            } else {
+                select.value = "todos";
+            }
         }
 
         function aplicarFiltrosYRenderizar() {
             const filtroOperario = document.getElementById('filtro-operario').value;
             const filtroBalance = document.getElementById('filtro-balance').value;
             const filtroOrden = document.getElementById('filtro-orden').value;
+
             let filtradas = [...window.cacheCajas];
+
+            // 1. Filtro por Operario
             if (filtroOperario !== 'todos') {
                 filtradas = filtradas.filter(c => {
                     const opA = c.usuario_apertura ? (c.usuario_apertura.nombre || c.usuario_apertura.username) : '';
@@ -217,16 +257,25 @@
                     return opA === filtroOperario || opC === filtroOperario;
                 });
             }
+
+            // 2. Filtro por Estado/Balance
             if (filtroBalance !== 'todos') {
                 filtradas = filtradas.filter(c => {
-                    const inicial = parseFloat(c.monto_inicial || 0);
-                    const finalReal = parseFloat(c.monto_final_real || 0);
-                    const esperado = parseFloat(c.monto_final_estimado !== undefined ? c.monto_final_estimado : (inicial + (c.total_ventas || 0)));
+                    const inicial = safeNum(c.monto_inicial);
+                    const finalReal = c.monto_final_real !== null ? safeNum(c.monto_final_real) : null;
+                    const ventasTotal = safeNum(c.total_ventas || c.total_efectivo);
+                    
+                    const estimado = (c.monto_final_estimado !== null && c.monto_final_estimado !== undefined)
+                        ? safeNum(c.monto_final_estimado)
+                        : (inicial + ventasTotal);
+
                     const abierta = (c.activa === true || !c.fecha_cierre);
+
                     if (filtroBalance === 'abiertas') return abierta;
                     if (filtroBalance === 'cerradas') return !abierta;
-                    if (!abierta) {
-                        const diff = finalReal - esperado;
+                    
+                    if (!abierta && finalReal !== null) {
+                        const diff = finalReal - estimado;
                         if (filtroBalance === 'ok') return Math.abs(diff) < 0.01;
                         if (filtroBalance === 'faltantes') return diff < -0.01;
                         if (filtroBalance === 'sobrantes') return diff > 0.01;
@@ -234,11 +283,27 @@
                     return false;
                 });
             }
+
+            // 3. Ordenamiento
             filtradas.sort((a, b) => {
                 if (filtroOrden === 'recientes') return new Date(b.fecha_apertura) - new Date(a.fecha_apertura);
                 if (filtroOrden === 'antiguas') return new Date(a.fecha_apertura) - new Date(b.fecha_apertura);
+                
+                const getDiff = (c) => {
+                    if (c.activa || !c.fecha_cierre || c.monto_final_real === null) return 0;
+                    const ini = safeNum(c.monto_inicial);
+                    const est = (c.monto_final_estimado !== null && c.monto_final_estimado !== undefined) 
+                        ? safeNum(c.monto_final_estimado) 
+                        : (ini + safeNum(c.total_ventas));
+                    return safeNum(c.monto_final_real) - est;
+                };
+
+                if (filtroOrden === 'mayor_faltante') return getDiff(a) - getDiff(b);
+                if (filtroOrden === 'mayor_sobrante') return getDiff(b) - getDiff(a);
                 return 0;
             });
+
+            renderizarKPIs(filtradas);
             renderizarFilas(filtradas);
         }
 
@@ -247,55 +312,120 @@
             const avisoVacio = document.getElementById('tabla-cajas-vacia');
             const contadorFilas = document.getElementById('contador-filas');
             if (!cuerpo) return;
+
             cuerpo.innerHTML = '';
             if(contadorFilas) contadorFilas.innerText = `Mostrando ${cajas.length} turno${cajas.length === 1 ? '' : 's'}`;
-            if (cajas.length === 0) { if (avisoVacio) avisoVacio.classList.remove('hidden'); return; }
+
+            if (cajas.length === 0) { 
+                if (avisoVacio) avisoVacio.classList.remove('hidden'); 
+                return; 
+            }
             if (avisoVacio) avisoVacio.classList.add('hidden');
+
             cajas.forEach(c => {
-                const inicial = parseFloat(c.monto_inicial || 0);
-                const finalReal = (c.monto_final_real !== null) ? parseFloat(c.monto_final_real) : null;
-                const esperado = parseFloat(c.monto_final_estimado !== undefined ? c.monto_final_estimado : (inicial + (c.total_ventas || 0)));
-                const nombreApertura = c.usuario_apertura ? (c.usuario_apertura.nombre || c.usuario_apertura.username) : `Operario #${c.usuario_apertura_id}`;
-                const nombreCierre = c.fecha_cierre ? (c.usuario_cierre ? (c.usuario_cierre.nombre || c.usuario_cierre.username) : `Operario #${c.usuario_cierre_id || '?'}`) : '<span class="text-emerald-500/50 italic">Sin cerrar</span>';
+                const inicial = safeNum(c.monto_inicial);
+                const finalReal = (c.monto_final_real !== null && c.monto_final_real !== undefined) ? safeNum(c.monto_final_real) : null;
+                const ventasTotal = safeNum(c.total_ventas || c.total_efectivo);
+
+                const esperado = (c.monto_final_estimado !== null && c.monto_final_estimado !== undefined)
+                    ? safeNum(c.monto_final_estimado)
+                    : (inicial + ventasTotal);
+
+                const esAbierta = c.activa === true || !c.fecha_cierre;
                 
-                let diffContent = '-';
-                if (finalReal !== null) {
+                const nombreApertura = c.usuario_apertura ? (c.usuario_apertura.nombre || c.usuario_apertura.username) : `Operario #${c.usuario_apertura_id || '?'}`;
+                const nombreCierre = !esAbierta ? (c.usuario_cierre ? (c.usuario_cierre.nombre || c.usuario_cierre.username) : `Operario #${c.usuario_cierre_id || '?'}`) : '<span class="text-emerald-500/60 italic font-sans">En curso</span>';
+
+                let diffContent = '<span class="text-gray-600">-</span>';
+                if (!esAbierta && finalReal !== null) {
                     const diff = finalReal - esperado;
-                    diffContent = Math.abs(diff) < 0.01 ? '✨ OK' : (diff > 0 ? `+$${diff.toFixed(2)}` : `-$${Math.abs(diff).toFixed(2)}`);
+                    if (Math.abs(diff) < 0.01) {
+                        diffContent = '<span class="text-emerald-400 font-bold">✨ $0.00</span>';
+                    } else if (diff > 0) {
+                        diffContent = `<span class="text-blue-400 font-bold">+$${diff.toFixed(2)}</span>`;
+                    } else {
+                        diffContent = `<span class="text-rose-400 font-bold">-$${Math.abs(diff).toFixed(2)}</span>`;
+                    }
                 }
 
                 const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-950/40 transition-colors";
                 tr.innerHTML = `
-                    <td class="py-4 px-5 font-mono font-bold text-gray-400">#${String(c.id).padStart(4, '0')}</td>
-                    <td class="py-4 px-4">${(c.activa || !c.fecha_cierre) ? '<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold px-2 py-0.5 rounded-md">Abierta</span>' : '<span class="bg-gray-800 text-gray-400 border border-gray-750 text-[10px] font-bold px-2 py-0.5 rounded-md">Cerrada</span>'}</td>
-                    <td class="py-4 px-4 text-xs font-bold text-gray-200">Apertura: ${nombreApertura} / Cierre: ${nombreCierre}</td>
-                    <td class="py-4 px-4 text-xs">${formatearFechaISO(c.fecha_apertura)}</td>
-                    <td class="py-4 px-4 text-right font-mono text-gray-400">$${inicial.toFixed(2)}</td>
-                    <td class="py-4 px-4 text-right font-mono text-gray-400">$${esperado.toFixed(2)}</td>
-                    <td class="py-4 px-4 text-right font-mono font-black text-gray-100">${(finalReal !== null) ? '$' + finalReal.toFixed(2) : '-'}</td>
-                    <td class="py-4 px-4 text-right text-xs">${diffContent}</td>
+                    <td class="py-3.5 px-4 font-bold text-gray-400">#${String(c.id).padStart(4, '0')}</td>
+                    <td class="py-3.5 px-4">${esAbierta 
+                        ? '<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-sans font-extrabold px-2 py-0.5 rounded-md">Abierta</span>' 
+                        : '<span class="bg-gray-800 text-gray-400 border border-gray-700 text-[10px] font-sans font-bold px-2 py-0.5 rounded-md">Cerrada</span>'}
+                    </td>
+                    <td class="py-3.5 px-4 text-gray-200">
+                        <div class="font-bold text-gray-200">${nombreApertura}</div>
+                        <div class="text-[10px] text-gray-500 font-sans">Cierre: ${nombreCierre}</div>
+                    </td>
+                    <td class="py-3.5 px-4 text-[11px] text-gray-400 font-sans">
+                        <div><strong class="text-gray-300">Apertura:</strong> ${formatearFechaISO(c.fecha_apertura)}</div>
+                        ${c.fecha_cierre ? `<div><strong class="text-gray-300">Cierre:</strong> ${formatearFechaISO(c.fecha_cierre)}</div>` : ''}
+                    </td>
+                    <td class="py-3.5 px-4 text-right text-gray-400">$${inicial.toFixed(2)}</td>
+                    <td class="py-3.5 px-4 text-right text-emerald-400 font-bold">$${esperado.toFixed(2)}</td>
+                    <td class="py-3.5 px-4 text-right font-black text-gray-100">${(finalReal !== null) ? '$' + finalReal.toFixed(2) : '-'}</td>
+                    <td class="py-3.5 px-4 text-right">${diffContent}</td>
                 `;
                 cuerpo.appendChild(tr);
             });
         }
 
         function renderizarKPIs(cajas) {
-            let totalActivas = 0, cantActivas = 0, totalCerradasHoy = 0, cantCerradasHoy = 0, diffAcumulada = 0;
+            let totalActivas = 0, cantActivas = 0;
+            let totalCerradas = 0, cantCerradas = 0;
+            let diffAcumuladaFiltro = 0;
+
             cajas.forEach(c => {
-                const inicial = parseFloat(c.monto_inicial || 0);
-                const finalReal = (c.monto_final_real !== null) ? parseFloat(c.monto_final_real) : null;
-                const esperado = parseFloat(c.monto_final_estimado !== undefined ? c.monto_final_estimado : (inicial + (c.total_ventas || 0)));
-                if (c.activa || !c.fecha_cierre) { totalActivas += esperado; cantActivas++; }
-                else { totalCerradasHoy += finalReal; cantCerradasHoy++; diffAcumulada += (finalReal - esperado); }
+                const inicial = safeNum(c.monto_inicial);
+                const finalReal = (c.monto_final_real !== null && c.monto_final_real !== undefined) ? safeNum(c.monto_final_real) : null;
+                const ventasTotal = safeNum(c.total_ventas || c.total_efectivo);
+
+                const estimado = (c.monto_final_estimado !== null && c.monto_final_estimado !== undefined)
+                    ? safeNum(c.monto_final_estimado)
+                    : (inicial + ventasTotal);
+
+                if (c.activa || !c.fecha_cierre) { 
+                    totalActivas += estimado; 
+                    cantActivas++; 
+                } else { 
+                    if (finalReal !== null) {
+                        totalCerradas += finalReal;
+                        diffAcumuladaFiltro += (finalReal - estimado);
+                    }
+                    cantCerradas++; 
+                }
             });
+
             document.getElementById('kpi-monto-activas').innerText = `$${totalActivas.toFixed(2)}`;
             document.getElementById('kpi-cant-activas').innerText = cantActivas;
-            document.getElementById('kpi-monto-cerradas').innerText = `$${totalCerradasHoy.toFixed(2)}`;
-            document.getElementById('kpi-cant-cerradas').innerText = cantCerradasHoy;
-            document.getElementById('kpi-diferencia-total').innerText = (diffAcumulada >= 0 ? '+$' : '-$') + Math.abs(diffAcumulada).toFixed(2);
+            
+            document.getElementById('kpi-monto-cerradas').innerText = `$${totalCerradas.toFixed(2)}`;
+            document.getElementById('kpi-cant-cerradas').innerText = cantCerradas;
+
+            const kpiDiff = document.getElementById('kpi-diferencia-total');
+            
+            if (cantCerradas === 0) {
+                kpiDiff.innerText = "$0.00";
+                kpiDiff.className = "text-2xl font-black font-mono text-gray-400";
+            } else {
+                const signo = diffAcumuladaFiltro >= 0 ? '+' : '-';
+                kpiDiff.innerText = `${signo}$${Math.abs(diffAcumuladaFiltro).toFixed(2)}`;
+
+                if (Math.abs(diffAcumuladaFiltro) < 0.01) {
+                    kpiDiff.className = "text-2xl font-black font-mono text-emerald-400";
+                } else if (diffAcumuladaFiltro < 0) {
+                    kpiDiff.className = "text-2xl font-black font-mono text-rose-400";
+                } else {
+                    kpiDiff.className = "text-2xl font-black font-mono text-blue-400";
+                }
+            }
         }
 
         function formatearFechaISO(stringISO) {
+            if (!stringISO) return '-';
             const d = new Date(stringISO);
             return isNaN(d.getTime()) ? stringISO : d.toLocaleDateString('es-AR') + ' ' + d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
         }

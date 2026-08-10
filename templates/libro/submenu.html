@@ -1,0 +1,47 @@
+<!-- templates/libro/submenu.html -->
+<div class="max-w-7xl mx-auto flex items-center justify-between gap-4 mb-6 border-b border-gray-800 pb-4 select-none">
+    
+    <div>
+        <h2 id="titulo-modulo-libro" class="text-base font-black tracking-wide uppercase flex items-center gap-2"></h2>
+        <p id="leyenda-modulo-libro" class="text-xs text-gray-400 mt-0.5"></p>
+    </div>
+    
+    <div class="flex items-center gap-1.5 bg-gray-900/50 border border-gray-800 p-1.5 rounded-xl flex-shrink-0">
+        <button id="btn-libro-diario" onclick="irASeccion('libro_diario')" class="text-xs font-bold px-3.5 py-2 rounded-lg transition-all text-gray-400 hover:text-gray-200 hover:bg-gray-800/40 cursor-pointer flex items-center gap-1">
+            📅 Diario (Hoy)
+        </button>
+        <button id="btn-libro-general" onclick="irASeccion('libro_general')" class="text-xs font-bold px-3.5 py-2 rounded-lg transition-all text-gray-400 hover:text-gray-200 hover:bg-gray-800/40 cursor-pointer flex items-center gap-1">
+            📊 Reporte General / Períodos
+        </button>
+    </div>
+</div>
+
+<script>
+    (function() {
+        setTimeout(() => {
+            const titulo = document.getElementById('titulo-modulo-libro');
+            const leyenda = document.getElementById('leyenda-modulo-libro');
+
+            const esVistaDiario = document.getElementById('modulo-libro-diario');
+            const esVistaGeneral = document.getElementById('modulo-libro-general');
+
+            if (esVistaDiario) {
+                if(titulo) titulo.innerHTML = "📖 Libro Diario - Cierre Hoy";
+                if(leyenda) leyenda.innerHTML = "Balance financiero en tiempo real correspondiente al día seleccionado.";
+                marcarBotonActivo('btn-libro-diario');
+            } else if (esVistaGeneral) {
+                if(titulo) titulo.innerHTML = "📊 Reporte General de Balance";
+                if(leyenda) leyenda.innerHTML = "Análisis consolidado por períodos (Semanal, Mensual o Rango Personalizado).";
+                marcarBotonActivo('btn-libro-general');
+            }
+        }, 1);
+
+        function marcarBotonActivo(idBoton) {
+            const btn = document.getElementById(idBoton);
+            if (btn) {
+                btn.className = "text-xs font-extrabold px-3.5 py-2 rounded-lg transition-all text-gray-950 bg-gradient-to-r from-emerald-400 to-teal-500 shadow-md cursor-default flex items-center gap-1";
+                btn.removeAttribute('onclick');
+            }
+        }
+    })();
+</script>

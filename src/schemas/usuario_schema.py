@@ -14,6 +14,12 @@ class UsuarioCreate(BaseModel):
     password: str = Field(..., min_length=6, description="Contraseña en texto plano a encriptar", examples=["ClaveSegura123"])
     role: str = Field(default="vendedor", description="Rol asignado: 'admin' o 'vendedor'", examples=["vendedor"])
 
+class UsuarioUpdate(BaseModel):
+    username: Optional[str] = Field(None, min_length=3, max_length=50)
+    password: Optional[str] = Field(None, min_length=6)
+    role: Optional[str] = None
+    activo: Optional[bool] = None
+
 
 class UsuarioLogin(BaseModel):
     """
@@ -35,6 +41,7 @@ class UsuarioResponse(BaseModel):
     id: int
     username: str
     role: str
+    activo: bool
 
     model_config = {
         "from_attributes": True

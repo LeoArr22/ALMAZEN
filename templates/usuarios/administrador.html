@@ -1,5 +1,6 @@
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in">
     
+    <!-- Formulario de Registro -->
     <div class="lg:col-span-1 bg-gray-900 border border-gray-800 rounded-2xl p-5 flex flex-col justify-between">
         <div>
             <div class="flex items-center gap-2 mb-4">
@@ -7,10 +8,10 @@
                 <h2 class="text-sm font-black uppercase tracking-wider text-gray-200">Registrar Personal</h2>
             </div>
             <p class="text-[11px] text-gray-500 mb-5 leading-relaxed">
-                Da de alta nuevos usuarios en el sistema. Los administradores heredan control total, mientras que los vendedores acceden directo al terminal de facturación.
+                Da de alta nuevos usuarios en el sistema.
             </p>
 
-            <form id="form-crear-usuario" class="space-y-4">
+            <form id="form-crear-usuario" class="space-y-4" onsubmit="event.preventDefault(); enviarRegistroUsuario();">
                 <div>
                     <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Nombre de Usuario</label>
                     <input type="text" id="user-username" required minlength="3" maxlength="50" autocomplete="off"
@@ -32,52 +33,132 @@
                         <option value="admin">🛡️ ADMIN (Control de Gestión)</option>
                     </select>
                 </div>
-            </form>
-        </div>
 
-        <div class="pt-6">
-            <button type="button" onclick="enviarRegistroUsuario()" class="w-full bg-gradient-to-r from-emerald-400 to-teal-500 text-gray-950 text-xs font-black uppercase tracking-wider py-2.5 rounded-xl shadow-md shadow-emerald-500/5 hover:opacity-90 transition-all cursor-pointer">
-                Guardar Usuario
-            </button>
+                <div class="pt-4">
+                    <button type="submit" class="w-full bg-gradient-to-r from-emerald-400 to-teal-500 text-gray-950 text-xs font-black uppercase tracking-wider py-2.5 rounded-xl shadow-md hover:opacity-90 transition-all cursor-pointer">
+                        Guardar Usuario
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
-    <div class="lg:col-span-2 space-y-6">
-        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-            <div class="flex items-center gap-2 mb-3">
-                <span class="text-sm">🛡️</span>
-                <h3 class="text-xs font-black uppercase tracking-wider text-gray-300">Políticas de Criptografía</h3>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-[11px] text-gray-400 font-medium leading-relaxed">
-                <div class="bg-gray-950/40 p-3 rounded-xl border border-gray-800/60">
-                    <p class="text-emerald-400 font-bold mb-1">Hasheo Seguro (Bcrypt)</p>
-                    Las contraseñas se interceptan en la capa de servicio y se transforman mediante un algoritmo criptográfico antes de guardarse en la base de datos. Nadie puede verlas en texto plano.
+    <!-- Tabla de Usuarios Registrados -->
+    <div class="lg:col-span-2 bg-gray-900 border border-gray-800 rounded-2xl p-5 flex flex-col justify-between">
+        <div>
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    <span class="text-xl">📋</span>
+                    <h2 class="text-sm font-black uppercase tracking-wider text-gray-200">Personal Registrado</h2>
                 </div>
-                <div class="bg-gray-950/40 p-3 rounded-xl border border-gray-800/60">
-                    <p class="text-teal-400 font-bold mb-1">Trazabilidad de Caja</p>
-                    Toda apertura, cierre de turno de caja o confirmación de venta quedará encuadrada de forma inmutable al ID del usuario que inició la sesión.
-                </div>
+                <button onclick="cargarTablaUsuarios()" class="text-xs text-emerald-400 hover:text-emerald-300 font-bold">
+                    🔄 Actualizar
+                </button>
             </div>
-        </div>
 
-        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 font-mono text-[11px] text-gray-500">
-            <div class="flex items-center justify-between border-b border-gray-800 pb-2 mb-2">
-                <span>API Target:</span>
-                <span class="text-gray-400 font-bold">POST /usuarios/registrar</span>
-            </div>
-            <div class="flex items-center justify-between">
-                <span>Filtro de Seguridad:</span>
-                <span class="text-amber-500 font-bold">Depends(solo_admin)</span>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs font-mono">
+                    <thead>
+                        <tr class="border-b border-gray-800 text-gray-400 uppercase text-[10px]">
+                            <th class="pb-2">ID</th>
+                            <th class="pb-2">Usuario</th>
+                            <th class="pb-2">Rol</th>
+                            <th class="pb-2">Estado</th>
+                            <th class="pb-2 text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-usuarios-body" class="divide-y divide-gray-800/60 text-gray-300">
+                        <tr>
+                            <td colspan="5" class="py-4 text-center text-gray-500">Cargando usuarios...</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Modal para Editar Usuario -->
+<div id="modal-editar-usuario" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center hidden z-50">
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md space-y-4 shadow-2xl">
+        <h3 class="text-sm font-black text-gray-200 uppercase tracking-wider">✏️ Editar Usuario</h3>
+        <input type="hidden" id="edit-user-id">
+
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Nombre de Usuario</label>
+            <input type="text" id="edit-user-username" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs text-gray-200 font-mono focus:border-emerald-500 focus:outline-none">
+        </div>
+
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Nueva Contraseña (Opcional)</label>
+            <input type="password" id="edit-user-password" placeholder="Dejar en blanco para mantener la actual" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs text-gray-200 font-mono focus:border-emerald-500 focus:outline-none">
+        </div>
+
+        <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Rol</label>
+            <select id="edit-user-role" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs font-bold text-gray-300 focus:border-emerald-500 focus:outline-none">
+                <option value="vendedor">🛠️ VENDEDOR</option>
+                <option value="admin">🛡️ ADMIN</option>
+            </select>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2">
+            <button onclick="cerrarModalEditar()" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl text-xs font-bold uppercase">Cancelar</button>
+            <button onclick="guardarEdicionUsuario()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-gray-950 rounded-xl text-xs font-black uppercase">Guardar Cambios</button>
+        </div>
+    </div>
+</div>
+
 <script>
-    // Inyección de limpieza al cambiar de módulo en el dashboard
-    window.moduloActivoLimpieza = function() {
-        console.log("Limpiando módulo de administración de usuarios.");
-    };
+    function emitirNotificacionLocal(mensaje, tipo = "exito") {
+        if (typeof emitirNotificacionGlobal === 'function') {
+            emitirNotificacionGlobal(mensaje, tipo);
+        } else if (typeof mostrarNotificacion === 'function') {
+            mostrarNotificacion(mensaje, tipo);
+        } else {
+            alert(mensaje);
+        }
+    }
+
+    async function cargarTablaUsuarios() {
+        const tbody = document.getElementById('tabla-usuarios-body');
+        try {
+            const res = await fetch('/usuarios/');
+            if (!res.ok) throw new Error("No se pudo cargar la lista.");
+            const usuarios = await res.json();
+
+            if (usuarios.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-gray-500">No hay usuarios registrados.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = usuarios.map(u => `
+                <tr class="hover:bg-gray-850/50">
+                    <td class="py-2.5 font-bold text-gray-400">#${u.id}</td>
+                    <td class="py-2.5 font-bold ${u.activo ? 'text-gray-200' : 'text-gray-500 line-through'}">${u.username}</td>
+                    <td class="py-2.5">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-black ${u.role.toLowerCase() === 'admin' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'} uppercase">
+                            ${u.role}
+                        </span>
+                    </td>
+                    <td class="py-2.5">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-black ${u.activo ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}">
+                            ${u.activo ? 'ACTIVO' : 'INACTIVO'}
+                        </span>
+                    </td>
+                    <td class="py-2.5 text-right space-x-2">
+                        <button onclick="abrirModalEditar(${u.id}, '${u.username}', '${u.role}')" class="text-amber-400 hover:text-amber-300 font-bold px-2 py-1 bg-amber-500/10 rounded-lg">✏️ Editar</button>
+                        <button onclick="alternarEstadoUsuario(${u.id})" class="${u.activo ? 'text-rose-400 bg-rose-500/10 hover:text-rose-300' : 'text-emerald-400 bg-emerald-500/10 hover:text-emerald-300'} font-bold px-2 py-1 rounded-lg">
+                            ${u.activo ? '🚫 Desactivar' : '✅ Activar'}
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+        } catch (e) {
+            tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-rose-400">Error al cargar listado de usuarios.</td></tr>`;
+        }
+    }
 
     async function enviarRegistroUsuario() {
         const usernameInput = document.getElementById('user-username');
@@ -88,18 +169,16 @@
         const password = passwordInput.value;
         const role = roleSelect.value;
 
-        // Validaciones del cliente en espejo con las de tus esquemas Pydantic
         if (username.length < 3 || username.length > 50) {
-            emitirNotificacionGlobal("El nombre de usuario debe tener entre 3 y 50 caracteres.", "error");
+            emitirNotificacionLocal("El nombre de usuario debe tener entre 3 y 50 caracteres.", "error");
             return;
         }
         if (password.length < 6) {
-            emitirNotificacionGlobal("La contraseña debe tener al menos 6 caracteres.", "error");
+            emitirNotificacionLocal("La contraseña debe tener al menos 6 caracteres.", "error");
             return;
         }
 
         try {
-            // Petición directa a tu controlador de usuarios
             const respuesta = await fetch('/usuarios/registrar', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -109,17 +188,77 @@
             const datos = await respuesta.json();
 
             if (respuesta.ok) {
-                emitirNotificacionGlobal(`Usuario "${datos.username}" creado con éxito como ${datos.role.toUpperCase()}.`, "exito");
-                // Limpieza del formulario
+                emitirNotificacionLocal(`Usuario "${datos.username}" creado con éxito.`, "exito");
                 usernameInput.value = "";
                 passwordInput.value = "";
                 roleSelect.value = "vendedor";
+                cargarTablaUsuarios();
             } else {
-                emitirNotificacionGlobal(`Error: ${datos.detail || 'No se pudo registrar.'}`, "error");
+                emitirNotificacionLocal(datos.detail || 'No se pudo registrar.', "error");
             }
         } catch (error) {
-            console.error("Error:", error);
-            emitirNotificacionGlobal("Error de red al intentar conectar con el servidor.", "error");
+            emitirNotificacionLocal("Error de red al conectar con el servidor.", "error");
         }
     }
+
+    function abrirModalEditar(id, username, role) {
+        document.getElementById('edit-user-id').value = id;
+        document.getElementById('edit-user-username').value = username;
+        document.getElementById('edit-user-password').value = '';
+        document.getElementById('edit-user-role').value = role.toLowerCase();
+        document.getElementById('modal-editar-usuario').classList.remove('hidden');
+    }
+
+    function cerrarModalEditar() {
+        document.getElementById('modal-editar-usuario').classList.add('hidden');
+    }
+
+    async function guardarEdicionUsuario() {
+        const id = document.getElementById('edit-user-id').value;
+        const username = document.getElementById('edit-user-username').value.trim();
+        const password = document.getElementById('edit-user-password').value;
+        const role = document.getElementById('edit-user-role').value;
+
+        const body = { username, role };
+        if (password && password.trim().length >= 6) {
+            body.password = password;
+        }
+
+        try {
+            const res = await fetch(`/usuarios/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+
+            const datos = await res.json();
+            if (res.ok) {
+                emitirNotificacionLocal("Usuario actualizado correctamente.", "exito");
+                cerrarModalEditar();
+                cargarTablaUsuarios();
+            } else {
+                emitirNotificacionLocal(datos.detail || "Error al actualizar.", "error");
+            }
+        } catch (e) {
+            emitirNotificacionLocal("Error de red al intentar actualizar.", "error");
+        }
+    }
+
+    async function alternarEstadoUsuario(id) {
+        try {
+            const res = await fetch(`/usuarios/${id}/estado`, { method: 'PATCH' });
+            const datos = await res.json();
+            if (res.ok) {
+                emitirNotificacionLocal(`Estado de usuario actualizado (${datos.activo ? 'Activo' : 'Inactivo'}).`, "exito");
+                cargarTablaUsuarios();
+            } else {
+                emitirNotificacionLocal(datos.detail || "Error al cambiar estado.", "error");
+            }
+        } catch (e) {
+            emitirNotificacionLocal("Error de conexión.", "error");
+        }
+    }
+
+    // Carga inicial al montar la vista
+    cargarTablaUsuarios();
 </script>

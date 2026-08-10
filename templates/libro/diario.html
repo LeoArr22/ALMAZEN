@@ -1,0 +1,147 @@
+<!-- templates/libro/diario.html -->
+{% include "libro/submenu.html" %}
+
+<div id="modulo-libro-diario" class="max-w-7xl mx-auto space-y-6 opacity-0 translate-y-2 transition-all duration-300">
+    
+    <!-- Filtro rápido por fecha -->
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-xs select-none">
+        <div class="flex items-center gap-3">
+            <span class="text-gray-400 font-bold uppercase">📅 Fecha a Consultar:</span>
+            <input type="date" id="filtro-fecha-diario" 
+                class="bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-gray-200 focus:outline-none focus:border-emerald-500 transition-all">
+        </div>
+        <button onclick="cargarLibroDiario()" class="w-full sm:w-auto px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 font-bold rounded-xl transition-all cursor-pointer">
+            🔄 Recargar Datos
+        </button>
+    </div>
+
+    <!-- Tarjetas de Métricas Financieras Principales -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 select-none">
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-1">
+            <span class="text-[10px] font-mono font-bold uppercase tracking-wider text-gray-500">Total Facturado</span>
+            <div id="metric-total-facturado" class="text-2xl font-black text-emerald-400 font-mono">$ 0.00</div>
+            <p class="text-[11px] text-gray-500 font-sans">Ingresos brutos percibidos</p>
+        </div>
+
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-1">
+            <span class="text-[10px] font-mono font-bold uppercase tracking-wider text-gray-500">Costo Mercadería</span>
+            <div id="metric-costo-total" class="text-2xl font-black text-rose-400 font-mono">$ 0.00</div>
+            <p class="text-[11px] text-gray-500 font-sans">Inversión en reposición</p>
+        </div>
+
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-1">
+            <span class="text-[10px] font-mono font-bold uppercase tracking-wider text-gray-500">Ganancia Neta</span>
+            <div id="metric-ganancia-neta" class="text-2xl font-black text-teal-300 font-mono">$ 0.00</div>
+            <p class="text-[11px] text-gray-500 font-sans">Margen neto operativo</p>
+        </div>
+
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-1">
+            <span class="text-[10px] font-mono font-bold uppercase tracking-wider text-gray-500">Ticket Promedio</span>
+            <div id="metric-ticket-promedio" class="text-2xl font-black text-blue-400 font-mono">$ 0.00</div>
+            <p id="metric-transacciones" class="text-[11px] text-gray-400 font-sans">0 operaciones realizadas</p>
+        </div>
+    </div>
+
+    <!-- Desglose por Medio de Pago + Auditoría -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Tabla Medios de Pago -->
+        <div class="lg:col-span-2 bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-4">
+            <h3 class="text-xs font-mono font-bold uppercase text-gray-400 tracking-wider flex items-center gap-2">
+                💳 Desglose por Medio de Pago
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left font-mono text-xs">
+                    <thead>
+                        <tr class="border-b border-gray-800 text-gray-500 uppercase">
+                            <th class="py-2 font-bold">Medio de Pago</th>
+                            <th class="py-2 font-bold text-right">Monto Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-desglose-pagos" class="divide-y divide-gray-800/40 text-gray-300">
+                        <tr>
+                            <td colspan="2" class="text-center py-8 text-gray-600 font-sans">⏳ Cargando desglose...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Auditoría de Anulaciones -->
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-4 flex flex-col justify-between select-none">
+            <div>
+                <h3 class="text-xs font-mono font-bold uppercase text-rose-400 tracking-wider flex items-center gap-2 mb-3">
+                    🚫 Auditoría de Anulaciones
+                </h3>
+                <div class="bg-gray-950/60 border border-rose-950/50 rounded-xl p-4 space-y-3 font-mono text-xs">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-400">Ventas Anuladas:</span>
+                        <span id="metric-cantidad-anuladas" class="font-bold text-rose-400 text-sm">0</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-400">Monto Anulado:</span>
+                        <span id="metric-monto-anulado" class="font-bold text-rose-400 text-sm">$ 0.00</span>
+                    </div>
+                </div>
+            </div>
+            <p class="text-[10px] text-gray-600 font-sans text-center">
+                Las operaciones anuladas no forman parte de los totales facturados.
+            </p>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    (function() {
+        const modulo = document.getElementById('modulo-libro-diario');
+        const inputFecha = document.getElementById('filtro-fecha-diario');
+
+        // Establecer fecha por defecto a hoy (YYYY-MM-DD)
+        const hoy = new Date().toISOString().split('T')[0];
+        inputFecha.value = hoy;
+
+        setTimeout(() => { modulo.classList.remove('opacity-0', 'translate-y-2'); }, 50);
+
+        window.cargarLibroDiario = async function() {
+            try {
+                const fecha = inputFecha.value || hoy;
+                const res = await fetch(`/libro-diario/?periodo=dia&fecha_ref=${fecha}`);
+                
+                if (!res.ok) throw new Error("Error de consulta");
+                const data = await res.json();
+
+                // Renderizar métricas
+                document.getElementById('metric-total-facturado').innerText = `$ ${parseFloat(data.total_facturado).toFixed(2)}`;
+                document.getElementById('metric-costo-total').innerText = `$ ${parseFloat(data.costo_total_mercaderia).toFixed(2)}`;
+                document.getElementById('metric-ganancia-neta').innerText = `$ ${parseFloat(data.ganancia_neta_total).toFixed(2)}`;
+                document.getElementById('metric-ticket-promedio').innerText = `$ ${parseFloat(data.ticket_promedio).toFixed(2)}`;
+                document.getElementById('metric-transacciones').innerText = `${data.cantidad_transacciones} operaciones realizadas`;
+
+                document.getElementById('metric-cantidad-anuladas').innerText = data.cantidad_ventas_anuladas;
+                document.getElementById('metric-monto-anulado').innerText = `$ ${parseFloat(data.monto_total_anulado).toFixed(2)}`;
+
+                // Renderizar tabla de pagos
+                const tbody = document.getElementById('tabla-desglose-pagos');
+                if (data.desglose_pagos.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="2" class="text-center py-8 text-gray-600 font-sans">Sin movimientos registrados en esta fecha.</td></tr>`;
+                } else {
+                    tbody.innerHTML = data.desglose_pagos.map(p => `
+                        <tr class="hover:bg-gray-950/40">
+                            <td class="py-3 font-bold text-gray-200">${p.medio_pago}</td>
+                            <td class="py-3 text-right font-black text-emerald-400">$ ${parseFloat(p.monto_total).toFixed(2)}</td>
+                        </tr>
+                    `).join('');
+                }
+
+            } catch (err) {
+                if (typeof emitirNotificacionGlobal === 'function') {
+                    emitirNotificacionGlobal("⚠️ No se pudieron cargar los datos del libro diario", "error");
+                }
+            }
+        };
+
+        inputFecha.addEventListener('change', cargarLibroDiario);
+        cargarLibroDiario();
+    })();
+</script>

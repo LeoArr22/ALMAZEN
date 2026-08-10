@@ -1,3 +1,4 @@
+# main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles 
@@ -7,7 +8,7 @@ from src.config.database import engine, Base
 import src.models
 
 # Controladores / Routers de la API JSON
-from src.controllers import producto_controller, venta_controller, caja_controller, usuario_controller
+from src.controllers import producto_controller, venta_controller, caja_controller, usuario_controller, libro_controller
 
 # 🖥️ Router de la Interfaz Web HTML
 from src.views.core_views import router_core
@@ -15,6 +16,7 @@ from src.views.producto_views import router_vistas_productos
 from src.views.venta_views import router_vistas_ventas
 from src.views.usuario_views import router_vistas_usuarios
 from src.views.caja_views import router_vistas_cajas
+from src.views.libro_views import router_vistas_libro
 
 # 🛡️ DEPENDENCIAS DE ROLES
 from src.dependencies.roles import RoleChecker
@@ -52,6 +54,7 @@ app.include_router(router_vistas_productos)
 app.include_router(router_vistas_ventas)
 app.include_router(router_vistas_usuarios)
 app.include_router(router_vistas_cajas)
+app.include_router(router_vistas_libro)
 
 # ==========================================
 # 🔌 ENRUTAMIENTO DE LA API REST (JSON DATA)
@@ -60,3 +63,4 @@ app.include_router(producto_controller.router)
 app.include_router(caja_controller.router)
 app.include_router(venta_controller.router) 
 app.include_router(usuario_controller.router)
+app.include_router(libro_controller.router)

@@ -1,0 +1,182 @@
+<!-- templates/libro/general.html -->
+{% include "libro/submenu.html" %}
+
+<div id="modulo-libro-general" class="max-w-7xl mx-auto space-y-6 opacity-0 translate-y-2 transition-all duration-300">
+    
+    <!-- Filtros por período -->
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4 grid grid-cols-1 sm:grid-cols-4 gap-4 font-mono text-xs select-none items-end">
+        
+        <div class="space-y-1.5">
+            <label class="text-gray-400 font-bold uppercase block tracking-wider">Período</label>
+            <select id="select-periodo" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-gray-200 focus:outline-none focus:border-emerald-500 transition-all">
+                <option value="semana">Semana Actual</option>
+                <option value="mes" selected>Mes Actual</option>
+                <option value="personalizado">Rango Personalizado</option>
+            </select>
+        </div>
+
+        <div id="wrapper-fecha-inicio" class="space-y-1.5 hidden">
+            <label class="text-gray-400 font-bold uppercase block tracking-wider">Desde</label>
+            <input type="date" id="filtro-fecha-inicio" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-gray-200 focus:outline-none focus:border-emerald-500 transition-all">
+        </div>
+
+        <div id="wrapper-fecha-fin" class="space-y-1.5 hidden">
+            <label class="text-gray-400 font-bold uppercase block tracking-wider">Hasta</label>
+            <input type="date" id="filtro-fecha-fin" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-gray-200 focus:outline-none focus:border-emerald-500 transition-all">
+        </div>
+
+        <div>
+            <button onclick="cargarReporteGeneral()" class="w-full py-2 bg-gradient-to-r from-emerald-400 to-teal-500 text-gray-950 font-black rounded-xl hover:opacity-95 transition-all cursor-pointer">
+                🔍 Generar Reporte
+            </button>
+        </div>
+    </div>
+
+    <!-- Rango Consultado -->
+    <div class="flex items-center justify-between text-xs font-mono text-gray-400 bg-gray-900/40 border border-gray-800/80 px-4 py-2.5 rounded-xl select-none">
+        <span>Período: <strong id="lbl-rango-fechas" class="text-emerald-400">-</strong></span>
+        <span id="lbl-transacciones-totales" class="text-gray-300">0 operaciones</span>
+    </div>
+
+    <!-- Consolidado Financiero -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 select-none">
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-1">
+            <span class="text-[10px] font-mono font-bold uppercase tracking-wider text-gray-500">Total Facturado</span>
+            <div id="gen-total-facturado" class="text-2xl font-black text-emerald-400 font-mono">$ 0.00</div>
+        </div>
+
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-1">
+            <span class="text-[10px] font-mono font-bold uppercase tracking-wider text-gray-500">Costo Total Mercadería</span>
+            <div id="gen-costo-total" class="text-2xl font-black text-rose-400 font-mono">$ 0.00</div>
+        </div>
+
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-1">
+            <span class="text-[10px] font-mono font-bold uppercase tracking-wider text-gray-500">Ganancia Neta Consolidada</span>
+            <div id="gen-ganancia-neta" class="text-2xl font-black text-teal-300 font-mono">$ 0.00</div>
+        </div>
+    </div>
+
+    <!-- Tablas de Desglose y Auditoría -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <div class="lg:col-span-2 bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-4">
+            <h3 class="text-xs font-mono font-bold uppercase text-gray-400 tracking-wider">
+                💳 Consolidado por Medio de Pago
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left font-mono text-xs">
+                    <thead>
+                        <tr class="border-b border-gray-800 text-gray-500 uppercase">
+                            <th class="py-2 font-bold">Medio de Pago</th>
+                            <th class="py-2 font-bold text-right">Monto Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="gen-tabla-desglose-pagos" class="divide-y divide-gray-800/40 text-gray-300">
+                        <tr>
+                            <td colspan="2" class="text-center py-8 text-gray-600 font-sans">⏳ Cargando reporte...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-4 flex flex-col justify-between select-none">
+            <div class="space-y-3">
+                <h3 class="text-xs font-mono font-bold uppercase text-rose-400 tracking-wider">
+                    🚫 Anulaciones en el Período
+                </h3>
+                <div class="bg-gray-950/60 border border-rose-950/50 rounded-xl p-4 space-y-3 font-mono text-xs">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-400">Total Anuladas:</span>
+                        <span id="gen-cantidad-anuladas" class="font-bold text-rose-400 text-sm">0</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-400">Monto Perdido/Anulado:</span>
+                        <span id="gen-monto-anulado" class="font-bold text-rose-400 text-sm">$ 0.00</span>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 pt-3 font-mono text-xs text-gray-400 flex justify-between">
+                <span>Ticket Promedio:</span>
+                <span id="gen-ticket-promedio" class="font-bold text-blue-400">$ 0.00</span>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    (function() {
+        const modulo = document.getElementById('modulo-libro-general');
+        const selectPeriodo = document.getElementById('select-periodo');
+        const wrapInicio = document.getElementById('wrapper-fecha-inicio');
+        const wrapFin = document.getElementById('wrapper-fecha-fin');
+        const inputInicio = document.getElementById('filtro-fecha-inicio');
+        const inputFin = document.getElementById('filtro-fecha-fin');
+
+        setTimeout(() => { modulo.classList.remove('opacity-0', 'translate-y-2'); }, 50);
+
+        selectPeriodo.addEventListener('change', () => {
+            if (selectPeriodo.value === 'personalizado') {
+                wrapInicio.classList.remove('hidden');
+                wrapFin.classList.remove('hidden');
+            } else {
+                wrapInicio.classList.add('hidden');
+                wrapFin.classList.add('hidden');
+            }
+        });
+
+        window.cargarReporteGeneral = async function() {
+            try {
+                const periodo = selectPeriodo.value;
+                let url = `/libro-diario/?periodo=${periodo}`;
+
+                if (periodo === 'personalizado') {
+                    if (!inputInicio.value || !inputFin.value) {
+                        if (typeof emitirNotificacionGlobal === 'function') {
+                            emitirNotificacionGlobal("⚠️ Seleccioná fecha de inicio y fin para el rango personalizado", "error");
+                        }
+                        return;
+                    }
+                    url += `&fecha_inicio_custom=${inputInicio.value}&fecha_fin_custom=${inputFin.value}`;
+                }
+
+                const res = await fetch(url);
+                if (!res.ok) throw new Error("Error en reporte");
+                const data = await res.json();
+
+                // Renderizar Rango y totales
+                document.getElementById('lbl-rango-fechas').innerText = `${data.fecha_inicio} ➔ ${data.fecha_fin}`;
+                document.getElementById('lbl-transacciones-totales').innerText = `${data.cantidad_transacciones} operaciones registradas`;
+
+                document.getElementById('gen-total-facturado').innerText = `$ ${parseFloat(data.total_facturado).toFixed(2)}`;
+                document.getElementById('gen-costo-total').innerText = `$ ${parseFloat(data.costo_total_mercaderia).toFixed(2)}`;
+                document.getElementById('gen-ganancia-neta').innerText = `$ ${parseFloat(data.ganancia_neta_total).toFixed(2)}`;
+                document.getElementById('gen-ticket-promedio').innerText = `$ ${parseFloat(data.ticket_promedio).toFixed(2)}`;
+
+                document.getElementById('gen-cantidad-anuladas').innerText = data.cantidad_ventas_anuladas;
+                document.getElementById('gen-monto-anulado').innerText = `$ ${parseFloat(data.monto_total_anulado).toFixed(2)}`;
+
+                // Desglose
+                const tbody = document.getElementById('gen-tabla-desglose-pagos');
+                if (data.desglose_pagos.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="2" class="text-center py-8 text-gray-600 font-sans">Sin movimientos en este período.</td></tr>`;
+                } else {
+                    tbody.innerHTML = data.desglose_pagos.map(p => `
+                        <tr class="hover:bg-gray-950/40">
+                            <td class="py-3 font-bold text-gray-200">${p.medio_pago}</td>
+                            <td class="py-3 text-right font-black text-emerald-400">$ ${parseFloat(p.monto_total).toFixed(2)}</td>
+                        </tr>
+                    `).join('');
+                }
+
+            } catch (err) {
+                if (typeof emitirNotificacionGlobal === 'function') {
+                    emitirNotificacionGlobal("⚠️ Error al generar el reporte contable", "error");
+                }
+            }
+        };
+
+        cargarReporteGeneral();
+    })();
+</script>
