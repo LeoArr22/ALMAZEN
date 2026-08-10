@@ -2,19 +2,24 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from src.config.config import settings
 
-# Esto va a crear un archivo llamado "almacen.db" en la raíz de tu proyecto
 SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL
 
-# connect_args es necesario SOLO para SQLite
+# Configuración condicional de kwargs para el engine
+engine_kwargs = {}
+
+# check_same_thread es un parámetro exclusivo de SQLite
+if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
+    engine_kwargs["connect_args"] = {"check_same_thread": False}
+
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+    SQLALCHEMY_DATABASE_URL,
+    **engine_kwargs
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
-# La dependencia para inyectar la BD en los endpoints
 def get_db():
     db = SessionLocal()
     try:
