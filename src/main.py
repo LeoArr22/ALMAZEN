@@ -4,6 +4,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles 
+from fastapi.responses import RedirectResponse
 from src.config.database import engine, Base 
 
 # 🌟 IMPORTACIÓN CRÍTICA DE MODELOS PARA SQLALCHEMY
@@ -41,6 +42,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# Redirigir la raíz ("/") directamente a "/login"
+@app.get("/", include_in_schema=False)
+def root_redirect():
+    return RedirectResponse(url="/login")
 
 # 🎨 Servir archivos estáticos (CSS, JS, Imágenes)
 os.makedirs("static", exist_ok=True)
