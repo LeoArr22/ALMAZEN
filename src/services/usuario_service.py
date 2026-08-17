@@ -59,6 +59,13 @@ class UsuarioService:
 
         datos_actualizar = usuario_in.model_dump(exclude_unset=True)
 
+        # 🛑 RESTRICCIÓN ADMIN: No se puede cambiar el nombre del usuario 'admin'
+        if usuario_db.username == "admin" and "username" in datos_actualizar and datos_actualizar["username"] != "admin":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No está permitido modificar el nombre del usuario administrador principal ('admin')."
+            )
+
         # Si viene actualización de username, verificar duplicados
         if "username" in datos_actualizar and datos_actualizar["username"] != usuario_db.username:
             existente = UsuarioRepository.obtener_por_username(db, datos_actualizar["username"])
@@ -85,6 +92,13 @@ class UsuarioService:
         usuario_db = UsuarioRepository.obtener_por_id(db, usuario_id)
         if not usuario_db:
             raise HTTPException(status_code=404, detail="Usuario no encontrado.")
+
+        # 🛑 RESTRICCIÓN ADMIN: No se puede deshabilitar al usuario 'admin'
+        if usuario_db.username == "admin" and usuario_db.activo:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No se puede deshabilitar al usuario administrador principal ('admin')."
+            )
 
         try:
             usuario = UsuarioRepository.actualizar(db, usuario_db, {"activo": not usuario_db.activo})

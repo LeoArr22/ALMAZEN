@@ -5,6 +5,8 @@ from sqlalchemy.orm import sessionmaker
 
 from src.config.database import Base, get_db
 from src.main import app  # 👈 Importamos app desde src.main
+from src.models.usuario import Usuario
+from src.dependencies.auth import get_current_user
 
 # Base de datos SQLite exclusiva para la ejecución de tests
 SQLALCHEMY_TEST_DATABASE_URL = "sqlite:///./test_almazen.db"
@@ -48,4 +50,22 @@ def client(db_session):
 
     app.dependency_overrides[get_db] = _override_get_db
     yield TestClient(app)
+    app.dependency_overrides.clear()
+    
+@pytest.fixture
+def override_admin(db_session):
+    """Crea un usuario admin real en la BD de pruebas y overridea la autenticación."""
+    admin_user = Usuario(
+        id=1,
+        username="admin",
+        password_hashed="fake_hashed_password_123",  # 👈 Campo obligatorio agregado
+        role="admin",
+        activo=True
+    )
+    db_session.add(admin_user)
+    db_session.commit()
+    db_session.refresh(admin_user)
+
+    app.dependency_overrides[get_current_user] = lambda: admin_user
+    yield admin_user
     app.dependency_overrides.clear()

@@ -11,8 +11,6 @@ from src.models.usuario import Usuario
 
 def crear_admin_inicial():
     print("🛠️ Creando el esqueleto de las tablas en la Base de Datos si no existen...")
-    # 🌟 ESTA LÍNEA MÁGICA VA A CREAR LA TABLA "usuarios" Y TODAS LAS DEMÁS ANTES DE HACER EL SELECT
-    Base.metadata.create_all(bind=engine)
 
     print("Iniciando la creación del usuario administrador con Bcrypt Nativo...")
     db = SessionLocal()
