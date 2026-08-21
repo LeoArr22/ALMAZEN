@@ -1,17 +1,14 @@
 # seed.py
 import bcrypt  # <- Usamos la librería pura de Python/C
 from sqlalchemy.orm import Session
-from src.config.database import SessionLocal, engine, Base # 🌟 IMPORTAMOS EL engine Y EL Base ACÁ
+from src.config.database import SessionLocal, engine, Base # IMPORTAMOS EL engine Y EL Base ACÁ
 
 # Cargamos los modelos para SQLAlchemy (¡Fundamental importarlos para que sepa qué tablas crear!)
-from src.models.producto import Producto      
-from src.models.venta import Venta, VentaDetalle
-from src.models.caja import Caja
 from src.models.usuario import Usuario
 
 def crear_admin_inicial():
     print("🛠️ Creando el esqueleto de las tablas en la Base de Datos si no existen...")
-
+    Base.metadata.create_all(bind=engine)
     print("Iniciando la creación del usuario administrador con Bcrypt Nativo...")
     db = SessionLocal()
     try:

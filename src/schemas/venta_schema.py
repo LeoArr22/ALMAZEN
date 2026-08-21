@@ -12,6 +12,12 @@ class VentaDetalleCreate(BaseModel):
     producto_id: int = Field(..., gt=0, examples=[1])
     cantidad: Decimal = Field(..., gt=0, examples=[0.500])
 
+class ProductoSimpleResponse(BaseModel):
+    id: int
+    nombre: str
+
+    model_config = {"from_attributes": True}
+
 # Lo que la API devuelve para cada renglón individual de la venta
 class VentaDetalleResponse(BaseModel):
     id: int
@@ -19,6 +25,9 @@ class VentaDetalleResponse(BaseModel):
     cantidad: Decimal
     precio_historico: Decimal
     costo_historico: Decimal
+    subtotal: Decimal
+    promocion_aplicada: Optional[str] = None
+    producto: Optional[ProductoSimpleResponse] = None
 
     model_config = {
         "from_attributes": True

@@ -1,7 +1,7 @@
 from decimal import Decimal
 from datetime import datetime
 from typing import List, Optional, TYPE_CHECKING
-from sqlalchemy import Numeric, DateTime, ForeignKey
+from sqlalchemy import Numeric, DateTime, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.config.database import Base
 
@@ -91,6 +91,10 @@ class VentaDetalle(Base):
     costo_historico: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     subtotal: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     ganancia_item: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
+
+    # --- Atributos de Promoción ---
+    promocion_aplicada: Mapped[Optional[str]] = mapped_column(String(150), nullable=True, default=None)
+
 
     # --- Relaciones Bidireccionales (ORM) ---
     

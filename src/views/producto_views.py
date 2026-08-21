@@ -25,3 +25,11 @@ async def servir_vista_buscar_editar_productos(
     _ = Depends(solo_admin)
 ):
     return templates.TemplateResponse(request, "productos/buscar_editar.html")
+
+@router_vistas_productos.get("/productos/promociones", response_class=HTMLResponse)
+async def servir_vista_promociones_productos(
+    request: Request, 
+    current_user: Usuario = Depends(get_current_user),
+    _ = Depends(solo_admin)
+):
+    return templates.TemplateResponse(request, "productos/promociones.html")

@@ -14,8 +14,8 @@
         <button id="btn-prod-buscar" onclick="irASeccion('productos_buscar')" class="text-xs font-bold px-3.5 py-2 rounded-lg transition-all text-gray-400 hover:text-gray-200 hover:bg-gray-800/40 cursor-pointer flex items-center gap-1">
             🔍 Buscar / Editar
         </button>
-        <button id="btn-prod-alertas" onclick="emitirNotificacionGlobal('Módulo de Alertas de Stock en desarrollo', 'error')" class="text-xs font-bold px-3.5 py-2 rounded-lg transition-all text-gray-400 hover:text-gray-200 hover:bg-gray-800/40 cursor-pointer flex items-center gap-1">
-            ⚠️ Alertas Stock
+        <button id="btn-prod-promociones" onclick="irASeccion('productos_promociones')" class="text-xs font-bold px-3.5 py-2 rounded-lg transition-all text-gray-400 hover:text-gray-200 hover:bg-gray-800/40 cursor-pointer flex items-center gap-1">
+            🏷️ Promociones
         </button>
         <button id="btn-prod-stats" onclick="emitirNotificacionGlobal('Módulo de Estadísticas en desarrollo', 'error')" class="text-xs font-bold px-3.5 py-2 rounded-lg transition-all text-gray-400 hover:text-gray-200 hover:bg-gray-800/40 cursor-pointer flex items-center gap-1">
             📊 Estadísticas
@@ -36,8 +36,15 @@
             // Buscamos de forma precisa las estructuras para evitar colisiones
             const esVistaBuscar = document.getElementById('input-busqueda-productos');
             const esVistaAlta = document.getElementById('form-carga-producto');
+            const esVistaPromociones = document.getElementById('tabla-promociones');
 
-            if (esVistaBuscar && !esVistaAlta) {
+            if (esVistaPromociones) {
+                if(titulo) titulo.innerHTML = "🏷️ Gestor de Promociones y Combos";
+                if(leyenda) leyenda.innerHTML = "Creá ofertas temporales, descuentos por cantidad (2x1, 3x2) o combos especiales.";
+                marcarBotonActivo('btn-prod-promociones');
+            }
+
+            else if (esVistaBuscar && !esVistaAlta) {
                 // CONFIGURACIÓN PARA BUSCAR / EDITAR
                 if(titulo) titulo.innerHTML = "🔍 Catálogo de Productos";
                 if(leyenda) leyenda.innerHTML = "Búsqueda en tiempo real, control de costos y edición de stock rápido.";

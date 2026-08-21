@@ -1,0 +1,521 @@
+{% include "productos/submenu.html" %}
+
+<div id="panel-promociones" class="max-w-7xl mx-auto space-y-6">
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- PANEL IZQUIERDO: FORMULARIO -->
+        <div class="lg:col-span-6 bg-gray-900 border border-gray-800 rounded-2xl p-5 shadow-2xl flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between border-b border-gray-800 pb-3 mb-4">
+                    <h3 class="text-xs font-black text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                        ✨ Configurar Nueva Promoción
+                    </h3>
+                </div>
+
+                <!-- Tabs de Modo -->
+                <div class="grid grid-cols-2 gap-2 mb-4 p-1 bg-gray-950 border border-gray-800 rounded-xl">
+                    <button type="button" id="tab-cantidad" onclick="seleccionarTipoPromo('CANTIDAD')"
+                            class="py-2 text-xs font-extrabold rounded-lg transition-all bg-emerald-500 text-gray-950">
+                        📦 Producto Individual
+                    </button>
+                    <button type="button" id="tab-combo" onclick="seleccionarTipoPromo('COMBO')"
+                            class="py-2 text-xs font-extrabold rounded-lg transition-all text-gray-400 hover:text-gray-200">
+                        🍹 Combo Combinado
+                    </button>
+                </div>
+
+                <form id="form-promocion" class="space-y-4">
+                    <input type="hidden" id="promo-modalidad" value="CANTIDAD">
+
+                    <div>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">Nombre de la Promoción *</label>
+                        <input type="text" id="promo-nombre" required placeholder="Ej: Promo 2x1 Fernet / Mayorista 5u Coca / Combo Fernet + Coca"
+                               class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs text-gray-100 placeholder-gray-600 focus:outline-none focus:border-emerald-500">
+                    </div>
+
+                    <!-- SECCIÓN: PRODUCTO INDIVIDUAL (MULTIPLO O MAYORISTA) -->
+                    <div id="seccion-cantidad" class="space-y-3 bg-gray-950/60 p-3.5 border border-gray-800/80 rounded-xl">
+                        <span class="text-[10px] font-black text-amber-400 uppercase tracking-wider block border-b border-gray-800 pb-1">
+                            Regla por Producto Individual
+                        </span>
+
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">Comportamiento de la Oferta *</label>
+                            <select id="promo-cant-tipo" class="w-full bg-gray-900 border border-gray-800 rounded-xl px-3 py-2 text-xs text-amber-300 font-bold focus:outline-none focus:border-emerald-500">
+                                <option value="MULTIPLO">📦 Por Lote / Múltiplo (Ej: 2x1, 3x2, de a N u. - Sobrante paga lista)</option>
+                                <option value="CANTIDAD_MINIMA">🏷️ Precio Mayorista (Comprando N o más, TODAS al precio promo)</option>
+                            </select>
+                        </div>
+
+                        <div class="relative">
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">Buscar Producto (Código o Nombre) *</label>
+                            <input type="text" id="input-buscar-cant" autocomplete="off" placeholder="Escribí o escaneá el producto..."
+                                   class="w-full bg-gray-900 border border-gray-800 rounded-xl px-3 py-2 text-xs text-gray-100 focus:outline-none focus:border-emerald-500">
+                            
+                            <div id="resultados-cant" class="hidden absolute left-0 right-0 top-full mt-1 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl max-h-48 overflow-y-auto z-50 divide-y divide-gray-800"></div>
+                        </div>
+
+                        <div id="chip-prod-cant" class="hidden bg-emerald-950/80 border border-emerald-500/40 rounded-xl p-2.5 flex items-center justify-between">
+                            <div>
+                                <div id="chip-prod-cant-nombre" class="text-xs font-bold text-emerald-200"></div>
+                                <div id="chip-prod-cant-precio" class="text-[10px] text-emerald-400/80 font-mono"></div>
+                            </div>
+                            <button type="button" onclick="deseleccionarProductoCant()" class="text-rose-400 hover:text-rose-300 font-bold text-xs px-2">✕ Quitar</button>
+                        </div>
+                        <input type="hidden" id="promo-cant-producto-id">
+
+                        <div class="grid grid-cols-2 gap-3 pt-1">
+                            <div>
+                                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">Cantidad Requerida (N) *</label>
+                                <input type="number" id="promo-cant-unidades" min="1" value="2" placeholder="Ej: 2"
+                                       class="w-full bg-gray-900 border border-gray-800 rounded-xl px-3 py-2 text-xs text-amber-400 font-mono font-bold focus:outline-none focus:border-emerald-500">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">Precio Total de la Oferta ($) *</label>
+                                <input type="number" id="promo-cant-precio-total" step="0.01" placeholder="Ej: 3000"
+                                       class="w-full bg-gray-900 border border-gray-800 rounded-xl px-3 py-2 text-xs text-emerald-400 font-mono font-bold focus:outline-none focus:border-emerald-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECCIÓN: COMBO COMBINADO -->
+                    <div id="seccion-combo" class="hidden space-y-3 bg-gray-950/60 p-3.5 border border-gray-800/80 rounded-xl">
+                        <span class="text-[10px] font-black text-cyan-400 uppercase tracking-wider block border-b border-gray-800 pb-1">
+                            Armador de Combo (Varios Productos Distintos)
+                        </span>
+
+                        <div class="relative">
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">Buscar Producto para Sumar al Combo</label>
+                            <input type="text" id="input-buscar-combo" autocomplete="off" placeholder="Escribí o escaneá el producto..."
+                                   class="w-full bg-gray-900 border border-gray-800 rounded-xl px-3 py-2 text-xs text-gray-100 focus:outline-none focus:border-emerald-500">
+                            
+                            <div id="resultados-combo" class="hidden absolute left-0 right-0 top-full mt-1 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl max-h-48 overflow-y-auto z-50 divide-y divide-gray-800"></div>
+                        </div>
+
+                        <div class="bg-gray-900 rounded-xl p-2 border border-gray-800/60 max-h-36 overflow-y-auto">
+                            <table class="w-full text-left text-xs">
+                                <tbody id="lista-combo-items" class="divide-y divide-gray-800 text-gray-300">
+                                    <tr><td colspan="3" class="text-center py-3 text-gray-600 font-mono text-[11px]">No hay productos en el combo.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">Precio Final del Combo Pack ($) *</label>
+                            <input type="number" id="combo-precio-final" step="0.01" placeholder="Ej: 8500.00"
+                                   class="w-full bg-gray-900 border border-gray-800 rounded-xl px-3 py-2 text-xs text-emerald-400 font-mono font-bold focus:outline-none focus:border-emerald-500">
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="pt-4 border-t border-gray-800 mt-4">
+                <button type="button" onclick="guardarPromocion()"
+                        class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-gray-950 font-black text-xs py-3 rounded-xl transition-all shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-2 cursor-pointer">
+                    💾 Guardar y Habilitar Promoción
+                </button>
+            </div>
+        </div>
+
+        <!-- PANEL DERECHO: TARJETAS DE PROMOS ACTIVAS -->
+        <div class="lg:col-span-6 bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden flex flex-col shadow-2xl min-h-[480px]">
+            <div class="p-4 border-b border-gray-800 flex items-center justify-between bg-gray-950/50">
+                <h3 class="text-xs font-black text-gray-300 uppercase tracking-wider flex items-center gap-2">
+                    🏷️ Reglas y Combos Activos
+                </h3>
+                <span id="badge-total-promos" class="text-[10px] font-mono text-emerald-400 font-bold bg-emerald-950 px-2 py-0.5 rounded border border-emerald-500/30">
+                    0 Activas
+                </span>
+            </div>
+
+            <div class="flex-grow overflow-auto p-4 space-y-3" id="contenedor-tarjetas-promos"></div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    (() => {
+        let productosGlobales = [];
+        let comboItems = [];
+        let promocionesLocales = [];
+
+        window.moduloActivoLimpieza = () => {
+            productosGlobales = [];
+            comboItems = [];
+            promocionesLocales = [];
+            window.moduloActivoLimpieza = null;
+        };
+
+        // Cargar Catálogo
+        async function cargarCatalogo() {
+            try {
+                const res = await fetch('/productos/?skip=0&limit=1000');
+                if (res.ok) {
+                    productosGlobales = await res.json();
+                }
+            } catch (e) {
+                console.error("Error al cargar productos", e);
+            }
+        }
+
+        // Alternar modo CANTIDAD / COMBO
+        window.seleccionarTipoPromo = (tipo) => {
+            document.getElementById('promo-modalidad').value = tipo;
+            const btnCant = document.getElementById('tab-cantidad');
+            const btnCombo = document.getElementById('tab-combo');
+            const secCant = document.getElementById('seccion-cantidad');
+            const secCombo = document.getElementById('seccion-combo');
+
+            if (tipo === 'CANTIDAD') {
+                btnCant.className = "py-2 text-xs font-extrabold rounded-lg transition-all bg-emerald-500 text-gray-950 shadow";
+                btnCombo.className = "py-2 text-xs font-extrabold rounded-lg transition-all text-gray-400 hover:text-gray-200";
+                secCant.classList.remove('hidden');
+                secCombo.classList.add('hidden');
+            } else {
+                btnCombo.className = "py-2 text-xs font-extrabold rounded-lg transition-all bg-emerald-500 text-gray-950 shadow";
+                btnCant.className = "py-2 text-xs font-extrabold rounded-lg transition-all text-gray-400 hover:text-gray-200";
+                secCombo.classList.remove('hidden');
+                secCant.classList.add('hidden');
+            }
+        };
+
+        // 🔍 Buscador Autocompletado para Producto Individual
+        const inputBuscarCant = document.getElementById('input-buscar-cant');
+        const resultadosCant = document.getElementById('resultados-cant');
+
+        inputBuscarCant.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            if (!query) {
+                resultadosCant.classList.add('hidden');
+                return;
+            }
+
+            const coor = productosGlobales.filter(p => 
+                p.nombre.toLowerCase().includes(query) || 
+                (p.codigo_barras && p.codigo_barras.toLowerCase().includes(query))
+            ).slice(0, 6);
+
+            if (coor.length === 0) {
+                resultadosCant.innerHTML = '<div class="p-3 text-xs text-gray-500 font-mono">No se encontraron productos</div>';
+            } else {
+                resultadosCant.innerHTML = coor.map(p => `
+                    <div onclick="seleccionarProductoCant(${p.id})" class="p-2.5 hover:bg-gray-800 cursor-pointer flex items-center justify-between transition-colors">
+                        <div>
+                            <div class="text-xs font-bold text-gray-200">${p.nombre}</div>
+                            <div class="text-[10px] text-gray-500 font-mono">${p.codigo_barras || 'Sin Código'}</div>
+                        </div>
+                        <div class="text-xs font-mono font-bold text-emerald-400">$${parseFloat(p.precio).toFixed(2)}</div>
+                    </div>
+                `).join('');
+            }
+            resultadosCant.classList.remove('hidden');
+        });
+
+        window.seleccionarProductoCant = (id) => {
+            const prod = productosGlobales.find(p => p.id === id);
+            if (!prod) return;
+
+            document.getElementById('promo-cant-producto-id').value = prod.id;
+            document.getElementById('chip-prod-cant-nombre').innerText = prod.nombre;
+            document.getElementById('chip-prod-cant-precio').innerText = `Precio Lista: $${parseFloat(prod.precio).toFixed(2)}`;
+
+            document.getElementById('chip-prod-cant').classList.remove('hidden');
+            inputBuscarCant.classList.add('hidden');
+            resultadosCant.classList.add('hidden');
+        };
+
+        window.deseleccionarProductoCant = () => {
+            document.getElementById('promo-cant-producto-id').value = "";
+            document.getElementById('chip-prod-cant').classList.add('hidden');
+            inputBuscarCant.value = "";
+            inputBuscarCant.classList.remove('hidden');
+        };
+
+        // 🔍 Buscador Autocompletado para Combos
+        const inputBuscarCombo = document.getElementById('input-buscar-combo');
+        const resultadosCombo = document.getElementById('resultados-combo');
+
+        inputBuscarCombo.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            if (!query) {
+                resultadosCombo.classList.add('hidden');
+                return;
+            }
+
+            const coor = productosGlobales.filter(p => 
+                p.nombre.toLowerCase().includes(query) || 
+                (p.codigo_barras && p.codigo_barras.toLowerCase().includes(query))
+            ).slice(0, 6);
+
+            if (coor.length === 0) {
+                resultadosCombo.innerHTML = '<div class="p-3 text-xs text-gray-500 font-mono">No se encontraron productos</div>';
+            } else {
+                resultadosCombo.innerHTML = coor.map(p => `
+                    <div onclick="agregarACombo(${p.id})" class="p-2.5 hover:bg-gray-800 cursor-pointer flex items-center justify-between transition-colors">
+                        <div>
+                            <div class="text-xs font-bold text-gray-200">${p.nombre}</div>
+                            <div class="text-[10px] text-gray-500 font-mono">${p.codigo_barras || 'Sin Código'}</div>
+                        </div>
+                        <div class="text-xs font-mono font-bold text-cyan-400">+ Añadir</div>
+                    </div>
+                `).join('');
+            }
+            resultadosCombo.classList.remove('hidden');
+        });
+
+        window.agregarACombo = (id) => {
+            const prod = productosGlobales.find(p => p.id === id);
+            if (!prod) return;
+
+            const exist = comboItems.find(i => i.producto_id === id);
+            if (exist) {
+                exist.cantidad += 1;
+            } else {
+                comboItems.push({
+                    producto_id: prod.id,
+                    nombre: prod.nombre,
+                    cantidad: 1,
+                    precio_unitario: parseFloat(prod.precio)
+                });
+            }
+
+            renderizarComboItems();
+            inputBuscarCombo.value = "";
+            resultadosCombo.classList.add('hidden');
+        };
+
+        window.quitarComboItem = (index) => {
+            comboItems.splice(index, 1);
+            renderizarComboItems();
+        };
+
+        function renderizarComboItems() {
+            const tbody = document.getElementById('lista-combo-items');
+            tbody.innerHTML = "";
+
+            if (comboItems.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center py-3 text-gray-600 font-mono text-[11px]">No hay productos en el combo.</td></tr>';
+                return;
+            }
+
+            comboItems.forEach((item, idx) => {
+                tbody.innerHTML += `
+                    <tr class="align-middle">
+                        <td class="py-1 font-medium text-gray-200 text-xs">${item.nombre}</td>
+                        <td class="py-1 text-center font-mono text-emerald-400 font-bold">x${item.cantidad}</td>
+                        <td class="py-1 text-right">
+                            <button type="button" onclick="quitarComboItem(${idx})" class="text-rose-400 hover:text-rose-300 font-bold px-1">✕</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // 💾 Guardar Promoción
+        window.guardarPromocion = async () => {
+            const modalidad = document.getElementById('promo-modalidad').value; // "CANTIDAD" o "COMBO"
+            const nombre = document.getElementById('promo-nombre').value.trim();
+
+            if (!nombre) {
+                emitirNotificacionGlobal("⚠️ Ingresá el nombre comercial de la oferta.", "error");
+                return;
+            }
+
+            let tipoFinal = "MULTIPLO";
+            if (modalidad === 'CANTIDAD') {
+                tipoFinal = document.getElementById('promo-cant-tipo').value; // "MULTIPLO" o "CANTIDAD_MINIMA"
+            } else {
+                tipoFinal = "COMBO";
+            }
+
+            let payload = {
+                nombre: nombre,
+                descripcion: null,
+                tipo: tipoFinal,
+                precio_promocional: 0,
+                activo: true,
+                productos: []
+            };
+
+            if (modalidad === 'CANTIDAD') {
+                const productoId = document.getElementById('promo-cant-producto-id').value;
+                const unidades = parseFloat(document.getElementById('promo-cant-unidades').value);
+                const precioTotal = parseFloat(document.getElementById('promo-cant-precio-total').value);
+
+                if (!productoId || !unidades || !precioTotal) {
+                    emitirNotificacionGlobal("⚠️ Seleccioná el producto, la cantidad y el precio total de la oferta.", "error");
+                    return;
+                }
+
+                payload.precio_promocional = precioTotal;
+                payload.productos = [
+                    {
+                        producto_id: parseInt(productoId),
+                        cantidad_requerida: unidades
+                    }
+                ];
+
+            } else { // COMBO
+                const precioFinal = parseFloat(document.getElementById('combo-precio-final').value);
+
+                if (comboItems.length < 2) {
+                    emitirNotificacionGlobal("⚠️ El combo debe tener al menos 2 productos distintos.", "error");
+                    return;
+                }
+
+                if (!precioFinal) {
+                    emitirNotificacionGlobal("⚠️ Indicá el precio final del combo.", "error");
+                    return;
+                }
+
+                payload.precio_promocional = precioFinal;
+                payload.productos = comboItems.map(item => ({
+                    producto_id: parseInt(item.producto_id),
+                    cantidad_requerida: parseFloat(item.cantidad)
+                }));
+            }
+
+            try {
+                const res = await fetch('/promociones/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    emitirNotificacionGlobal("🎉 Promoción guardada con éxito.", "exito");
+                    limpiarFormulario();
+                    cargarPromociones();
+                } else {
+                    const err = await res.json().catch(() => ({}));
+                    let mensajeError = "No se pudo guardar";
+                    if (err.detail && Array.isArray(err.detail)) {
+                        mensajeError = err.detail.map(e => `${e.loc.join('.')}: ${e.msg}`).join(" | ");
+                    } else if (err.detail) {
+                        mensajeError = err.detail;
+                    }
+                    emitirNotificacionGlobal(`❌ Error: ${mensajeError}`, "error");
+                }
+            } catch (e) {
+                emitirNotificacionGlobal(`⚠️ Error de red: ${e.message}`, "error");
+            }
+        };
+
+        function limpiarFormulario() {
+            document.getElementById('promo-nombre').value = "";
+            deseleccionarProductoCant();
+            document.getElementById('promo-cant-unidades').value = "2";
+            document.getElementById('promo-cant-precio-total').value = "";
+            comboItems = [];
+            renderizarComboItems();
+            document.getElementById('combo-precio-final').value = "";
+        }
+
+        // 📋 Cargar Promociones Activas desde Backend
+        async function cargarPromociones() {
+            const cont = document.getElementById('contenedor-tarjetas-promos');
+            try {
+                const res = await fetch('/promociones/');
+                if (res.ok) {
+                    promocionesLocales = await res.json();
+                } else {
+                    promocionesLocales = [];
+                }
+            } catch (e) {
+                promocionesLocales = [];
+            }
+
+            document.getElementById('badge-total-promos').innerText = `${promocionesLocales.length} Activas`;
+
+            if (promocionesLocales.length === 0) {
+                cont.innerHTML = '<div class="text-center py-16 text-gray-500 font-mono text-xs">🏷️ No hay ofertas activas cargadas.</div>';
+                return;
+            }
+
+            cont.innerHTML = "";
+            promocionesLocales.forEach(p => {
+                const tipoUpper = (p.tipo || '').toUpperCase();
+                
+                // Configuración visual por tipo
+                let badgeClass = "bg-amber-950 text-amber-400 border-amber-500/30";
+                let badgeLabel = tipoUpper;
+
+                if (tipoUpper === 'COMBO') {
+                    badgeClass = "bg-cyan-950 text-cyan-400 border-cyan-500/30";
+                    badgeLabel = "COMBO";
+                } else if (tipoUpper === 'CANTIDAD_MINIMA') {
+                    badgeClass = "bg-purple-950 text-purple-400 border-purple-500/30";
+                    badgeLabel = "MAYORISTA";
+                } else if (tipoUpper === 'MULTIPLO' || tipoUpper === 'CANTIDAD') {
+                    badgeClass = "bg-amber-950 text-amber-400 border-amber-500/30";
+                    badgeLabel = "POR LOTE";
+                }
+
+                let detalleHtml = "";
+
+                if (p.productos && p.productos.length > 0) {
+                    const itemsText = p.productos.map(prodRel => {
+                        const cant = parseFloat(prodRel.cantidad_requerida);
+                        
+                        // Busca el nombre en la relación o en el catálogo local
+                        let prodNom = prodRel.producto ? prodRel.producto.nombre : null;
+                        if (!prodNom) {
+                            const pLocal = productosGlobales.find(g => g.id === prodRel.producto_id);
+                            prodNom = pLocal ? pLocal.nombre : `Producto #${prodRel.producto_id}`;
+                        }
+
+                        return `<span class="font-bold text-gray-200">${cant}x</span> ${prodNom}`;
+                    }).join(' + ');
+
+                    detalleHtml = `
+                        <div class="text-xs text-gray-400 mt-1">
+                            ${itemsText}
+                        </div>
+                        <div class="text-xs font-mono text-emerald-400 font-bold mt-1">
+                            Precio Oferta: $${parseFloat(p.precio_promocional).toFixed(2)}
+                        </div>
+                    `;
+                }
+
+                cont.innerHTML += `
+                    <div class="bg-gray-950 border border-gray-800 rounded-xl p-3.5 flex items-center justify-between hover:border-gray-700 transition-all">
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-[10px] font-black px-2 py-0.5 rounded border ${badgeClass}">
+                                    ${badgeLabel}
+                                </span>
+                                <h4 class="text-xs font-black text-gray-100">${p.nombre}</h4>
+                            </div>
+                            ${detalleHtml}
+                        </div>
+                        <button onclick="eliminarPromo(${p.id})" class="p-2 text-rose-400 hover:bg-rose-950/50 rounded-lg border border-rose-500/20 text-xs transition-all cursor-pointer">
+                            🗑️
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        window.eliminarPromo = async (id) => {
+            if (!confirm("¿Eliminar esta regla de promoción?")) return;
+            await fetch(`/promociones/${id}`, { method: 'DELETE' });
+            emitirNotificacionGlobal("🗑️ Promoción eliminada", "exito");
+            cargarPromociones();
+        };
+
+        // Cerrar autocompletados si se hace clic fuera
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#seccion-cantidad')) resultadosCant.classList.add('hidden');
+            if (!e.target.closest('#seccion-combo')) resultadosCombo.classList.add('hidden');
+        });
+
+        async function init() {
+            await cargarCatalogo();
+            await cargarPromociones();
+        }
+
+        init();
+    })();
+</script>

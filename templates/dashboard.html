@@ -110,6 +110,10 @@
                 contenedor.innerHTML = '<div class="text-center text-xs text-gray-500 font-mono py-10">⏳ Cargando catálogo de edición...</div>';
                 await traerHtmlDinamico('/vistas/productos/buscar_editar');
             }
+            else if (moduloDestino === 'productos_promociones') {
+                contenedor.innerHTML = '<div class="text-center text-xs text-gray-500 font-mono py-10">⏳ Cargando gestor de promociones...</div>';
+                await traerHtmlDinamico('/vistas/productos/promociones');
+            }
             // VENTAS
             else if (moduloDestino === 'ventas' || moduloDestino === 'ventas_pos') {
                 contenedor.innerHTML = '<div class="text-center text-xs text-gray-500 font-mono py-10">⏳ Abriendo Punto de Venta...</div>';

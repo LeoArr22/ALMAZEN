@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Optional
+from typing import Optional, List
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import and_, func
 from src.models.venta import Venta, VentaDetalle
@@ -29,7 +29,8 @@ class VentaRepository:
         producto_id: int, 
         cantidad: Decimal, 
         precio_historico: Decimal, 
-        costo_historico: Decimal
+        costo_historico: Decimal,
+        promocion_aplicada: Optional[str] = None
     ) -> VentaDetalle:
         """Inserta un renglón del carrito asociado a la venta madre con campos calculados."""
         # Calculamos los montos de forma exacta con Decimal
@@ -43,7 +44,8 @@ class VentaRepository:
             precio_historico=precio_historico, 
             costo_historico=costo_historico,   
             subtotal=subtotal,                 
-            ganancia_item=ganancia_item
+            ganancia_item=ganancia_item,
+            promocion_aplicada=promocion_aplicada
         )
         db.add(db_detalle)
         return db_detalle
@@ -65,12 +67,54 @@ class VentaRepository:
         return db_pago
 
     @staticmethod
-    def obtener_por_id(db: Session, venta_id: int) -> Venta | None:
-        """Busca una venta específica y trae sus detalles y pagos de un solo viaje."""
-        return db.query(Venta).options(
-            joinedload(Venta.detalles),
-            joinedload(Venta.pagos)
-        ).filter(Venta.id == venta_id).first()
+    def obtener_por_id(db: Session, venta_id: int) -> Optional[Venta]:
+        return (
+            db.query(Venta)
+            .options(
+                joinedload(Venta.detalles).joinedload(VentaDetalle.producto),
+                joinedload(Venta.pagos),
+                joinedload(Venta.vendedor)
+            )
+            .filter(Venta.id == venta_id)
+            .first()
+        )
+
+    @staticmethod
+    def obtener_todas(
+        db: Session, 
+        skip: int = 0, 
+        limit: int = 100, 
+        caja_id: Optional[int] = None, 
+        fecha_desde: Optional[datetime] = None,
+        fecha_hasta: Optional[datetime] = None
+    ) -> List[Venta]:
+        """Trae el historial de ventas aplicando filtros de caja y rango de fechas desde la BD."""
+        query = db.query(Venta).options(
+            joinedload(Venta.detalles).joinedload(VentaDetalle.producto),
+            joinedload(Venta.pagos),
+            joinedload(Venta.vendedor)
+        )
+        
+        filtros = []
+        
+        if caja_id is not None:
+            filtros.append(Venta.caja_id == caja_id)
+            
+        if fecha_desde:
+            filtros.append(Venta.fecha_venta >= fecha_desde)
+
+        if fecha_hasta:
+            filtros.append(Venta.fecha_venta <= fecha_hasta)
+            
+        if filtros:
+            query = query.filter(and_(*filtros))
+            
+        return (
+            query.order_by(Venta.fecha_venta.desc())
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
         
     @staticmethod
     def obtener_por_vendedor(db: Session, usuario_id: int, skip: int = 0, limit: int = 100) -> list[Venta]:
@@ -88,34 +132,6 @@ class VentaRepository:
             .all()
         )
 
-    @staticmethod
-    def obtener_todas(
-        db: Session, 
-        skip: int = 0, 
-        limit: int = 100, 
-        caja_id: Optional[int] = None, 
-        fecha: Optional[str] = None
-    ) -> list[Venta]:
-        """Trae el historial de ventas aplicando filtros dinámicos desde la BD."""
-        query = db.query(Venta).options(
-            joinedload(Venta.detalles),
-            joinedload(Venta.pagos)
-        )
-        
-        filtros = []
-        
-        # Filtro por Caja ID
-        if caja_id is not None:
-            filtros.append(Venta.caja_id == caja_id)
-            
-        # Filtro por Fecha (comparamos solo la parte YYYY-MM-DD)
-        if fecha:
-            filtros.append(func.date(Venta.fecha_venta) == fecha)
-            
-        if filtros:
-            query = query.filter(and_(*filtros))
-        
-        return query.order_by(Venta.fecha_venta.desc()).offset(skip).limit(limit).all()
     
     @staticmethod
     def eliminar(db: Session, db_venta: Venta) -> None:

@@ -193,6 +193,7 @@
     (function() {
         let carrito = [];
         let productosCatalogo = [];
+        let promocionesActivas = [];
         let pagosAgregados = [];
         let primerProductoFiltrado = null;
 
@@ -251,6 +252,20 @@
             }
         }
         cargarCatalogo();
+
+        async function cargarPromociones() {
+            try {
+                const res = await fetch('/promociones/');
+                if (res.ok) {
+                    const data = await res.json();
+                    promocionesActivas = Array.isArray(data) ? data : (data.items || []);
+                    renderizarCarrito();
+                }
+            } catch (err) {
+                console.error("Error cargando promociones:", err);
+            }
+        }
+        cargarPromociones();
 
         if (inputBusqueda) {
             inputBusqueda.addEventListener('input', (e) => {
@@ -342,7 +357,274 @@
             renderizarCarrito();
         }
 
+        function evaluarPromociones() {
+            // 1. Limpiamos las marcas de descuento previas
+            carrito.forEach(item => {
+                item.cant_disponible = item.cantidad;
+                item.promociones_aplicadas = [];
+            });
+
+            if (!Array.isArray(promocionesActivas) || promocionesActivas.length === 0) return;
+
+            // 2. Filtramos promociones que REALMENTE cumplen las condiciones de cantidad en el carrito
+            const promosAplicables = promocionesActivas.filter(p => {
+                if (!p.activo) return false;
+                const listaProds = p.productos || [];
+                if (listaProds.length === 0) return false;
+
+                const tipoUpper = String(p.tipo || '').toUpperCase();
+
+                if (tipoUpper === 'COMBO') {
+                    // El combo solo es aplicable si el carrito tiene TODOS los productos con sus cantidades requeridas
+                    return listaProds.every(pPromo => {
+                        const req = parseFloat(pPromo.cantidad_requerida || 1);
+                        const item = carrito.find(i => String(i.producto_id) === String(pPromo.producto_id));
+                        return item && item.cantidad >= req;
+                    });
+                } else {
+                    // Para MULTIPLO, CANTIDAD, CANTIDAD_MINIMA: requiere que el producto esté y supere la cantidad mínima
+                    const promoProd = listaProds[0];
+                    if (!promoProd) return false;
+                    const req = parseFloat(promoProd.cantidad_requerida || 1);
+                    const item = carrito.find(i => String(i.producto_id) === String(promoProd.producto_id));
+                    return item && item.cantidad >= req;
+                }
+            });
+
+            if (promosAplicables.length === 0) return;
+
+            // 3. Agrupamos únicamente las promociones válidas que comparten productos en conflicto
+            let gruposConflicto = [];
+            promosAplicables.forEach(promo => {
+                const prodsP = new Set((promo.productos || []).map(p => String(p.producto_id)));
+                let agregado = false;
+                for (let grupo of gruposConflicto) {
+                    const comparte = grupo.some(pGrupo => {
+                        const prodsG = new Set((pGrupo.productos || []).map(p => String(p.producto_id)));
+                        return [...prodsP].some(id => prodsG.has(id));
+                    });
+                    if (comparte) {
+                        grupo.push(promo);
+                        agregado = true;
+                        break;
+                    }
+                }
+                if (!agregado) gruposConflicto.push([promo]);
+            });
+
+            // 4. Verificación de regla: Máximo 2 promos en conflicto
+            for (let grupo of gruposConflicto) {
+                if (grupo.length >= 3) {
+                    mostrarToast("No se pueden combinar 3 o más promociones que comparten los mismos productos.", "error");
+                    return;
+                }
+            }
+
+            // Helper para simular ahorro de una secuencia de promociones sobre una copia limpia
+            function simularPromos(listaPromos) {
+                let copiaCarrito = carrito.map(i => ({
+                    producto_id: String(i.producto_id),
+                    precio: i.precio,
+                    cantidad: i.cantidad,
+                    cant_disponible: i.cantidad,
+                    subtotal: i.precio * i.cantidad
+                }));
+
+                listaPromos.forEach(promo => {
+                    const tipoUpper = String(promo.tipo || '').toUpperCase();
+                    const listaProds = promo.productos || [];
+
+                    if (tipoUpper === 'COMBO') {
+                        let maxCombos = Infinity;
+                        let totalListaCombo = 0;
+
+                        listaProds.forEach(pPromo => {
+                            const req = parseFloat(pPromo.cantidad_requerida || 1);
+                            const item = copiaCarrito.find(i => i.producto_id === String(pPromo.producto_id));
+                            const disp = item ? item.cant_disponible : 0;
+                            const posibles = Math.floor(disp / req);
+                            if (posibles < maxCombos) maxCombos = posibles;
+                            if (item) totalListaCombo += item.precio * req;
+                        });
+
+                        const precioPromo = parseFloat(promo.precio_promocional);
+                        if (maxCombos > 0 && maxCombos !== Infinity && precioPromo < totalListaCombo) {
+                            const factor = precioPromo / totalListaCombo;
+                            listaProds.forEach(pPromo => {
+                                const req = parseFloat(pPromo.cantidad_requerida || 1);
+                                const item = copiaCarrito.find(i => i.producto_id === String(pPromo.producto_id));
+                                if (item) {
+                                    const usadas = maxCombos * req;
+                                    const ahorroUnitario = item.precio * (1 - factor);
+                                    item.subtotal -= usadas * ahorroUnitario;
+                                    item.cant_disponible -= usadas;
+                                }
+                            });
+                        }
+                    } else if (tipoUpper === 'MULTIPLO' || tipoUpper === 'CANTIDAD') {
+                        const promoProd = listaProds[0];
+                        if (!promoProd) return;
+                        const req = parseFloat(promoProd.cantidad_requerida || 1);
+                        const item = copiaCarrito.find(i => i.producto_id === String(promoProd.producto_id));
+
+                        if (item && item.cant_disponible >= req) {
+                            const precioUnitarioPromo = parseFloat(promo.precio_promocional) / req;
+                            if (precioUnitarioPromo < item.precio) {
+                                const bloques = Math.floor(item.cant_disponible / req);
+                                const usadas = bloques * req;
+                                const ahorroUnitario = item.precio - precioUnitarioPromo;
+                                item.subtotal -= usadas * ahorroUnitario;
+                                item.cant_disponible -= usadas;
+                            }
+                        }
+                    } else if (tipoUpper === 'CANTIDAD_MINIMA') {
+                        const promoProd = listaProds[0];
+                        if (!promoProd) return;
+                        const req = parseFloat(promoProd.cantidad_requerida || 1);
+                        const item = copiaCarrito.find(i => i.producto_id === String(promoProd.producto_id));
+
+                        if (item && item.cant_disponible >= req) {
+                            const precioUnitarioPromo = parseFloat(promo.precio_promocional) / req;
+                            if (precioUnitarioPromo < item.precio) {
+                                item.subtotal = item.cantidad * precioUnitarioPromo;
+                                item.cant_disponible = 0;
+                            }
+                        }
+                    }
+                });
+
+                return copiaCarrito.reduce((acc, i) => acc + i.subtotal, 0);
+            }
+
+            // 5. Elección de promociones ganadoras
+            let promosGanadoras = [];
+            gruposConflicto.forEach(grupo => {
+                if (grupo.length === 1) {
+                    promosGanadoras.push(grupo[0]);
+                } else {
+                    let mejorPromo = null;
+                    let menorMonto = Infinity;
+                    grupo.forEach(candidata => {
+                        const totalSimulado = simularPromos([candidata]);
+                        if (totalSimulado < menorMonto) {
+                            menorMonto = totalSimulado;
+                            mejorPromo = candidata;
+                        }
+                    });
+                    if (mejorPromo) promosGanadoras.push(mejorPromo);
+                }
+            });
+
+            // 6. Aplicar definitivamente las promociones ganadoras marcando bloques
+            promosGanadoras.forEach(promo => {
+                const tipoUpper = String(promo.tipo || '').toUpperCase();
+                const listaProds = promo.productos || [];
+
+                if (tipoUpper === 'COMBO') {
+                    let maxCombos = Infinity;
+                    let totalListaCombo = 0;
+
+                    listaProds.forEach(pPromo => {
+                        const req = parseFloat(pPromo.cantidad_requerida || 1);
+                        const item = carrito.find(i => String(i.producto_id) === String(pPromo.producto_id));
+                        const disp = item ? item.cant_disponible : 0;
+                        const posibles = Math.floor(disp / req);
+                        if (posibles < maxCombos) maxCombos = posibles;
+                        if (item) totalListaCombo += item.precio * req;
+                    });
+
+                    const precioPromo = parseFloat(promo.precio_promocional);
+                    if (maxCombos > 0 && maxCombos !== Infinity && precioPromo < totalListaCombo) {
+                        const factor = precioPromo / totalListaCombo;
+                        listaProds.forEach(pPromo => {
+                            const req = parseFloat(pPromo.cantidad_requerida || 1);
+                            const item = carrito.find(i => String(i.producto_id) === String(pPromo.producto_id));
+                            if (item) {
+                                const usadas = maxCombos * req;
+                                const precioEfectivoUnitario = item.precio * factor;
+                                item.cant_disponible -= usadas;
+                                item.promociones_aplicadas.push({
+                                    nombre: promo.nombre,
+                                    tipo: 'COMBO',
+                                    descripcion: promo.descripcion || promo.nombre,
+                                    cantidad_usada: usadas,
+                                    precio_unitario_promo: precioEfectivoUnitario,
+                                    subtotal: usadas * precioEfectivoUnitario
+                                });
+                            }
+                        });
+                    }
+                } else if (tipoUpper === 'MULTIPLO' || tipoUpper === 'CANTIDAD') {
+                    const promoProd = listaProds[0];
+                    if (!promoProd) return;
+                    const req = parseFloat(promoProd.cantidad_requerida || 1);
+                    const item = carrito.find(i => String(i.producto_id) === String(promoProd.producto_id));
+
+                    if (item && item.cant_disponible >= req) {
+                        const precioUnitarioPromo = parseFloat(promo.precio_promocional) / req;
+                        if (precioUnitarioPromo < item.precio) {
+                            const bloques = Math.floor(item.cant_disponible / req);
+                            const usadas = bloques * req;
+                            item.cant_disponible -= usadas;
+                            item.promociones_aplicadas.push({
+                                nombre: promo.nombre,
+                                tipo: tipoUpper,
+                                descripcion: promo.descripcion || promo.nombre,
+                                cantidad_usada: usadas,
+                                precio_unitario_promo: precioUnitarioPromo,
+                                subtotal: usadas * precioUnitarioPromo
+                            });
+                        }
+                    }
+                } else if (tipoUpper === 'CANTIDAD_MINIMA') {
+                    const promoProd = listaProds[0];
+                    if (!promoProd) return;
+                    const req = parseFloat(promoProd.cantidad_requerida || 1);
+                    const item = carrito.find(i => String(i.producto_id) === String(promoProd.producto_id));
+
+                    if (item && item.cant_disponible >= req) {
+                        const precioUnitarioPromo = parseFloat(promo.precio_promocional) / req;
+                        if (precioUnitarioPromo < item.precio) {
+                            const usadas = item.cantidad;
+                            item.cant_disponible = 0;
+                            item.promociones_aplicadas.push({
+                                nombre: promo.nombre,
+                                tipo: 'CANTIDAD_MINIMA',
+                                descripcion: promo.descripcion || promo.nombre,
+                                cantidad_usada: usadas,
+                                precio_unitario_promo: precioUnitarioPromo,
+                                subtotal: usadas * precioUnitarioPromo
+                            });
+                        }
+                    }
+                }
+            });
+        }
+        
+        function obtenerEstilosBadgePromo(tipo) {
+            switch (tipo) {
+                case 'CANTIDAD_MINIMA':
+                    return {
+                        clases: 'bg-purple-950/80 text-purple-400 border-purple-500/40',
+                        etiquetaTipo: 'Mayorista'
+                    };
+                case 'COMBO':
+                    return {
+                        clases: 'bg-cyan-950/80 text-cyan-400 border-cyan-500/40',
+                        etiquetaTipo: 'Combo'
+                    };
+                case 'MULTIPLO':
+                case 'CANTIDAD':
+                default:
+                    return {
+                        clases: 'bg-amber-950/80 text-amber-400 border-amber-500/40',
+                        etiquetaTipo: 'Lote / Múltiplo'
+                    };
+            }
+        }
+
         function renderizarCarrito() {
+            evaluarPromociones();
             if (carrito.length === 0) {
                 tablaBody.innerHTML = '';
                 msgVacio.classList.remove('hidden');
@@ -356,45 +638,164 @@
             msgVacio.classList.add('hidden');
             let totalMonto = 0;
             let totalUnidades = 0;
+            let filasHtml = [];
 
-            tablaBody.innerHTML = carrito.map((item, index) => {
-                const subtotal = item.precio * item.cantidad;
-                totalMonto += subtotal;
+            carrito.forEach((item, index) => {
                 totalUnidades += item.cantidad;
+                const tieneSobrantes = item.cant_disponible > 0;
 
-                return `
-                    <tr class="hover:bg-gray-800/30 transition-colors">
-                        <td class="p-3.5">
-                            <div class="font-bold text-gray-200 text-xs md:text-sm">${item.nombre}</div>
-                            <div class="text-xs text-gray-500">${item.codigo} • ${item.es_fraccionable ? 'Fraccionable' : 'Entero'}</div>
-                        </td>
-                        <td class="p-3.5 text-center text-gray-300 font-bold">${item.stock}</td>
-                        <td class="p-3.5 text-center">
-                            <input type="number" step="${item.es_fraccionable ? '0.001' : '1'}" min="0.001" value="${item.es_fraccionable ? parseFloat(item.cantidad).toFixed(3) : item.cantidad}" 
-                                onchange="actualizarCantidad(${index}, this.value)"
-                                class="w-24 bg-gray-950 border border-gray-800 rounded-lg px-2 py-1.5 text-center text-emerald-400 font-bold text-xs md:text-sm focus:outline-none focus:border-emerald-500">
-                        </td>
-                        <td class="p-3.5 text-center">
-                            ${item.es_fraccionable 
-                                ? `<input type="number" step="0.01" value="${subtotal.toFixed(2)}" onchange="actualizarMontoVentaFraccionable(${index}, this.value)" class="w-28 bg-gray-950 border border-gray-800 rounded-lg px-2 py-1.5 text-center text-emerald-400 font-bold text-xs md:text-sm focus:outline-none focus:border-emerald-500">`
-                                : `<span class="text-gray-500 italic text-xs">No fraccionable</span>`
-                            }
-                        </td>
-                        <td class="p-3.5 text-right text-gray-300 text-xs md:text-sm">$${item.precio.toFixed(2)}</td>
-                        <td class="p-3.5 text-right font-bold text-emerald-400 text-xs md:text-sm">$${subtotal.toFixed(2)}</td>
-                        <td class="p-3.5 text-center">
-                            <button onclick="eliminarItem(${index})" class="text-red-400 hover:text-red-300 font-bold px-2 text-sm">✕</button>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
+                // 1. Renglones para las unidades que entran en promociones
+                if (item.promociones_aplicadas && item.promociones_aplicadas.length > 0) {
+                    item.promociones_aplicadas.forEach(pApp => {
+                        totalMonto += pApp.subtotal;
+                        const estilo = obtenerEstilosBadgePromo(pApp.tipo);
 
+                        filasHtml.push(`
+                            <tr class="bg-gray-900/40 hover:bg-gray-800/30 transition-colors">
+                                <td class="p-3.5">
+                                    <div class="font-bold text-gray-200 text-xs md:text-sm flex items-center gap-2 flex-wrap">
+                                        <span>${item.nombre}</span>
+                                        <div class="relative group/tooltip inline-block">
+                                            <span class="${estilo.clases} border text-[10px] px-2 py-0.5 rounded-full font-sans font-bold flex items-center gap-1">
+                                                🏷️ ${estilo.etiquetaTipo} • ${pApp.nombre}
+                                            </span>
+                                            <div class="absolute left-0 bottom-full mb-1.5 hidden group-hover/tooltip:block z-50 w-max max-w-xs bg-gray-950 text-gray-200 border border-gray-700 p-2 rounded-lg shadow-2xl text-xs font-sans">
+                                                <div class="font-bold text-amber-400 border-b border-gray-800 pb-1 mb-1">${pApp.nombre}</div>
+                                                <div>${pApp.descripcion}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="text-xs text-gray-500">${item.codigo} • Promocionado</div>
+                                </td>
+                                <td class="p-3.5 text-center text-gray-300 font-bold">${item.stock}</td>
+                                <td class="p-3.5 text-center text-emerald-400 font-bold">
+                                    ${item.es_fraccionable ? pApp.cantidad_usada.toFixed(3) : pApp.cantidad_usada}
+                                </td>
+                                <td class="p-3.5 text-center">
+                                    <span class="text-gray-500 italic text-xs">En Promo</span>
+                                </td>
+                                <td class="p-3.5 text-right text-xs md:text-sm">
+                                    <span class="line-through text-gray-500 text-[11px] block">$${item.precio.toFixed(2)}</span>
+                                    <span class="text-amber-400 font-bold">$${pApp.precio_unitario_promo.toFixed(2)}</span>
+                                </td>
+                                <td class="p-3.5 text-right font-bold text-emerald-400 text-xs md:text-sm">$${pApp.subtotal.toFixed(2)}</td>
+                                <td class="p-3.5 text-center">
+                                    ${!tieneSobrantes 
+                                        ? `<button onclick="eliminarItem(${index})" class="text-red-400 hover:text-red-300 font-bold px-2 text-sm cursor-pointer" title="Eliminar producto">✕</button>`
+                                        : `<span class="text-gray-600 text-xs">—</span>`
+                                    }
+                                </td>
+                            </tr>
+                        `);
+                    });
+                }
+
+                // 2. Renglón para unidades sobrantes / fuera de la promoción
+                if (tieneSobrantes) {
+                    const cantSuelta = item.cant_disponible;
+                    const subtotalSuelto = cantSuelta * item.precio;
+                    totalMonto += subtotalSuelto;
+
+                    filasHtml.push(`
+                        <tr class="hover:bg-gray-800/30 transition-colors">
+                            <td class="p-3.5">
+                                <div class="font-bold text-gray-200 text-xs md:text-sm flex items-center gap-2 flex-wrap">
+                                    <span>${item.nombre}</span>
+                                    ${item.promociones_aplicadas && item.promociones_aplicadas.length > 0 ? '<span class="text-[10px] bg-gray-800 text-gray-400 border border-gray-700 px-2 py-0.5 rounded-full font-sans">Excedente sin promo</span>' : ''}
+                                </div>
+                                <div class="text-xs text-gray-500">${item.codigo} • ${item.es_fraccionable ? 'Fraccionable' : 'Entero'}</div>
+                            </td>
+                            <td class="p-3.5 text-center text-gray-300 font-bold">${item.stock}</td>
+                            <td class="p-3.5 text-center">
+                                <input type="number" 
+                                    step="${item.es_fraccionable ? '0.001' : '1'}" 
+                                    min="${item.es_fraccionable ? '0.001' : '1'}" 
+                                    value="${item.es_fraccionable ? parseFloat(item.cantidad).toFixed(3) : item.cantidad}" 
+                                    onchange="actualizarCantidad(${index}, this.value)"
+                                    onkeydown="if(!${item.es_fraccionable} && (event.key==='.' || event.key===',')) event.preventDefault();"
+                                    class="w-24 bg-gray-950 border border-gray-800 rounded-lg px-2 py-1.5 text-center text-emerald-400 font-bold text-xs md:text-sm focus:outline-none focus:border-emerald-500">
+                            </td>
+                            <td class="p-3.5 text-center">
+                                ${item.es_fraccionable 
+                                    ? `<input type="number" step="0.01" value="${subtotalSuelto.toFixed(2)}" onchange="actualizarMontoVentaFraccionable(${index}, this.value)" class="w-28 bg-gray-950 border border-gray-800 rounded-lg px-2 py-1.5 text-center text-emerald-400 font-bold text-xs md:text-sm focus:outline-none focus:border-emerald-500">`
+                                    : `<span class="text-gray-500 italic text-xs">No fraccionable</span>`
+                                }
+                            </td>
+                            <td class="p-3.5 text-right text-gray-300 text-xs md:text-sm">
+                                $${item.precio.toFixed(2)}
+                            </td>
+                            <td class="p-3.5 text-right font-bold text-emerald-400 text-xs md:text-sm">$${subtotalSuelto.toFixed(2)}</td>
+                            <td class="p-3.5 text-center">
+                                <button onclick="eliminarItem(${index})" class="text-red-400 hover:text-red-300 font-bold px-2 text-sm cursor-pointer" title="Eliminar producto">✕</button>
+                            </td>
+                        </tr>
+                    `);
+                }
+            });
+
+            tablaBody.innerHTML = filasHtml.join('');
             cantItemsElem.innerText = carrito.length;
             unidadesTotalesElem.innerText = itemEsFraccionablePresente(carrito) ? totalUnidades.toFixed(3) : totalUnidades;
             totalMontoElem.innerText = `$${totalMonto.toFixed(2)}`;
             document.getElementById('monto-total-pago').innerText = `$${totalMonto.toFixed(2)}`;
             btnIrACobrar.disabled = false;
         }
+
+        // 3. Modificación del cálculo de total para la pantalla de cobro
+        window.obtenerTotalCarritoActual = function() {
+            let total = 0;
+            carrito.forEach(item => {
+                let subtotalItem = 0;
+                if (item.promociones_aplicadas && item.promociones_aplicadas.length > 0) {
+                    item.promociones_aplicadas.forEach(p => subtotalItem += p.subtotal);
+                }
+                subtotalItem += (item.cant_disponible || 0) * item.precio;
+                total += subtotalItem;
+            });
+            return total;
+        };
+
+
+        function recalculateSaldosAutofill() {
+            const total = window.obtenerTotalCarritoActual();
+            const abonado = pagosAgregados.reduce((acc, p) => acc + p.monto, 0);
+            const resta = total - abonado;
+            const inputMontoNuevo = document.getElementById('input-monto-pago-nuevo');
+            if (resta > 0) {
+                inputMontoNuevo.value = resta.toFixed(2);
+            } else {
+                inputMontoNuevo.value = '';
+            }
+        }
+
+        window.recalcularTotalesPago = function() {
+            const total = window.obtenerTotalCarritoActual();
+            const abonado = pagosAgregados.reduce((acc, p) => acc + p.monto, 0);
+            const resta = total - abonado;
+
+            document.getElementById('monto-total-abonado').innerText = `$${abonado.toFixed(2)}`;
+            document.getElementById('monto-resta-asignar').innerText = `$${(resta > 0 ? resta : 0).toFixed(2)}`;
+
+            const efectivoAportadoVal = parseFloat(document.getElementById('input-efectivo-recibido').value || 0);
+            const pagoEfectivoEnLista = pagosAgregados.find(p => p.medio_pago === 'Efectivo');
+            const montoEfectivoEsperado = pagoEfectivoEnLista ? pagoEfectivoEnLista.monto : 0;
+
+            let vuelto = 0;
+            if (efectivoAportadoVal > montoEfectivoEsperado) {
+                vuelto = efectivoAportadoVal - montoEfectivoEsperado;
+            }
+
+            document.getElementById('monto-vuelto-calculado').innerText = `$${vuelto.toFixed(2)}`;
+
+            const btnConfirmar = document.getElementById('btn-confirmar-venta-final');
+            const esConsumo = document.getElementById('check-consumo-interno-pos').checked;
+
+            if (esConsumo) {
+                btnConfirmar.disabled = false;
+            } else {
+                btnConfirmar.disabled = (abonado < total);
+            }
+        };
 
         function itemEsFraccionablePresente(arr) {
             return arr.some(i => i.es_fraccionable);
@@ -403,6 +804,13 @@
         window.actualizarCantidad = function(idx, val) {
             let num = parseFloat(val);
             if (isNaN(num) || num <= 0) num = 1;
+
+            // FORZAR ENTEROS PARA PRODUCTOS NO FRACCIONABLES
+            if (!carrito[idx].es_fraccionable) {
+                num = Math.floor(num);
+                if (num < 1) num = 1;
+            }
+
             carrito[idx].cantidad = num;
             renderizarCarrito();
         };
@@ -432,11 +840,11 @@
 
         window.mostrarPantallaPago = function() {
             if (carrito.length === 0) return;
-            const total = carrito.reduce((acc, i) => acc + (i.precio * i.cantidad), 0);
+            const total = window.obtenerTotalCarritoActual();
             
-            if (pagosAgregados.length === 0) {
-                pagosAgregados = [{ medio_pago: 'Efectivo', monto: total }];
-            }
+            // Forzamos el total promocionado en los pagos asignados
+            pagosAgregados = [{ medio_pago: 'Efectivo', monto: total }];
+            
             renderizarListaPagos();
 
             document.getElementById('vista-resumen-operacion').classList.add('hidden');
@@ -491,7 +899,7 @@
         }
 
         function recalculateSaldosAutofill() {
-            const total = carrito.reduce((acc, i) => acc + (i.precio * i.cantidad), 0);
+            const total = window.obtenerTotalCarritoActual();
             const abonado = pagosAgregados.reduce((acc, p) => acc + p.monto, 0);
             const resta = total - abonado;
             const inputMontoNuevo = document.getElementById('input-monto-pago-nuevo');
@@ -503,7 +911,7 @@
         }
 
         window.recalcularTotalesPago = function() {
-            const total = carrito.reduce((acc, i) => acc + (i.precio * i.cantidad), 0);
+            const total = window.obtenerTotalCarritoActual();
             const abonado = pagosAgregados.reduce((acc, p) => acc + p.monto, 0);
             const resta = total - abonado;
 
@@ -561,7 +969,6 @@
                 const data = await res.json();
 
                 if (res.ok) {
-                    // DESCUENTO REACTIVO EN TIEMPO REAL DEL STOCK EN EL FRONTEND
                     carrito.forEach(itemVendido => {
                         const prodEnCat = productosCatalogo.find(p => p.id === itemVendido.producto_id);
                         if (prodEnCat) {

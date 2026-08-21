@@ -2,42 +2,60 @@
 
 <div id="modulo-historial-ventas" class="max-w-7xl mx-auto space-y-4 opacity-0 translate-y-2 transition-all duration-300">
     
-    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono text-xs select-none">
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4 grid grid-cols-1 sm:grid-cols-5 gap-3 font-mono text-xs select-none">
         <div class="space-y-1.5">
-            <label class="text-gray-500 font-bold uppercase block tracking-wider">📦 Filtrar por Caja (ID)</label>
+            <label class="text-gray-500 font-bold uppercase block tracking-wider">📦 Caja (ID)</label>
             <input type="number" id="filtro-caja" placeholder="Ej: 1" min="1"
                 class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-gray-200 focus:outline-none focus:border-emerald-500 transition-all placeholder:text-gray-700">
         </div>
+
+        <div class="space-y-1.5">
+            <label class="text-gray-500 font-bold uppercase block tracking-wider">👤 Usuario</label>
+            <select id="filtro-usuario"
+                class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-gray-200 focus:outline-none focus:border-emerald-500 transition-all">
+                <option value="">Todos los usuarios</option>
+            </select>
+        </div>
         
         <div class="space-y-1.5">
-            <label class="text-gray-500 font-bold uppercase block tracking-wider">📅 Filtrar por Fecha</label>
-            <input type="date" id="filtro-fecha" 
-                class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-gray-200 focus:outline-none focus:border-emerald-500 transition-all text-gray-400 focus:text-gray-200">
+            <label class="text-gray-500 font-bold uppercase block tracking-wider">📅 Desde</label>
+            <input type="datetime-local" id="filtro-fecha-desde" 
+                class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-gray-200 focus:outline-none focus:border-emerald-500 transition-all text-gray-400">
         </div>
 
         <div class="space-y-1.5">
-            <label class="text-gray-500 font-bold uppercase block tracking-wider">🕒 Filtrar por Hora (HH:MM)</label>
-            <input type="time" id="filtro-hora" 
-                class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-gray-200 focus:outline-none focus:border-emerald-500 transition-all text-gray-400 focus:text-gray-200">
+            <label class="text-gray-500 font-bold uppercase block tracking-wider">📅 Hasta</label>
+            <input type="datetime-local" id="filtro-fecha-hasta" 
+                class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-gray-200 focus:outline-none focus:border-emerald-500 transition-all text-gray-400">
+        </div>
+
+        <div class="space-y-1.5 flex items-end">
+            <button id="btn-limpiar-filtros" type="button"
+                class="w-full bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold py-2 px-4 rounded-xl border border-gray-700 transition flex items-center justify-center gap-2 cursor-pointer">
+                <i class="fa-solid fa-filter-circle-xmark"></i> Limpiar
+            </button>
         </div>
     </div>
-    
-    <div class="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden shadow-xl">
+
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden shadow-2xl">
         <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse text-sm">
+            <table class="w-full text-left border-collapse">
                 <thead>
-                    <tr class="border-b border-gray-800 bg-gray-950/40 text-gray-400 font-mono text-xs uppercase tracking-wider">
-                        <th class="p-4 font-bold">Comprobante N°</th>
-                        <th class="p-4 font-bold">Fecha y Hora</th>
-                        <th class="p-4 font-bold text-center">Caja ID</th>
-                        <th class="p-4 font-bold text-right">Monto Total</th>
-                        <th class="p-4 font-bold text-center w-28">Detalles</th>
+                    <tr class="bg-gray-950/80 border-b border-gray-800 text-[11px] font-mono text-gray-400 uppercase tracking-wider select-none">
+                        <th class="py-3.5 px-4">ID Venta</th>
+                        <th class="py-3.5 px-4">Fecha y Hora</th>
+                        <th class="py-3.5 px-4">Caja</th>
+                        <th class="py-3.5 px-4">Usuario</th>
+                        <th class="py-3.5 px-4">Medios de Pago</th>
+                        <th class="py-3.5 px-4 text-right">Total</th>
+                        <th class="py-3.5 px-4 text-center">Acciones</th>
                     </tr>
                 </thead>
-                <tbody id="tabla-historial-cuerpo" class="divide-y divide-gray-800/40 text-gray-300 font-mono">
+                <tbody id="tabla-historial-body" class="divide-y divide-gray-800/50 text-sm font-mono">
                     <tr>
-                        <td colspan="5" class="text-center py-20 text-gray-600 tracking-tight font-sans text-xs">
-                            ⏳ Consultando registro histórico de cajas...
+                        <td colspan="7" class="text-center py-12 text-gray-600">
+                            <i class="fa-solid fa-circle-notch fa-spin text-2xl mb-2"></i>
+                            <p>Cargando historial de ventas...</p>
                         </td>
                     </tr>
                 </tbody>
@@ -47,145 +65,209 @@
 </div>
 
 <div id="drawer-detalle-venta" class="fixed inset-0 z-50 invisible transition-all duration-300 select-none">
-    <div onclick="cerrarDrawerDetalle()" class="absolute inset-0 bg-gray-950/70 backdrop-blur-sm transition-opacity duration-300 opacity-0" id="drawer-backdrop"></div>
-    
-    <div class="absolute right-0 top-0 h-full w-full max-w-md bg-gray-900 border-l border-gray-800 p-6 flex flex-col justify-between shadow-2xl transform translate-x-full transition-transform duration-300" id="drawer-panel">
-        <div class="space-y-6 overflow-y-auto pr-1">
-            <div class="flex items-center justify-between border-b border-gray-800 pb-4">
+    <div id="drawer-backdrop" onclick="cerrarDrawerDetalle()" class="absolute inset-0 bg-gray-950/80 backdrop-blur-sm opacity-0 transition-opacity duration-300"></div>
+    <div id="drawer-panel" class="absolute right-0 top-0 h-full w-full max-w-md bg-gray-900 border-l border-gray-800 shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col justify-between font-mono">
+        <div>
+            <div class="p-5 border-b border-gray-800 flex items-center justify-between bg-gray-950/50">
                 <div>
-                    <h3 class="text-xs font-mono font-bold uppercase text-gray-500 tracking-wider">Detalle del Comprobante</h3>
-                    <span id="drawer-id-venta" class="text-lg font-black text-emerald-400 font-mono">#0000</span>
+                    <h3 class="text-base font-bold text-white flex items-center gap-2">
+                        <span>Detalle de Venta</span>
+                        <span id="detalle-venta-id" class="text-emerald-400">#---</span>
+                    </h3>
+                    <p id="detalle-venta-fecha" class="text-xs text-gray-500 mt-0.5">--/--/---- --:--</p>
+                    <p id="detalle-venta-usuario" class="text-xs text-indigo-400 mt-0.5 font-semibold"><i class="fa-solid fa-user text-[10px]"></i> Vendedor: ---</p>
                 </div>
-                <button onclick="cerrarDrawerDetalle()" class="w-8 h-8 rounded-xl bg-gray-950 hover:bg-gray-800 border border-gray-800 text-gray-400 hover:text-gray-200 flex items-center justify-center text-xs transition-colors cursor-pointer">✕</button>
+                <button type="button" onclick="cerrarDrawerDetalle()" class="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-gray-800 transition cursor-pointer">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
             </div>
 
-            <div class="bg-gray-950/40 border border-gray-800/60 rounded-xl p-4 font-mono text-xs space-y-2 text-gray-400">
-                <div class="flex justify-between"><span class="font-sans">Emisión:</span><span id="drawer-fecha-venta" class="text-gray-200 font-bold">-</span></div>
-                <div class="flex justify-between"><span class="font-sans">N° de Caja operativa:</span><span id="drawer-caja-venta" class="text-gray-200 font-bold">-</span></div>
-            </div>
-
-            <div class="space-y-3">
-                <h4 class="text-[10px] font-mono font-bold uppercase text-gray-500 tracking-widest">Artículos liquidados</h4>
-                <div id="drawer-lista-articulos" class="divide-y divide-gray-800/50 max-h-[320px] overflow-y-auto">
+            <div class="p-5 space-y-4 overflow-y-auto max-h-[calc(100vh-210px)]">
+                
+                <div id="detalle-descuento-info" class="hidden bg-amber-500/10 border border-amber-500/40 p-3 rounded-xl text-xs text-amber-300 space-y-1">
+                    <div class="flex items-center gap-2 font-bold text-amber-400">
+                        <i class="fa-solid fa-tags text-sm"></i>
+                        <span>Promoción Aplicada en esta venta</span>
                     </div>
+                    <p id="detalle-descuento-texto" class="text-[12px] text-amber-200/90 font-mono font-bold pl-5"></p>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Items Comprados</h4>
+                    <div id="detalle-items-list" class="space-y-2"></div>
+                </div>
+
+                <div class="border-t border-gray-800 pt-4">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Desglose de Pago</h4>
+                    <div id="detalle-pagos-list" class="space-y-2"></div>
+                </div>
             </div>
         </div>
 
-        <div class="border-t border-gray-800 pt-4 bg-gray-950 -mx-6 -mb-6 p-6 rounded-b-2xl border-l border-l-gray-800 space-y-4">
-            <div class="flex justify-between items-center font-mono">
-                <span class="text-xs font-bold text-gray-400 uppercase">Monto Neto Cobrado:</span>
-                <span id="drawer-total-venta" class="text-2xl font-black text-emerald-400">$ 0.00</span>
+        <div class="p-5 border-t border-gray-800 bg-gray-950/50 space-y-3">
+            <div class="flex justify-between items-center text-base font-bold">
+                <span class="text-gray-400">Total Venta:</span>
+                <span id="detalle-total-monto" class="text-emerald-400 text-2xl font-black font-mono">$0.00</span>
             </div>
 
-            <!-- Contenedor del Botón / Estado de Anulación -->
-            <div id="drawer-contenedor-acciones" class="pt-2">
-                <button id="btn-anular-venta" onclick="confirmarAnulacionVenta()" 
-                    class="w-full py-2.5 bg-rose-950/60 hover:bg-rose-900 border border-rose-800/80 text-rose-300 font-mono text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2">
-                    🚫 Anular Venta y Reponer Stock
-                </button>
-                <div id="banner-venta-anulada" class="hidden w-full py-2 bg-rose-950/30 border border-rose-900/50 text-rose-400 font-mono text-xs text-center font-bold rounded-xl">
-                    ⚠️ VENTA ANULADA (Stock Reintegrado)
-                </div>
-            </div>
+            <button id="btn-anular-venta" type="button" onclick="solicitarAnulacionVenta()" 
+                class="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold py-2.5 px-4 rounded-xl border border-red-500/30 transition flex items-center justify-center gap-2 text-xs cursor-pointer">
+                <i class="fa-solid fa-ban"></i> Anular Venta y Devolver Stock
+            </button>
         </div>
     </div>
 </div>
 
 <script>
     (function() {
-        const moduloContenedor = document.getElementById('modulo-historial-ventas');
-        const tablaCuerpo = document.getElementById('tabla-historial-cuerpo');
-        
-        // Inputs de Filtros
-        const inputFiltroCaja = document.getElementById('filtro-caja');
-        const inputFiltroFecha = document.getElementById('filtro-fecha');
-        const inputFiltroHora = document.getElementById('filtro-hora'); // Este se sigue refinando en JS
-
-        // Elementos del Drawer
+        const modulo = document.getElementById('modulo-historial-ventas');
+        setTimeout(() => {
+            modulo.classList.remove('opacity-0', 'translate-y-2');
+        }, 50);
+        // Referencias a los inputs
+        const filtroCaja = document.getElementById('filtro-caja');
+        const filtroUsuario = document.getElementById('filtro-usuario');
+        const filtroFechaDesde = document.getElementById('filtro-fecha-desde');
+        const filtroFechaHasta = document.getElementById('filtro-fecha-hasta');
+        const btnLimpiar = document.getElementById('btn-limpiar-filtros');
+        const tablaBody = document.getElementById('tabla-historial-body');
         const drawer = document.getElementById('drawer-detalle-venta');
         const drawerBackdrop = document.getElementById('drawer-backdrop');
         const drawerPanel = document.getElementById('drawer-panel');
 
-        setTimeout(() => {
-            moduloContenedor.classList.remove('opacity-0', 'translate-y-2');
-        }, 50);
+        let ventasCargadas = [];
+        let ventaSeleccionadaId = null;
+        let mapaUsuarios = {};
 
-        // 🟢 Función unificada para consultar a la API con filtros reales en BD
-        async function cargarHistorialServidor() {
+        async function cargarUsuariosFiltro() {
             try {
-                const valCaja = inputFiltroCaja.value.trim();
-                const valFecha = inputFiltroFecha.value; // Formato YYYY-MM-DD
-
-                // Armamos los Query Params dinámicamente para FastAPI
-                let url = new URL(window.location.origin + '/ventas/');
-                url.searchParams.append('limit', '50'); // Traemos un lote cómodo de 50 por consulta
-                
-                if (valCaja !== "") url.searchParams.append('caja_id', valCaja);
-                if (valFecha !== "") url.searchParams.append('fecha', valFecha);
-
-                tablaCuerpo.innerHTML = `
-                    <tr>
-                        <td colspan="5" class="text-center py-20 text-gray-600 tracking-tight font-sans text-xs">
-                            ⏳ Buscando en el registro histórico de la base de datos...
-                        </td>
-                    </tr>`;
-
-                const respuesta = await fetch(url);
-                if (!respuesta.ok) throw new Error("Fallo de lectura");
-                
-                let ventas = await respuesta.json();
-
-                // 🕒 Filtro de Hora secundario (se aplica en JS sobre el resultado de esa fecha/caja)
-                const valHora = inputFiltroHora.value;
-                if (valHora !== "" && ventas.length > 0) {
-                    ventas = ventas.filter(v => {
-                        const f = new Date(v.fecha_venta);
-                        const [horaF, minF] = valHora.split(':');
-                        const horaV = String(f.getHours()).padStart(2, '0');
-                        const minV = String(f.getMinutes()).padStart(2, '0');
-                        return horaF === horaV && minF === minV;
+                const res = await fetch('/usuarios/');
+                if (res.ok) {
+                    const usuarios = await res.json();
+                    filtroUsuario.innerHTML = '<option value="">Todos los usuarios</option>';
+                    usuarios.forEach(u => {
+                        const nombreMostrar = u.username || u.nombre || `Usuario #${u.id}`;
+                        mapaUsuarios[u.id] = nombreMostrar;
+                        filtroUsuario.innerHTML += `<option value="${u.id}">${nombreMostrar}</option>`;
                     });
                 }
-
-                renderizarTablaHistorial(ventas);
-            } catch (err) {
-                tablaCuerpo.innerHTML = `
-                    <tr>
-                        <td colspan="5" class="text-center py-16 text-rose-400 font-sans text-xs">
-                            ⚠️ Error al conectar con el servidor de auditoría.
-                        </td>
-                    </tr>`;
+            } catch (e) {
+                console.error("Error al cargar usuarios:", e);
             }
         }
 
-        // Escuchadores de eventos: Ahora rearman la query de SQL en cada cambio
-        inputFiltroCaja.addEventListener('input', cargarHistorialServidor);
-        inputFiltroFecha.addEventListener('change', cargarHistorialServidor);
-        inputFiltroHora.addEventListener('input', cargarHistorialServidor); // Refina la hora al toque
+        async function cargarHistorialServidor() {
+            tablaBody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center py-12 text-gray-600">
+                        <i class="fa-solid fa-circle-notch fa-spin text-2xl mb-2"></i>
+                        <p>Filtrando ventas...</p>
+                    </td>
+                </tr>
+            `;
 
-        function renderizarTablaHistorial(ventas) {
-            if (ventas.length === 0) {
-                tablaCuerpo.innerHTML = `
+            try {
+                let params = new URLSearchParams();
+                if (filtroCaja.value) params.append('caja_id', filtroCaja.value);
+                if (filtroFechaDesde.value) params.append('fecha_desde', filtroFechaDesde.value);
+                if (filtroFechaHasta.value) params.append('fecha_hasta', filtroFechaHasta.value);
+
+                const response = await fetch(`/ventas/?${params.toString()}`);
+                if (!response.ok) throw new Error("No se pudo obtener el historial");
+
+                ventasCargadas = await response.json();
+                aplicarFiltrosYRenderizar();
+
+            } catch (err) {
+                ventasCargadas = [];
+                tablaBody.innerHTML = `
                     <tr>
-                        <td colspan="5" class="text-center py-20 text-gray-600 font-sans text-xs">
-                            🔍 Ninguna venta coincide con los criterios de filtro aplicados.
+                        <td colspan="7" class="text-center py-8 text-red-400">
+                            <i class="fa-solid fa-triangle-exclamation text-xl mb-1"></i>
+                            <p>Error al cargar el historial de ventas.</p>
                         </td>
-                    </tr>`;
+                    </tr>
+                `;
+            }
+        }
+        
+        function aplicarFiltrosYRenderizar() {
+        let ventasFiltradas = ventasCargadas;
+
+        // Filtro local adicional por Usuario
+        if (filtroUsuario.value) {
+            const usuarioIdSeleccionado = parseInt(filtroUsuario.value);
+            ventasFiltradas = ventasFiltradas.filter(v => (v.usuario_id || v.vendedor_id) === usuarioIdSeleccionado);
+        }
+
+        renderizarTablaVentas(ventasFiltradas);
+    }
+
+        function renderizarTablaVentas(ventas) {
+            if (!ventas || ventas.length === 0) {
+                tablaBody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center py-12 text-gray-500">
+                            <i class="fa-solid fa-inbox text-3xl mb-2 block"></i>
+                            No se encontraron ventas para los filtros seleccionados.
+                        </td>
+                    </tr>
+                `;
                 return;
             }
 
-            tablaCuerpo.innerHTML = ventas.map(v => {
-                const f = new Date(v.fecha_venta);
-                const fechaFormateada = f.toLocaleDateString() + ' - ' + f.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            tablaBody.innerHTML = ventas.map(v => {
+                const fechaObj = new Date(v.fecha_venta);
+                const fechaFormat = fechaObj.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                const horaFormat = fechaObj.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+
+                const esConsumoInterno = v.pagos && v.pagos.some(p => 
+                    p.medio_pago && (
+                        p.medio_pago.toLowerCase().includes('consumo') || 
+                        p.medio_pago.toLowerCase().includes('interno')
+                    )
+                );
+                const esAnulada = v.es_anulada;
+
+                let colorMonto = 'text-emerald-400 font-bold';
+                if (esAnulada) {
+                    colorMonto = 'text-red-400 line-through opacity-70 font-normal';
+                } else if (esConsumoInterno) {
+                    colorMonto = 'text-orange-400 font-bold';
+                }
+
+                const mediosPagoHtml = (v.pagos || []).map(p => {
+                    const textoMedio = (p.medio_pago || '').toLowerCase();
+                    const esConsumo = textoMedio.includes('consumo') || textoMedio.includes('interno');
+                    
+                    const claseBadge = esConsumo 
+                        ? 'bg-orange-950/90 text-orange-300 border-orange-500/60 font-bold' 
+                        : 'bg-gray-800 text-gray-100 border-gray-700 font-medium';
+
+                    return `
+                        <span class="inline-flex items-center gap-1.5 ${claseBadge} text-xs px-2.5 py-1 rounded-md border mr-1 my-0.5 shadow-sm font-mono">
+                            ${p.medio_pago}: <span class="text-white font-black text-sm">$${parseFloat(p.monto).toFixed(2)}</span>
+                        </span>
+                    `;
+                }).join('');
+
+                const userId = v.usuario_id || v.vendedor_id;
+                const nombreUsuario = v.username_vendedor || mapaUsuarios[userId] || `Usuario #${userId || '---'}`;
 
                 return `
-                    <tr class="hover:bg-gray-900/40 transition-colors">
-                        <td class="p-4 text-gray-400 font-bold"># ${String(v.id).padStart(4, '0')}</td>
-                        <td class="p-4 text-gray-300">${fechaFormateada}</td>
-                        <td class="p-4 text-center text-gray-500 font-sans"><span class="bg-gray-950 px-2 py-1 border border-gray-800 rounded-md text-xs font-mono font-bold text-gray-400">${v.caja_id}</span></td>
-                        <td class="p-4 text-right font-black text-emerald-400 text-sm">$ ${parseFloat(v.total).toFixed(2)}</td>
-                        <td class="p-4 text-center">
-                            <button onclick="abrirDetalleVenta(${v.id})" class="text-xs font-bold px-2.5 py-1.5 bg-gray-950 border border-gray-800 text-gray-300 hover:text-emerald-400 hover:border-emerald-500/30 rounded-lg transition-all cursor-pointer">
+                    <tr class="hover:bg-gray-800/40 transition border-b border-gray-800/40">
+                        <td class="py-3 px-4 font-bold text-gray-200">#${v.id}</td>
+                        <td class="py-3 px-4 text-gray-400 text-xs">
+                            ${fechaFormat} <span class="text-gray-600">${horaFormat}</span>
+                        </td>
+                        <td class="py-3 px-4 text-gray-400">Caja #${v.caja_id}</td>
+                        <td class="py-3 px-4 text-indigo-300 font-semibold">${nombreUsuario}</td>
+                        <td class="py-3 px-4">${mediosPagoHtml}</td>
+                        <td class="py-3 px-4 text-right ${colorMonto}">
+                            $${parseFloat(v.total).toFixed(2)}
+                        </td>
+                        <td class="py-3 px-4 text-center">
+                            <button onclick="verDetalleVenta(${v.id})" class="text-xs font-bold px-2.5 py-1.5 bg-gray-950 border border-gray-800 text-gray-300 hover:text-emerald-400 hover:border-emerald-500/30 rounded-lg transition-all cursor-pointer">
                                 🔍 Ver
                             </button>
                         </td>
@@ -193,92 +275,108 @@
                 `;
             }).join('');
         }
-let ventaSeleccionadaId = null;
 
-        // 👁️ Ver renglones detallados
-        window.abrirDetalleVenta = async function(id) {
-            try {
-                ventaSeleccionadaId = id; // Guardamos el ID actual
-                const respuesta = await fetch(`/ventas/${id}`);
-                if (!respuesta.ok) return;
-                
-                const v = await respuesta.json();
-
-                document.getElementById('drawer-id-venta').innerText = `# ${String(v.id).padStart(4, '0')}`;
-                const f = new Date(v.fecha_venta);
-                document.getElementById('drawer-fecha-venta').innerText = f.toLocaleDateString() + ' ' + f.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                document.getElementById('drawer-caja-venta').innerText = v.caja_id;
-                document.getElementById('drawer-total-venta').innerText = `$ ${parseFloat(v.total).toFixed(2)}`;
-
-                // Controlar Visibilidad según si está anulada o no
-                const btnAnular = document.getElementById('btn-anular-venta');
-                const bannerAnulada = document.getElementById('banner-venta-anulada');
-
-                if (v.es_anulada) {
-                    btnAnular.classList.add('hidden');
-                    bannerAnulada.classList.remove('hidden');
-                    document.getElementById('drawer-total-venta').classList.replace('text-emerald-400', 'text-gray-500');
-                    document.getElementById('drawer-total-venta').classList.add('line-through');
-                } else {
-                    btnAnular.classList.remove('hidden');
-                    bannerAnulada.classList.add('hidden');
-                    document.getElementById('drawer-total-venta').classList.replace('text-gray-500', 'text-emerald-400');
-                    document.getElementById('drawer-total-venta').classList.remove('line-through');
-                }
-
-                const listaArticulos = document.getElementById('drawer-lista-articulos');
-                
-                if (v.detalles && v.detalles.length > 0) {
-                    listaArticulos.innerHTML = `<div class="text-center text-gray-600 py-6 text-xs font-sans">⏳ Recuperando nombres del catálogo...</div>`;
-                    
-                    const promesasDetalles = v.detalles.map(async (d) => {
-                        let nombreProducto = `Producto ID: ${d.producto_id}`;
-                        try {
-                            const resProd = await fetch(`/productos/${d.producto_id}`);
-                            if (resProd.ok) {
-                                const prodData = await resProd.json();
-                                if (prodData && prodData.nombre) nombreProducto = prodData.nombre;
-                            }
-                        } catch (pErr) {
-                            console.error(pErr);
-                        }
-
-                        return `
-                            <div class="py-3 flex justify-between items-center font-mono text-xs">
-                                <div class="pr-2">
-                                    <span class="font-black text-gray-100 block text-sm tracking-tight">${nombreProducto}</span>
-                                    <span class="text-gray-500 font-sans text-[11px]">Código Ref: # ${d.producto_id} — Unitario: $ ${parseFloat(d.precio_historico).toFixed(2)}</span>
-                                </div>
-                                <div class="text-right flex-shrink-0">
-                                    <span class="text-gray-400 block font-bold">x${d.cantidad}</span>
-                                    <span class="text-emerald-400 font-black text-sm">$ ${(parseFloat(d.precio_historico) * d.cantidad).toFixed(2)}</span>
-                                </div>
-                            </div>
-                        `;
-                    });
-
-                    const htmlRenglones = await Promise.all(promesasDetalles);
-                    listaArticulos.innerHTML = htmlRenglones.join('');
-
-                } else {
-                    listaArticulos.innerHTML = `<div class="text-center text-gray-600 py-6 text-xs">Comprobante sin artículos asociados</div>`;
-                }
-
-                drawer.classList.remove('invisible');
-                setTimeout(() => {
-                    drawerBackdrop.classList.remove('opacity-0');
-                    drawerPanel.classList.remove('translate-x-full');
-                }, 10);
-
-            } catch (err) {
-                if (typeof emitirNotificacionGlobal === 'function') {
-                    emitirNotificacionGlobal("⚠️ Error al recabar los datos de la venta", "error");
-                }
+        window.verDetalleVenta = async function(ventaId) {
+            let v = ventasCargadas.find(item => item.id === ventaId);
+            
+            // Consultamos individualmente si faltaran detalles
+            if (!v || !v.detalles) {
+                try {
+                    const res = await fetch(`/ventas/${ventaId}`);
+                    if (res.ok) v = await res.json();
+                } catch(e) {}
             }
+
+            if (!v) return;
+
+            ventaSeleccionadaId = v.id;
+            document.getElementById('detalle-venta-id').innerText = `#${v.id}`;
+            
+            const fechaObj = new Date(v.fecha_venta);
+            document.getElementById('detalle-venta-fecha').innerText = fechaObj.toLocaleString('es-AR');
+            
+            const userId = v.usuario_id || v.vendedor_id;
+            const nombreUsuario = v.username_vendedor || (v.vendedor ? (v.vendedor.username || v.vendedor.nombre) : null) || mapaUsuarios[userId] || `Usuario #${userId || '---'}`;
+            document.getElementById('detalle-venta-usuario').innerHTML = `<i class="fa-solid fa-user text-[10px]"></i> Vendedor: ${nombreUsuario}`;
+
+            const promoBanner = document.getElementById('detalle-descuento-info');
+            const promoTexto = document.getElementById('detalle-descuento-texto');
+            let promosEncontradas = [];
+
+            const itemsList = document.getElementById('detalle-items-list');
+            itemsList.innerHTML = (v.detalles || []).map(d => {
+                // Lectura directa del campo promocion_aplicada
+                const promoNombre = d.promocion_aplicada || d.promocion;
+                let tagPromo = '';
+
+                if (promoNombre && String(promoNombre).trim() !== '' && String(promoNombre) !== 'null') {
+                    promosEncontradas.push(promoNombre);
+                    tagPromo = `
+                        <div class="mt-2 inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono">
+                            <i class="fa-solid fa-tag text-[10px]"></i> Promo: ${promoNombre}
+                        </div>
+                    `;
+                }
+
+                // fallback seguro para obtener el nombre del producto
+                const nombreProd = d.nombre_producto || (d.producto ? d.producto.nombre : null) || `Producto #${d.producto_id || '---'}`;
+
+                return `
+                    <div class="bg-gray-950 p-3.5 rounded-xl border border-gray-800 text-xs">
+                        <div class="flex justify-between items-start gap-2">
+                            <div>
+                                <p class="font-bold text-gray-100 text-sm">${nombreProd}</p>
+                                <p class="text-gray-400 font-mono text-xs mt-0.5">${parseFloat(d.cantidad)} u. x $${parseFloat(d.precio_historico || 0).toFixed(2)}</p>
+                                ${tagPromo}
+                            </div>
+                            <span class="font-black text-emerald-400 font-mono text-base">$${parseFloat(d.subtotal).toFixed(2)}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            if (promosEncontradas.length > 0) {
+                const unicas = [...new Set(promosEncontradas)].join(', ');
+                promoTexto.innerText = unicas;
+                promoBanner.classList.remove('hidden');
+            } else {
+                promoBanner.classList.add('hidden');
+            }
+
+            const pagosList = document.getElementById('detalle-pagos-list');
+            pagosList.innerHTML = (v.pagos || []).map(p => {
+                const esConsumo = (p.medio_pago || '').toLowerCase().includes('consumo') || (p.medio_pago || '').toLowerCase().includes('interno');
+                const colorTexto = esConsumo ? 'text-orange-400 font-bold' : 'text-gray-300 font-bold';
+
+                return `
+                    <div class="flex justify-between items-center bg-gray-950 px-3.5 py-2.5 rounded-xl border border-gray-800 font-mono">
+                        <span class="${colorTexto} text-xs uppercase tracking-wider">${p.medio_pago}</span>
+                        <span class="text-white font-black text-lg font-mono">$${parseFloat(p.monto).toFixed(2)}</span>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('detalle-total-monto').innerText = `$${parseFloat(v.total).toFixed(2)}`;
+
+            const btnAnular = document.getElementById('btn-anular-venta');
+            if (v.es_anulada) {
+                btnAnular.disabled = true;
+                btnAnular.classList.add('opacity-50', 'cursor-not-allowed');
+                btnAnular.innerHTML = `<i class="fa-solid fa-ban"></i> Esta venta ya se encuentra anulada`;
+            } else {
+                btnAnular.disabled = false;
+                btnAnular.classList.remove('opacity-50', 'cursor-not-allowed');
+                btnAnular.innerHTML = `<i class="fa-solid fa-ban"></i> Anular Venta y Devolver Stock`;
+            }
+
+            drawer.classList.remove('invisible');
+            setTimeout(() => {
+                drawerBackdrop.classList.remove('opacity-0');
+                drawerPanel.classList.remove('translate-x-full');
+            }, 10);
         };
 
-        // 🚫 Ejecutar Anulación
-        window.confirmarAnulacionVenta = async function() {
+        window.solicitarAnulacionVenta = async function() {
             if (!ventaSeleccionadaId) return;
 
             const confirmar = confirm(`¿Estás seguro de que deseas anular la Venta #${ventaSeleccionadaId}? El stock de los productos será reintegrado automáticamente.`);
@@ -295,7 +393,7 @@ let ventaSeleccionadaId = null;
                         emitirNotificacionGlobal("✅ Venta anulada y stock devuelto exitosamente", "exito");
                     }
                     cerrarDrawerDetalle();
-                    cargarHistorialServidor(); // Recargar la lista para reflejar los cambios
+                    cargarHistorialServidor();
                 } else {
                     const errData = await res.json();
                     alert(`Error: ${errData.detail || "No se pudo anular la venta"}`);
@@ -313,7 +411,23 @@ let ventaSeleccionadaId = null;
             }, 300);
         };
 
-        cargarHistorialServidor();
+        // Listeners de Filtros
+        // Listeners de actualización
+        filtroCaja.addEventListener('input', cargarHistorialServidor);
+        filtroFechaDesde.addEventListener('change', cargarHistorialServidor);
+        filtroFechaHasta.addEventListener('change', cargarHistorialServidor);
+        filtroUsuario.addEventListener('change', aplicarFiltrosYRenderizar);
 
+        btnLimpiar.addEventListener('click', () => {
+            filtroCaja.value = '';
+            filtroUsuario.value = '';
+            filtroFechaDesde.value = '';
+            filtroFechaHasta.value = '';
+            cargarHistorialServidor();
+        });
+
+        cargarUsuariosFiltro().then(() => {
+            cargarHistorialServidor();
+        });
     })();
 </script>

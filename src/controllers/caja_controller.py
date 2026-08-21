@@ -22,6 +22,7 @@ def abrir_caja(
 
 # 🔓 EL VENDEDOR REVISA SU PROPIA CAJA (Usa la cookie automática)
 @router.get("/activa", response_model=CajaResponse)
+@router.get("/activa/", response_model=CajaResponse)
 def obtener_caja_activa(
     db: Session = Depends(get_db), 
     current_user: Usuario = Depends(get_current_user) # 👈  Lee quién es por la cookie

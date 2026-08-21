@@ -1,5 +1,5 @@
 from typing import Optional
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Query
 from sqlalchemy.orm import Session
 from src.config.database import get_db
 from src.models.usuario import Usuario
@@ -28,16 +28,24 @@ def obtener_venta(venta_id: int, db: Session = Depends(get_db)):
 # 🛡️ PROTEGIDO: Listados históricos globales y balances generales quedan bajo llave
 @router.get("/", response_model=list[VentaResponse])
 def listar_ventas(
-    skip: int = 0, 
-    limit: int = 100, 
-    caja_id: Optional[int] = None,
-    fecha: Optional[str] = None,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1),
+    caja_id: Optional[int] = Query(None),
+    fecha_desde: Optional[str] = Query(None, description="Fecha desde (YYYY-MM-DD o YYYY-MM-DDTHH:MM:SS)"),
+    fecha_hasta: Optional[str] = Query(None, description="Fecha hasta (YYYY-MM-DD o YYYY-MM-DDTHH:MM:SS)"),
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(solo_admin)  # 👈 Inyección de rol
+    current_user: Usuario = Depends(solo_admin)
 ):
-    """Trae el historial de ventas filtrado y paginado desde el motor de BD."""
-    return VentaService.listar_ventas(db, skip, limit, caja_id, fecha)
-
+    """Trae el historial de ventas filtrado por rango de fechas/horas."""
+    return VentaService.listar_ventas(
+        db=db, 
+        skip=skip, 
+        limit=limit, 
+        caja_id=caja_id, 
+        fecha_desde=fecha_desde, 
+        fecha_hasta=fecha_hasta
+    )
+    
 # 🛡️ PROTEGIDO: Solo un ADMIN puede anular una venta, lo que devuelve el stock y marca la venta como anulada
 @router.post("/{venta_id}/anular", response_model=VentaResponse)
 def anular_venta(

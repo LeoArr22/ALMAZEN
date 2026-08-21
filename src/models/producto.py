@@ -6,6 +6,7 @@ from src.config.database import Base
 
 if TYPE_CHECKING:
     from src.models.venta import VentaDetalle
+    from src.models.promocion import PromocionProducto
 
 class Producto(Base):
     __tablename__ = "productos"
@@ -29,4 +30,6 @@ class Producto(Base):
         String(50), unique=True, index=True, nullable=True, default=None
     )  
 
+    # Relaciones
+    promociones: Mapped[List["PromocionProducto"]] = relationship("PromocionProducto", back_populates="producto")
     detalles_venta: Mapped[List["VentaDetalle"]] = relationship("VentaDetalle", back_populates="producto")
