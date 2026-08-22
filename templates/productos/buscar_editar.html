@@ -6,9 +6,6 @@
         <input type="text" id="input-busqueda-productos" placeholder="Buscar por código o nombre..." class="bg-gray-900 border border-gray-800 rounded-xl px-4 py-2 text-xs w-full max-w-md focus:outline-none focus:border-emerald-500 text-gray-200">
     </div>
 
-    <div class="overflow-x-auto bg-gray-900 border border-gray-800 rounded-2xl">
-        </div>
-</div>
     <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4 shadow-xl mb-4 flex-shrink-0">
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             <div>
@@ -61,7 +58,7 @@
                     </tr>
                 </thead>
                 <tbody id="tabla-productos-body" class="divide-y divide-gray-800/60 text-xs text-gray-300">
-                    </tbody>
+                </tbody>
             </table>
             
             <div id="tabla-vacia-estado" class="hidden text-center py-16 text-gray-500 font-mono text-xs">
@@ -78,7 +75,7 @@
                     ◀ Anterior
                 </button>
                 <div id="pag-numeros-contenedor" class="flex items-center gap-1 text-xs font-mono">
-                    </div>
+                </div>
                 <button id="btn-pag-siguiente" class="bg-gray-900 border border-gray-800 hover:border-gray-700 disabled:opacity-30 disabled:cursor-not-allowed text-gray-300 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer">
                     Siguiente ▶
                 </button>
@@ -96,13 +93,11 @@
 
 <script>
     (() => {
-        // Estado local de la interfaz de Búsqueda y Edición
         let productosLocales = [];
         let categoriasLocales = [];
         let paginaActual = 1;
-        const limitePorPagina = 15; // Cantidad considerable de registros por página
+        const limitePorPagina = 15;
 
-        // Elementos del DOM
         const tablaBody = document.getElementById('tabla-productos-body');
         const tablaVacia = document.getElementById('tabla-vacia-estado');
         const filtroNombre = document.getElementById('filtro-nombre');
@@ -117,13 +112,11 @@
         const infoHasta = document.getElementById('pag-info-hasta');
         const infoTotal = document.getElementById('pag-info-total');
 
-        // Función de limpieza nativa cuando el Dashboard remueve el componente
         window.moduloActivoLimpieza = () => {
             productosLocales = [];
             window.moduloActivoLimpieza = null;
         };
 
-        // Función de normalización idéntica a la del alta rápida
         function normalizarCategoria(texto) {
             if (!texto) return "";
             const mapaTildes = { 'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u', 'Á': 'A', 'É': 'E', 'Í': 'I', 'Ó': 'O', 'Ú': 'U' };
@@ -132,19 +125,15 @@
             return limpia.charAt(0).toUpperCase() + limpia.slice(1).toLowerCase();
         }
 
-        // 🛠️ INICIALIZACIÓN: Traer datos del servidor de FastAPI
         async function inicializarModulo() {
             tablaBody.innerHTML = '<tr><td colspan="9" class="text-center py-10 text-gray-500 font-mono">⏳ Cargando catálogo de productos...</td></tr>';
             try {
-                // 1. Traer todos los productos (aprovechando tu endpoint /productos/)
                 const resProd = await fetch('/productos/?skip=0&limit=500');
                 if (!resProd.ok) throw new Error(`Catálogo no disponible (Código ${resProd.status})`);
                 productosLocales = await resProd.json();
 
-                // 2. Extraer dinámicamente las categorías únicas para el selector de filtros
                 categoriasLocales = [...new Set(productosLocales.map(p => p.categoria))].filter(Boolean).sort();
                 
-                // Rellenar select de categorías
                 filtroCategoria.innerHTML = '<option value="">Todas las categorías</option>';
                 categoriasLocales.forEach(cat => {
                     const opt = document.createElement('option');
@@ -160,11 +149,9 @@
             }
         }
 
-        // ⚙️ PROCESAMIENTO: Filtrado, ordenamiento y paginación en el cliente para máxima velocidad
         function procesarYRenderizar() {
             let resultado = [...productosLocales];
 
-            // Aplicar Filtro de Nombre
             const busqueda = filtroNombre.value.toLowerCase().trim();
             if (busqueda !== "") {
                 resultado = resultado.filter(p => 
@@ -173,13 +160,11 @@
                 );
             }
 
-            // Aplicar Filtro de Categoría
             const catSeleccionada = filtroCategoria.value;
             if (catSeleccionada !== "") {
                 resultado = resultado.filter(p => p.categoria === catSeleccionada);
             }
 
-            // Aplicar Ordenamiento
             const orden = filtroOrden.value;
             if (orden === "nombre_asc") {
                 resultado.sort((a, b) => a.nombre.localeCompare(b.nombre));
@@ -193,7 +178,6 @@
                 resultado.sort((a, b) => b.stock - a.stock);
             }
 
-            // Configurar Paginación
             const totalRegistros = resultado.length;
             const totalPaginas = Math.ceil(totalRegistros / limitePorPagina) || 1;
             
@@ -204,7 +188,6 @@
             
             const productosPaginados = resultado.slice(indiceDesde, indiceHasta);
 
-            // Actualizar datos del Pie de página
             infoDesde.innerText = totalRegistros === 0 ? 0 : indiceDesde + 1;
             infoHasta.innerText = indiceHasta;
             infoTotal.innerText = totalRegistros;
@@ -212,7 +195,6 @@
             btnAnt.disabled = paginaActual === 1;
             btnSig.disabled = paginaActual === totalPaginas;
 
-            // Renderizar números de páginas fluidos
             contenedorNumeros.innerHTML = "";
             for (let i = 1; i <= totalPaginas; i++) {
                 if (i === 1 || i === totalPaginas || Math.abs(i - paginaActual) <= 1) {
@@ -236,7 +218,6 @@
             renderizarTablaHTML(productosPaginados);
         }
 
-        // 🖥️ RENDERIZADO: Estructurar el HTML puro de las filas de productos
         function renderizarTablaHTML(productos) {
             tablaBody.innerHTML = "";
             
@@ -251,9 +232,13 @@
                 tr.id = `fila-prod-${p.id}`;
                 tr.className = "hover:bg-gray-900/40 transition-colors group align-middle";
 
-                // Procesamiento limpio de la descripción para tooltip nativo
                 const descCompleta = p.descripcion || "";
-                const descCorta = descCompleta.length > 30 ? descCompleta.slice(0, 28) + "..." : descCompleta;
+                const stepStock = p.es_fraccionable ? "any" : "1";
+                
+                // Truncar para la UI si no es fraccionable, o mostrar plano en costo y precio
+                const valorStockUI = p.es_fraccionable ? p.stock : Math.trunc(p.stock);
+                const valorCostoUI = Math.trunc(p.costo);
+                const valorPrecioUI = Math.trunc(p.precio);
 
                 tr.innerHTML = `
                     <td class="px-4 py-2.5 text-center font-mono text-gray-600 font-bold">${p.id}</td>
@@ -279,17 +264,17 @@
                     </td>
                     
                     <td class="px-4 py-2.5">
-                        <input type="number" id="edit-stock-${p.id}" value="${p.stock}" min="0" oninput="activarEdicionFila(${p.id})"
+                        <input type="number" id="edit-stock-${p.id}" value="${valorStockUI}" min="0" step="${stepStock}" oninput="activarEdicionFila(${p.id})"
                                class="w-full bg-transparent border border-transparent rounded-lg px-2 py-1 focus:bg-gray-950 focus:border-gray-800 focus:outline-none transition-all text-right font-mono text-emerald-400 text-xs">
                     </td>
                     
                     <td class="px-4 py-2.5">
-                        <input type="number" id="edit-costo-${p.id}" value="${parseFloat(p.costo).toFixed(2)}" min="0.01" step="0.01" oninput="activarEdicionFila(${p.id})"
+                        <input type="number" id="edit-costo-${p.id}" value="${valorCostoUI}" min="0" step="1" oninput="activarEdicionFila(${p.id})"
                                class="w-full bg-transparent border border-transparent rounded-lg px-2 py-1 focus:bg-gray-950 focus:border-gray-800 focus:outline-none transition-all text-right font-mono text-amber-500/90 text-xs">
                     </td>
                     
                     <td class="px-4 py-2.5">
-                        <input type="number" id="edit-precio-${p.id}" value="${parseFloat(p.precio).toFixed(2)}" min="0.01" step="0.01" oninput="activarEdicionFila(${p.id})"
+                        <input type="number" id="edit-precio-${p.id}" value="${valorPrecioUI}" min="0" step="1" oninput="activarEdicionFila(${p.id})"
                                class="w-full bg-transparent border border-transparent rounded-lg px-2 py-1 focus:bg-gray-950 focus:border-gray-800 focus:outline-none transition-all text-right font-mono text-sky-400 text-xs">
                     </td>
                     
@@ -303,7 +288,6 @@
             });
         }
 
-        // ⚡ INTERACTIVIDAD: Activar botones de confirmación solo en la fila modificada
         window.activarEdicionFila = (id) => {
             const contenedorAcciones = document.getElementById(`wrapper-acciones-${id}`);
             const fila = document.getElementById(`fila-prod-${id}`);
@@ -323,7 +307,6 @@
             }
         };
 
-        // ❌ CANCELAR: Revertir los campos de la fila al estado original
         window.cancelarEdicionFila = (id) => {
             const original = productosLocales.find(p => p.id === id);
             if (!original) return;
@@ -332,9 +315,9 @@
             document.getElementById(`edit-nombre-${id}`).value = original.nombre;
             document.getElementById(`edit-categoria-${id}`).value = original.categoria;
             document.getElementById(`edit-descripcion-${id}`).value = original.descripcion || '';
-            document.getElementById(`edit-stock-${id}`).value = original.stock;
-            document.getElementById(`edit-costo-${id}`).value = parseFloat(original.costo).toFixed(2);
-            document.getElementById(`edit-precio-${id}`).value = parseFloat(original.precio).toFixed(2);
+            document.getElementById(`edit-stock-${id}`).value = original.es_fraccionable ? original.stock : Math.trunc(original.stock);
+            document.getElementById(`edit-costo-${id}`).value = Math.trunc(original.costo);
+            document.getElementById(`edit-precio-${id}`).value = Math.trunc(original.precio);
 
             const contenedorAcciones = document.getElementById(`wrapper-acciones-${id}`);
             const fila = document.getElementById(`fila-prod-${id}`);
@@ -345,12 +328,10 @@
             contenedorAcciones.classList.remove('opacity-100');
         };
 
-        // 💾 PERSISTENCIA: Mandar datos al Backend y capturar excepciones de Pydantic/FastAPI
         window.guardarCambiosServidor = async (id) => {
             const btnSave = document.querySelector(`#wrapper-acciones-${id} .btn-guardar-save`);
             if (btnSave) btnSave.disabled = true;
 
-            // Recolectar datos en caliente de los inputs
             const rawCodigo = document.getElementById(`edit-codigo-${id}`).value.trim();
             const rawNombre = document.getElementById(`edit-nombre-${id}`).value.trim();
             const rawCat = document.getElementById(`edit-categoria-${id}`).value;
@@ -359,19 +340,17 @@
             const rawCosto = document.getElementById(`edit-costo-${id}`).value;
             const rawPrecio = document.getElementById(`edit-precio-${id}`).value;
 
-            // Estructurar DTO respetando tu ProductoUpdate
             const payload = {
                 nombre: rawNombre,
                 codigo_barras: rawCodigo === "" ? null : rawCodigo,
                 descripcion: rawDesc === "" ? null : rawDesc,
                 categoria: normalizarCategoria(rawCat),
-                stock: parseInt(rawStock) || 0,
+                stock: parseFloat(rawStock) || 0.0,
                 costo: parseFloat(rawCosto) || 0.0,
                 precio: parseFloat(rawPrecio) || 0.0
             };
 
             try {
-                // Petición directa a tu controlador usando PUT
                 const respuesta = await fetch(`/productos/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
@@ -381,13 +360,11 @@
                 if (respuesta.ok) {
                     const productoActualizado = await respuesta.json();
                     
-                    // Actualizar base de datos local en memoria
                     const index = productosLocales.findIndex(p => p.id === id);
                     if (index !== -1) productosLocales[index] = productoActualizado;
 
                     emitirNotificacionGlobal(`✨ Producto ID ${id} modificado exitosamente.`, "exito");
                     
-                    // Reestablecer la fila visualmente
                     const contenedorAcciones = document.getElementById(`wrapper-acciones-${id}`);
                     const fila = document.getElementById(`fila-prod-${id}`);
                     fila.classList.remove('bg-gray-900/60');
@@ -398,7 +375,6 @@
                     }, 800);
 
                 } else {
-                    // Manejo avanzado de errores del backend (reglas de negocio de FastAPI)
                     const errorJson = await respuesta.json().catch(() => ({}));
                     let mensajeError = errorJson.detail;
                     if (Array.isArray(errorJson.detail)) {
@@ -413,7 +389,6 @@
             }
         };
 
-        // ⚡ LISTENERS DE EVENTOS DE CONTROL (Inputs reactivos)
         filtroNombre.addEventListener('input', () => { paginaActual = 1; procesarYRenderizar(); });
         filtroCategoria.addEventListener('change', () => { paginaActual = 1; procesarYRenderizar(); });
         filtroOrden.addEventListener('change', () => { paginaActual = 1; procesarYRenderizar(); });
@@ -430,7 +405,6 @@
         btnAnt.addEventListener('click', () => { if (paginaActual > 1) { paginaActual--; procesarYRenderizar(); } });
         btnSig.addEventListener('click', () => { paginaActual++; procesarYRenderizar(); });
 
-        // Disparar carga inicial
         inicializarModulo();
     })();
 </script>

@@ -24,5 +24,9 @@ def get_db():
     db = SessionLocal()
     try:
         yield db
+        db.commit()  # Si el endpoint termina con éxito, confirma todos los cambios
+    except Exception:
+        db.rollback() # Si hubo un HTTPException o error no controlado, revierte todo
+        raise
     finally:
         db.close()

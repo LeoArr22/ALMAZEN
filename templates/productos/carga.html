@@ -1,6 +1,7 @@
 {% include "productos/submenu.html" %}
 
     <form id="form-carga-producto" class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
                 <label for="prod-codigo" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Código de Barras (Opcional)</label>
                 <input type="text" id="prod-codigo" name="codigo_barras" autocomplete="off"
@@ -9,9 +10,11 @@
             </div>
             <div>
                 <label for="prod-categoria" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Categoría</label>
-                <input type="text" id="prod-categoria" name="categoria" required autocomplete="off"
+                <input type="text" id="prod-categoria" name="categoria" list="lista-categorias-datalist" required autocomplete="off"
                        class="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
                        placeholder="Ej. Almacén (Se normaliza automáticamente)">
+                
+                <datalist id="lista-categorias-datalist"></datalist>
             </div>
         </div>
 
@@ -37,21 +40,21 @@
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
                 <label for="prod-stock" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Stock Inicial</label>
-                <input type="number" id="prod-stock" name="stock" value="0" min="0" required autocomplete="off" step="any"  min="0"
+                <input type="number" id="prod-stock" name="stock" value="0" min="0" required autocomplete="off" step="1"
                        class="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all font-mono"
                        placeholder="0">
             </div>
             <div>
                 <label for="prod-costo" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Costo Unitario ($)</label>
-                <input type="number" id="prod-costo" name="costo" step="0.01" min="0.01" required autocomplete="off"
+                <input type="number" id="prod-costo" name="costo" step="1" min="0" required autocomplete="off"
                        class="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all font-mono"
-                       placeholder="0.00">
+                       placeholder="0">
             </div>
             <div>
                 <label for="prod-precio" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Precio Venta ($)</label>
-                <input type="number" id="prod-precio" name="precio" step="0.01" min="0.01" required autocomplete="off"
+                <input type="number" id="prod-precio" name="precio" step="1" min="0" required autocomplete="off"
                        class="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all font-mono"
-                       placeholder="0.00">
+                       placeholder="0">
             </div>
         </div>
 
@@ -69,8 +72,40 @@
         const formulario = document.getElementById('form-carga-producto');
         const inputCodigo = document.getElementById('prod-codigo');
         const btnGuardar = document.getElementById('btn-guardar-producto');
+        const datalistCategorias = document.getElementById('lista-categorias-datalist');
+        const checkFraccionable = document.getElementById('prod-fraccionable');
+        const inputStock = document.getElementById('prod-stock');
 
         if (inputCodigo) inputCodigo.focus();
+
+        checkFraccionable.addEventListener('change', () => {
+            if (checkFraccionable.checked) {
+                inputStock.step = "any";
+            } else {
+                inputStock.step = "1";
+                if (inputStock.value) {
+                    inputStock.value = Math.round(parseFloat(inputStock.value) || 0);
+                }
+            }
+        });
+
+        async function cargarSugerenciasCategorias() {
+            try {
+                const res = await fetch('/productos/categorias');
+                if (res.ok) {
+                    const categorias = await res.json();
+                    if (datalistCategorias && Array.isArray(categorias)) {
+                        datalistCategorias.innerHTML = categorias
+                            .map(cat => `<option value="${cat}">`)
+                            .join('');
+                    }
+                }
+            } catch (error) {
+                console.error("Error al obtener las categorías:", error);
+            }
+        }
+
+        cargarSugerenciasCategorias();
 
         const presionarTeclaF9 = (e) => {
             if (e.key === 'F9') {
@@ -100,16 +135,19 @@
 
             const formData = new FormData(formulario);
             const raw = Object.fromEntries(formData.entries());
+            const esFraccionable = checkFraccionable.checked;
 
+            // Se redondean a entero pero se envían como Number para que Pydantic/SQLAlchemy
+            // los persista sin problemas en las columnas Float del backend.
             const payload = {
                 nombre: raw.nombre,
                 descripcion: raw.descripcion.trim() === "" ? null : raw.descripcion.trim(),
                 categoria: normalizarCategoria(raw.categoria),
-                es_fraccionable: document.getElementById('prod-fraccionable').checked,
-                unidad_medida: document.getElementById('prod-fraccionable').checked ? "KG" : "UNIDAD",
-                stock: parseFloat(document.getElementById('prod-stock').value) || 0.0,
-                costo: parseFloat(raw.costo) || 0.0,
-                precio: parseFloat(raw.precio) || 0.0,
+                es_fraccionable: esFraccionable,
+                unidad_medida: esFraccionable ? "KG" : "UNIDAD",
+                stock: esFraccionable ? (parseFloat(raw.stock) || 0) : (parseInt(raw.stock, 10) || 0),
+                costo: Math.round(parseFloat(raw.costo) || 0),
+                precio: Math.round(parseFloat(raw.precio) || 0),
                 codigo_barras: raw.codigo_barras.trim() === "" ? null : raw.codigo_barras.trim()
             };
 
@@ -123,7 +161,10 @@
                 if (respuesta.status === 201) {
                     emitirNotificacionGlobal("✨ Producto cargado correctamente en ALMAZEN", "exito");
                     formulario.reset();
+                    inputStock.step = "1";
                     if (inputCodigo) inputCodigo.focus();
+                    
+                    cargarSugerenciasCategorias();
                 } else {
                     const errorJson = await respuesta.json().catch(() => ({}));
                     let mensajeError = errorJson.detail;

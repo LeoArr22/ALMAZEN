@@ -36,7 +36,7 @@ class VentaService:
 
             # --- CASO 1: COMBOS ---
             if tipo_upper == "COMBO":
-                max_combos_posibles = float("inf")
+                max_combos_posibles = Decimal("inf")
                 total_lista_combo = Decimal("0.00")
 
                 for p_promo in productos_promo:
@@ -53,7 +53,7 @@ class VentaService:
 
                 precio_promo_combo = Decimal(str(promo.precio_promocional))
 
-                if max_combos_posibles > 0 and max_combos_posibles != float("inf") and precio_promo_combo < total_lista_combo:
+                if max_combos_posibles > 0 and max_combos_posibles != Decimal("inf") and precio_promo_combo < total_lista_combo:
                     factor_descuento = precio_promo_combo / total_lista_combo
 
                     for p_promo in productos_promo:
@@ -66,7 +66,7 @@ class VentaService:
 
                             item["subtotal"] -= ahorro_item
                             item["cant_disponible"] -= unidades_usadas
-                            item["promocion_aplicada"] = promo.nombre  # 👈 Guardamos el nombre aquí
+                            item["promocion_aplicada"] = promo.nombre
 
             # --- CASO 2: MÚLTIPLO / LOTE / CANTIDAD ---
             elif tipo_upper in ["MULTIPLO", "CANTIDAD"]:
@@ -84,7 +84,7 @@ class VentaService:
 
                         item["subtotal"] -= (unidades_en_promo * descuento_unidad)
                         item["cant_disponible"] -= unidades_en_promo
-                        item["promocion_aplicada"] = promo.nombre  # 👈 Guardamos el nombre aquí
+                        item["promocion_aplicada"] = promo.nombre
 
             # --- CASO 3: CANTIDAD MÍNIMA / MAYORISTA ---
             elif tipo_upper in ["CANTIDAD_MINIMA"]:
@@ -98,7 +98,7 @@ class VentaService:
                     if precio_unitario_promo < item["producto_obj"].precio:
                         item["subtotal"] = item["cantidad"] * precio_unitario_promo
                         item["cant_disponible"] = Decimal("0")
-                        item["promocion_aplicada"] = promo.nombre  # 👈 Guardamos el nombre aquí
+                        item["promocion_aplicada"] = promo.nombre
 
         # Calculamos el total final del carrito resultante para esta simulación
         total_venta_simulada = sum((item["subtotal"] for item in items), Decimal("0.00"))
@@ -110,7 +110,6 @@ class VentaService:
         if not promos_activas:
             return
 
-        # Map de consulta rápida: producto_id -> cantidad en el carrito
         cantidades_carrito = {item["producto_obj"].id: item["cantidad"] for item in items_procesados}
 
         # 1. Filtramos solo las promociones que REALMENTE aplican según la cantidad del carrito
@@ -122,7 +121,6 @@ class VentaService:
             tipo_upper = (promo.tipo or "").upper()
 
             if tipo_upper == "COMBO":
-                # Un combo solo aplica si TODOS sus productos están en el carrito con la cantidad mínima
                 cumple_combo = all(
                     cantidades_carrito.get(p.producto_id, Decimal("0")) >= Decimal(str(p.cantidad_requerida))
                     for p in promo.productos
@@ -130,7 +128,6 @@ class VentaService:
                 if cumple_combo:
                     promos_aplicables.append(promo)
             else:
-                # Para MULTIPLO, CANTIDAD, CANTIDAD_MINIMA: requiere que el producto esté y supere el requerimiento
                 promo_prod = promo.productos[0]
                 cant_disponible = cantidades_carrito.get(promo_prod.producto_id, Decimal("0"))
                 cant_requerida = Decimal(str(promo_prod.cantidad_requerida))
@@ -180,14 +177,15 @@ class VentaService:
                 if mejor_promo:
                     promos_ganadoras.append(mejor_promo)
 
-        # 5. Aplicamos definitivamente las promociones ganadoras
+        # 5. Aplicamos definitivamente la lista consolidada de promociones ganadoras
         _, items_optimizados = cls._aplicar_secuencia_promos(items_procesados, promos_ganadoras)
 
-        # Reasignamos los subtotales al carrito final
+        # Reasignamos los subtotales al carrito final con resguardo ante división por cero
         for item_orig, item_opt in zip(items_procesados, items_optimizados):
+            cant = item_orig["cantidad"]
             item_orig["subtotal"] = item_opt["subtotal"]
-            item_orig["precio_efectivo"] = item_opt["subtotal"] / item_orig["cantidad"]
-            item_orig["promocion_aplicada"] = item_opt.get("promocion_aplicada") or item_opt.get("promocion")
+            item_orig["precio_efectivo"] = (item_opt["subtotal"] / cant) if cant > Decimal("0") else Decimal("0.00")
+            item_orig["promocion_aplicada"] = item_opt.get("promocion_aplicada")
               
     @staticmethod
     def registrar_venta(db: Session, venta_in: VentaCreate, usuario_id: int) -> Venta:
@@ -215,99 +213,93 @@ class VentaService:
 
         items_a_procesar = []
 
-        try:
-            # 4. Validar existencia y stock de productos
-            for detalle in venta_in.detalles:
-                producto = ProductoRepository.obtener_por_id_para_update(db, detalle.producto_id)
-                
-                if not producto:
-                    raise HTTPException(
-                        status_code=status.HTTP_404_NOT_FOUND,
-                        detail=f"El producto con ID {detalle.producto_id} no existe."
-                    )
-                
-                if producto.stock < detalle.cantidad:
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail=f"Stock insuficiente para '{producto.nombre}'. Disponible: {producto.stock}, Solicitado: {detalle.cantidad}"
-                    )
-
-                # Inicializamos por defecto a precio de lista normal
-                subtotal_inicial = producto.precio * detalle.cantidad
-                costo_total = producto.costo * detalle.cantidad
-
-                items_a_procesar.append({
-                    "producto_obj": producto,
-                    "cantidad": detalle.cantidad,
-                    "costo_historico": producto.costo,
-                    "costo_total": costo_total,
-                    "subtotal": subtotal_inicial,
-                    "precio_efectivo": producto.precio,
-                })
-
-            # 🌟 5. APLICAR LÓGICA DE PROMOCIONES A LOS SUBTOTALES
-            VentaService._calcular_subtotales_con_promociones(db, items_a_procesar)
-
-            # 6. Sumar totales finales ya calculados
-            total_venta = Decimal("0.00")
-            ganancia_total_venta = Decimal("0.00")
-
-            for item in items_a_procesar:
-                total_venta += item["subtotal"]
-                ganancia_item = item["subtotal"] - item["costo_total"]
-                ganancia_total_venta += ganancia_item
-
-            # 7. Persistir cabecera de venta
-            db_venta = VentaRepository.crear_cabecera(
-                db=db,
-                total=total_venta if not es_consumo_interno else Decimal("0.00"),
-                ganancia_total=Decimal("0.00") if es_consumo_interno else ganancia_total_venta,
-                caja_id=caja_abierta.id,
-                usuario_id=usuario_id
-            )
-
-            # 8. Insertar renglones de detalle y descontar stock
-            for item in items_a_procesar:
-                nombre_promo = item.get("promocion_aplicada") or item.get("promocion") or None
-                
-                VentaRepository.crear_detalle(
-                    db=db,
-                    venta_id=db_venta.id,
-                    producto_id=item["producto_obj"].id,
-                    cantidad=item["cantidad"],
-                    precio_historico=item["precio_efectivo"],  # Se guarda el precio unitario real cobrado
-                    costo_historico=item["costo_historico"],
-                    promocion_aplicada=nombre_promo
-                )
-                ProductoRepository.descontar_stock(
-                    db=db,
-                    producto=item["producto_obj"],
-                    cantidad=item["cantidad"]
-                )
-
-            # 9. Registrar pagos
-            for pago in venta_in.pagos:
-                VentaRepository.crear_pago(
-                    db=db,
-                    venta_id=db_venta.id,
-                    medio_pago=pago.medio_pago,
-                    monto=pago.monto
-                )
-
-            db.commit()
-            db.refresh(db_venta)
-            return db_venta
-
-        except HTTPException:
-            db.rollback()
-            raise
-        except Exception as e:
-            db.rollback()
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error interno al procesar la operación: {str(e)}"
-            )
+        # 4. Validar existencia y stock de productos
+        for detalle in venta_in.detalles:
+            producto = ProductoRepository.obtener_por_id_para_update(db, detalle.producto_id)
             
+            if not producto:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"El producto con ID {detalle.producto_id} no existe."
+                )
+            
+            if producto.stock < detalle.cantidad:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Stock insuficiente para '{producto.nombre}'. Disponible: {producto.stock}, Solicitado: {detalle.cantidad}"
+                )
+
+            # Inicializamos por defecto a precio de lista normal
+            subtotal_inicial = producto.precio * detalle.cantidad
+            costo_total = producto.costo * detalle.cantidad
+
+            items_a_procesar.append({
+                "producto_obj": producto,
+                "cantidad": detalle.cantidad,
+                "costo_historico": producto.costo,
+                "costo_total": costo_total,
+                "subtotal": subtotal_inicial,
+                "precio_efectivo": producto.precio,
+            })
+
+        # 5. Aplicar lógica de promociones a los subtotales
+        VentaService._calcular_subtotales_con_promociones(db, items_a_procesar)
+
+        # 6. Sumar totales finales ya calculados
+        total_venta = Decimal("0.00")
+        ganancia_total_venta = Decimal("0.00")
+
+        for item in items_a_procesar:
+            total_venta += item["subtotal"]
+            ganancia_item = item["subtotal"] - item["costo_total"]
+            ganancia_total_venta += ganancia_item
+
+        # 🌟 VALIDACIÓN DE PAGOS: Garantizar que lo abonado cubra el total calculado (salvo consumo interno)
+        if not es_consumo_interno:
+            total_pagado = sum((pago.monto for pago in venta_in.pagos), Decimal("0.00"))
+            if total_pagado != total_venta:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"El total pagado (${total_pagado}) no coincide con el total de la venta (${total_venta})."
+                )
+
+        # 7. Persistir cabecera de venta
+        db_venta = VentaRepository.crear_cabecera(
+            db=db,
+            total=total_venta if not es_consumo_interno else Decimal("0.00"),
+            ganancia_total=Decimal("0.00") if es_consumo_interno else ganancia_total_venta,
+            caja_id=caja_abierta.id,
+            usuario_id=usuario_id
+        )
+
+        # 8. Insertar renglones de detalle y descontar stock
+        for item in items_a_procesar:
+            nombre_promo = item.get("promocion_aplicada") or item.get("promocion") or None
+            
+            VentaRepository.crear_detalle(
+                db=db,
+                venta_id=db_venta.id,
+                producto_id=item["producto_obj"].id,
+                cantidad=item["cantidad"],
+                precio_historico=item["precio_efectivo"],
+                costo_historico=item["costo_historico"],
+                promocion_aplicada=nombre_promo
+            )
+            ProductoRepository.descontar_stock(
+                db=db,
+                producto=item["producto_obj"],
+                cantidad=item["cantidad"]
+            )
+
+        # 9. Registrar pagos
+        for pago in venta_in.pagos:
+            VentaRepository.crear_pago(
+                db=db,
+                venta_id=db_venta.id,
+                medio_pago=pago.medio_pago,
+                monto=pago.monto
+            )
+        return db_venta    
             
     @staticmethod
     def obtener_venta(db: Session, venta_id: int) -> Venta:
@@ -338,13 +330,11 @@ class VentaService:
 
         if fecha_desde:
             dt_desde = datetime.fromisoformat(fecha_desde)
-            # Si sólo viene "YYYY-MM-DD", aseguramos el inicio del día
             if len(fecha_desde) <= 10:
                 dt_desde = datetime.combine(dt_desde.date(), time.min)
 
         if fecha_hasta:
             dt_hasta = datetime.fromisoformat(fecha_hasta)
-            # Si sólo viene "YYYY-MM-DD", aseguramos el final del día
             if len(fecha_hasta) <= 10:
                 dt_hasta = datetime.combine(dt_hasta.date(), time.max)
 
@@ -368,23 +358,14 @@ class VentaService:
                 detail="La venta ya se encuentra anulada."
             )
 
-        try:
-            # 2. Devolver stock a cada producto
-            for detalle in db_venta.detalles:
-                if detalle.producto_id:
-                    producto = ProductoRepository.obtener_por_id_para_update(db, detalle.producto_id)
-                    if producto:
-                        producto.stock += Decimal(str(detalle.cantidad))
+        # 2. Devolver stock a cada producto
+        for detalle in db_venta.detalles:
+            if detalle.producto_id:
+                producto = ProductoRepository.obtener_por_id_para_update(db, detalle.producto_id)
+                if producto:
+                    producto.stock += Decimal(str(detalle.cantidad))
 
-            # 3. Marcar como anulada en lugar de eliminar
-            db_venta.es_anulada = True
-            
-            db.commit()
-            db.refresh(db_venta)
-            return db_venta
-        except Exception as e:
-            db.rollback()
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error al anular la venta: {str(e)}"
-            )
+        # 3. Marcar como anulada en lugar de eliminar
+        db_venta.es_anulada = True
+        return db_venta
+        

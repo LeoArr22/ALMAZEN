@@ -12,8 +12,7 @@ class ProductoRepository:
         # Transformamos el DTO de Pydantic a un Modelo de SQLAlchemy
         nuevo_producto = Producto(**producto_in.model_dump())
         db.add(nuevo_producto)
-        db.commit()
-        db.refresh(nuevo_producto)
+        db.flush()
         return nuevo_producto
 
     @staticmethod
@@ -60,21 +59,20 @@ class ProductoRepository:
         for campo, valor in datos_actualizar.items():
             if hasattr(db_producto, campo):
                 setattr(db_producto, campo, valor)
-            
-        db.commit()
-        db.refresh(db_producto)
+        db.flush()
         return db_producto
 
     @staticmethod
     def eliminar(db: Session, db_producto: Producto) -> None:
         db.delete(db_producto)
-        db.commit()
 
     @staticmethod
     def obtener_categorias_existentes(db: Session) -> list[str]:
         # El truco que hablamos para listar las categorías únicas cargadas en el campo de texto
-        resultado = db.query(Producto.categoria).distinct().all()
-        # Como devuelve una lista de tuplas [("Almacén",), ("Bebidas",)], lo limpiamos a una lista de strings
+        resultado = db.query(Producto.categoria).filter(
+            Producto.categoria.isnot(None), 
+            Producto.categoria != ""
+        ).distinct().all()        # Como devuelve una lista de tuplas [("Almacén",), ("Bebidas",)], lo limpiamos a una lista de strings
         return [r[0] for r in resultado]
     
     @staticmethod
@@ -93,3 +91,5 @@ class ProductoRepository:
         # No hacemos db.commit() acá porque la transacción completa (venta + pagos + stock)
         # se confirma mediante el db.commit() atómico dentro del VentaService.
         return producto
+    
+    

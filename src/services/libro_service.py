@@ -1,4 +1,5 @@
 # src/services/libro_service.py
+import calendar
 from datetime import datetime, date, timedelta, time
 from typing import Optional
 from sqlalchemy.orm import Session
@@ -33,11 +34,11 @@ class LibroService:
             
         elif periodo_lower == "mes":
             inicio_mes = base_date.replace(day=1)
-            siguiente_mes = (inicio_mes + timedelta(days=32)).replace(day=1)
-            fin_mes = siguiente_mes - timedelta(days=1)
+            _, ultimo_dia = calendar.monthrange(base_date.year, base_date.month)
+            fin_mes = base_date.replace(day=ultimo_dia)
             dt_inicio = datetime.combine(inicio_mes, time.min)
             dt_fin = datetime.combine(fin_mes, time.max)
-            
+                    
         elif periodo_lower == "personalizado":
             if not fecha_inicio_custom or not fecha_fin_custom:
                 raise HTTPException(

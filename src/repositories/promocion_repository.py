@@ -40,9 +40,6 @@ class PromocionRepository:
                 cantidad_requerida=item.cantidad_requerida
             )
             db.add(detalle)
-
-        db.commit()
-        db.refresh(nueva_promo)
         return nueva_promo
 
     @staticmethod
@@ -51,12 +48,8 @@ class PromocionRepository:
         for campo, valor in datos_actualizar.items():
             if hasattr(db_promo, campo):
                 setattr(db_promo, campo, valor)
-
-        db.commit()
-        db.refresh(db_promo)
         return db_promo
 
     @staticmethod
     def eliminar(db: Session, db_promo: Promocion) -> None:
         db.delete(db_promo)
-        db.commit()

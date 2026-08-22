@@ -137,4 +137,3 @@ class VentaRepository:
     def eliminar(db: Session, db_venta: Venta) -> None:
         """Elimina una venta y sus detalles/pagos por cascada."""
         db.delete(db_venta)
-        db.commit()

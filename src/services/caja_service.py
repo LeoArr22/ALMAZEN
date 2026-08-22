@@ -22,8 +22,6 @@ class CajaService:
         
         # Guardamos en la base de datos usando el repositorio
         nuevo_turno = CajaRepository.crear(db, caja_in, usuario_apertura_id=usuario_id)
-        db.commit()
-        db.refresh(nuevo_turno)
         return nuevo_turno
 
     @staticmethod
@@ -39,7 +37,6 @@ class CajaService:
 
     @staticmethod
     def cerrar_caja(db: Session, caja_close: CajaClose, usuario_id: int):
-        # Buscamos la caja abierta de este usuario para cerrarla
         caja_activa = CajaRepository.obtener_activa_por_usuario(db, usuario_id=usuario_id)
         if not caja_activa:
             raise HTTPException(
@@ -47,26 +44,19 @@ class CajaService:
                 detail="No tenés ninguna caja abierta en este momento para poder cerrar."
             )
         
-        try:
-            # Hacemos el arqueo matemático (Monto Inicial + Suma de Ventas)
-            total_ventas = sum(Decimal(str(v.total)) for v in caja_activa.ventas)
-            monto_inicial = Decimal(str(caja_activa.monto_inicial))
-            
-            # Impactamos los datos finales de cierre
-            caja_activa.monto_final_estimado = monto_inicial + total_ventas
-            caja_activa.monto_final_real = caja_close.monto_final_real
-            caja_activa.fecha_cierre = datetime.now() 
-            caja_activa.estado = "CERRADA"
-            caja_activa.usuario_cierre_id = usuario_id 
-            
-            db.commit()
-            db.refresh(caja_activa)
-            return caja_activa
-            
-        except Exception as e:
-            db.rollback()
-            raise e
-
+        total_ventas = sum(
+            Decimal(str(v.total)) for v in caja_activa.ventas if not v.es_anulada
+        )
+        monto_inicial = Decimal(str(caja_activa.monto_inicial))
+        
+        caja_activa.monto_final_estimado = monto_inicial + total_ventas
+        caja_activa.monto_final_real = caja_close.monto_final_real
+        caja_activa.fecha_cierre = datetime.now() 
+        caja_activa.estado = "CERRADA"
+        caja_activa.usuario_cierre_id = usuario_id 
+        
+        return caja_activa
+    
     @staticmethod
     def listar_historial_cajas(db: Session, skip: int = 0, limit: int = 500,
                                caja_id: Optional[int] = None,

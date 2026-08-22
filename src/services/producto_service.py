@@ -1,5 +1,6 @@
 from decimal import Decimal
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, status
 from src.repositories.producto_repository import ProductoRepository
 from src.schemas.producto_schema import ProductoCreate, ProductoUpdate
@@ -9,32 +10,34 @@ class ProductoService:
 
     @staticmethod
     def crear_producto(db: Session, producto_in: ProductoCreate) -> Producto:
-        # 1. Validación de negocio: El precio de venta no puede ser menor al costo (nos fundimos)
+        # 1. Validación de negocio rápida: El precio de venta no puede ser menor al costo
         if producto_in.precio < producto_in.costo:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="El precio de venta no puede ser menor al costo del producto."
             )
         
-        # 2. Validación de negocio: Evitar productos duplicados con el mismo nombre exacto
-        productos_existentes = ProductoRepository.obtener_por_nombre(db, producto_in.nombre)
-        for p in productos_existentes:
-            if p.nombre.lower() == producto_in.nombre.lower():
+        # 2. Delegamos la restricción de duplicados a la base de datos para evitar Race Conditions.
+        # Capturamos la excepción de integridad (UNIQUE constraint) de SQLAlchemy de manera atómica.
+        try:
+            return ProductoRepository.crear(db, producto_in)
+        except IntegrityError as e:
+            err_msg = str(e.orig).lower()
+            if "codigo_barras" in err_msg:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"El código de barras '{producto_in.codigo_barras}' ya se encuentra registrado."
+                )
+            elif "nombre" in err_msg:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"Ya existe un producto registrado con el nombre '{producto_in.nombre}'."
                 )
-                
-        # 3. Validación de negocio: Evitar código de barras duplicado (si se envió uno)
-        if producto_in.codigo_barras:
-            prod_por_codigo = ProductoRepository.obtener_por_codigo_barras(db, producto_in.codigo_barras)
-            if prod_por_codigo:
+            else:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"El código de barras '{producto_in.codigo_barras}' ya se encuentra registrado en otro producto."
+                    detail="El producto viola una restricción de unicidad en la base de datos."
                 )
-
-        return ProductoRepository.crear(db, producto_in)
 
     @staticmethod
     def obtener_producto(db: Session, producto_id: int) -> Producto:
@@ -78,8 +81,7 @@ class ProductoService:
         # 1. Verificamos que el producto exista antes de editar
         db_producto = ProductoService.obtener_producto(db, producto_id)
         
-        # 2. Si se intenta modificar costos o precios, volvemos a validar la regla de negocio
-        # Forzamos la conversión a Decimal de Python puro para calmar al linter
+        # 2. Validar precios y costos
         nuevo_costo = producto_in.costo if producto_in.costo is not None else Decimal(str(db_producto.costo))
         nuevo_precio = producto_in.precio if producto_in.precio is not None else Decimal(str(db_producto.precio))
         
@@ -89,7 +91,26 @@ class ProductoService:
                 detail="El precio de venta resultante no puede ser menor al costo."
             )
 
-        return ProductoRepository.editar(db, db_producto, producto_in)
+        # 3. Capturamos posibles duplicados por conflicto al actualizar
+        try:
+            return ProductoRepository.editar(db, db_producto, producto_in)
+        except IntegrityError as e:
+            err_msg = str(e.orig).lower()
+            if "codigo_barras" in err_msg:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="El código de barras ingresado ya está asignado a otro producto."
+                )
+            elif "nombre" in err_msg:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="El nombre ingresado ya está siendo utilizado por otro producto."
+                )
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Error de restricción al actualizar el producto."
+                )
 
     @staticmethod
     def borrar_producto(db: Session, producto_id: int) -> dict:

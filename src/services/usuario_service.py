@@ -16,15 +16,11 @@ class UsuarioService:
                 detail=f"El nombre de usuario '{usuario_in.username}' ya está registrado."
             )
         
-        try:
-            password_hasheado = obtener_password_hash(usuario_in.password)
-            nuevo_usuario = UsuarioRepository.crear(db, usuario_in, password_hasheado)
-            db.commit()
-            db.refresh(nuevo_usuario)
-            return nuevo_usuario
-        except Exception as e:
-            db.rollback()
-            raise e
+        
+        password_hasheado = obtener_password_hash(usuario_in.password)
+        nuevo_usuario = UsuarioRepository.crear(db, usuario_in, password_hasheado)
+        return nuevo_usuario
+    
 
     @staticmethod
     def autenticar_usuario(db: Session, username: str, password: str) -> TokenResponse:
@@ -75,17 +71,17 @@ class UsuarioService:
         # Si viene contraseña, se hashea antes de guardar
         if "password" in datos_actualizar:
             pwd = datos_actualizar.pop("password")
-            if pwd and len(pwd.strip()) >= 6:
+            if pwd:
+                if len(pwd.strip()) < 6:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="La contraseña debe tener al menos 6 caracteres."
+                    )
                 datos_actualizar["password_hashed"] = obtener_password_hash(pwd)
 
-        try:
-            usuario = UsuarioRepository.actualizar(db, usuario_db, datos_actualizar)
-            db.commit()
-            db.refresh(usuario)
-            return usuario
-        except Exception as e:
-            db.rollback()
-            raise e
+    
+        usuario = UsuarioRepository.actualizar(db, usuario_db, datos_actualizar)
+        return usuario
 
     @staticmethod
     def alternar_estado_usuario(db: Session, usuario_id: int):
@@ -100,11 +96,6 @@ class UsuarioService:
                 detail="No se puede deshabilitar al usuario administrador principal ('admin')."
             )
 
-        try:
-            usuario = UsuarioRepository.actualizar(db, usuario_db, {"activo": not usuario_db.activo})
-            db.commit()
-            db.refresh(usuario)
-            return usuario
-        except Exception as e:
-            db.rollback()
-            raise e
+        
+        usuario = UsuarioRepository.actualizar(db, usuario_db, {"activo": not usuario_db.activo})
+        return usuario

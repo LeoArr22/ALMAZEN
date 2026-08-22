@@ -27,6 +27,12 @@ def listar_productos(skip: int = 0, limit: int = 500, db: Session = Depends(get_
     """Trae la lista completa de productos paginada."""
     return ProductoService.listar_productos(db, skip, limit)
 
+# 🔓 LIBRE: Para autocompletar categorías en el formulario de alta de producto
+@router.get("/categorias", response_model=list[str])
+def obtener_categorias(db: Session = Depends(get_db)):
+    """Retorna la lista de categorías existentes para el autocompletado."""
+    return ProductoService.listar_categorias(db)
+
 # 🔓 LIBRE: Para mostrar alertas visuales en el sistema de stock
 @router.get("/bajo-stock", response_model=list[ProductoResponse])
 def verificar_alerta_stock(limite: int = 5, db: Session = Depends(get_db)):
