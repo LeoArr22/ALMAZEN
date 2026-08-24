@@ -1,5 +1,6 @@
 from typing import Optional
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import select
 from src.models.promocion import Promocion, PromocionProducto
 from src.schemas.promocion_schema import PromocionCreate, PromocionUpdate
 
@@ -7,19 +8,19 @@ class PromocionRepository:
 
     @staticmethod
     def obtener_por_id(db: Session, promocion_id: int) -> Optional[Promocion]:
-        return (
-            db.query(Promocion)
+        stmt = (
+            select(Promocion)
             .options(joinedload(Promocion.productos))
-            .filter(Promocion.id == promocion_id)
-            .first()
+            .where(Promocion.id == promocion_id)
         )
+        return db.scalars(stmt).first()
 
     @staticmethod
     def obtener_todas(db: Session, solo_activas: bool = True) -> list[Promocion]:
-        query = db.query(Promocion).options(joinedload(Promocion.productos))
+        stmt = select(Promocion).options(joinedload(Promocion.productos))
         if solo_activas:
-            query = query.filter(Promocion.activo == True)
-        return query.all()
+            stmt = stmt.where(Promocion.activo == True)
+        return list(db.scalars(stmt).all())
 
     @staticmethod
     def crear(db: Session, promo_in: PromocionCreate) -> Promocion:
@@ -31,7 +32,7 @@ class PromocionRepository:
             activo=promo_in.activo
         )
         db.add(nueva_promo)
-        db.flush()  # Genera el ID para asociar los detalles
+        db.flush()
 
         for item in promo_in.productos:
             detalle = PromocionProducto(

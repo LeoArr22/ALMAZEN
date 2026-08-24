@@ -1,8 +1,7 @@
-# src/repositories/libro_repository.py
 from decimal import Decimal
 from datetime import datetime
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_
+from sqlalchemy import select, func, and_
 from src.models.venta import Venta
 from src.models.venta_pago import VentaPago
 
@@ -10,22 +9,20 @@ class LibroRepository:
 
     @staticmethod
     def obtener_totales_periodo(db: Session, fecha_inicio: datetime, fecha_fin: datetime) -> dict:
-        """
-        Calcula las agregaciones financieras de las ventas NO anuladas dentro de un rango de fechas.
-        """
-        resultado = db.query(
+        stmt = select(
             func.coalesce(func.sum(Venta.total), Decimal("0.00")).label("total_facturado"),
             func.coalesce(func.sum(Venta.ganancia_total), Decimal("0.00")).label("ganancia_neta_total"),
             func.count(Venta.id).label("cantidad_transacciones")
-        ).filter(
+        ).where(
             and_(
                 Venta.fecha_venta >= fecha_inicio,
                 Venta.fecha_venta <= fecha_fin,
                 Venta.es_anulada == False
             )
-        ).first()
+        )
 
-        # 🛡️ Validación para evitar que el analizador reclame por NoneType
+        resultado = db.execute(stmt).first()
+
         if not resultado:
             return {
                 "total_facturado": Decimal("0.00"),
@@ -56,21 +53,23 @@ class LibroRepository:
 
     @staticmethod
     def obtener_desglose_pagos(db: Session, fecha_inicio: datetime, fecha_fin: datetime) -> list[dict]:
-        """
-        Obtiene el total cobrado por cada medio de pago en el período seleccionado.
-        """
-        resultados = db.query(
-            VentaPago.medio_pago,
-            func.coalesce(func.sum(VentaPago.monto), Decimal("0.00")).label("monto_total")
-        ).join(
-            Venta, VentaPago.venta_id == Venta.id
-        ).filter(
-            and_(
-                Venta.fecha_venta >= fecha_inicio,
-                Venta.fecha_venta <= fecha_fin,
-                Venta.es_anulada == False
+        stmt = (
+            select(
+                VentaPago.medio_pago,
+                func.coalesce(func.sum(VentaPago.monto), Decimal("0.00")).label("monto_total")
             )
-        ).group_by(VentaPago.medio_pago).all()
+            .join(Venta, VentaPago.venta_id == Venta.id)
+            .where(
+                and_(
+                    Venta.fecha_venta >= fecha_inicio,
+                    Venta.fecha_venta <= fecha_fin,
+                    Venta.es_anulada == False
+                )
+            )
+            .group_by(VentaPago.medio_pago)
+        )
+
+        resultados = db.execute(stmt).all()
 
         return [
             {"medio_pago": r[0], "monto_total": Decimal(str(r[1] or "0.00"))}
@@ -79,21 +78,19 @@ class LibroRepository:
 
     @staticmethod
     def obtener_auditoria_anulaciones(db: Session, fecha_inicio: datetime, fecha_fin: datetime) -> dict:
-        """
-        Calcula el volumen y monto de las ventas anuladas durante el período.
-        """
-        resultado = db.query(
+        stmt = select(
             func.count(Venta.id).label("cantidad_anuladas"),
             func.coalesce(func.sum(Venta.total), Decimal("0.00")).label("monto_anulado")
-        ).filter(
+        ).where(
             and_(
                 Venta.fecha_venta >= fecha_inicio,
                 Venta.fecha_venta <= fecha_fin,
                 Venta.es_anulada == True
             )
-        ).first()
+        )
 
-        # 🛡️ Validación contra None
+        resultado = db.execute(stmt).first()
+
         if not resultado:
             return {
                 "cantidad_ventas_anuladas": 0,

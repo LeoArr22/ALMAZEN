@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 from typing import Optional, List
 from src.models.usuario import Usuario
 from src.schemas.usuario_schema import UsuarioCreate, UsuarioUpdate
@@ -7,15 +8,15 @@ class UsuarioRepository:
 
     @staticmethod
     def obtener_por_username(db: Session, username: str) -> Optional[Usuario]:
-        return db.query(Usuario).filter(Usuario.username == username).first()
+        return db.scalars(select(Usuario).where(Usuario.username == username)).first()
 
     @staticmethod
     def obtener_por_id(db: Session, usuario_id: int) -> Optional[Usuario]:
-        return db.query(Usuario).filter(Usuario.id == usuario_id).first()
+        return db.scalars(select(Usuario).where(Usuario.id == usuario_id)).first()
 
     @staticmethod
     def obtener_todos(db: Session) -> List[Usuario]:
-        return db.query(Usuario).order_by(Usuario.id.asc()).all()
+        return list(db.scalars(select(Usuario).order_by(Usuario.id.asc())).all())
 
     @staticmethod
     def crear(db: Session, usuario_in: UsuarioCreate, password_hasheado: str) -> Usuario:

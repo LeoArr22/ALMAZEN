@@ -74,12 +74,12 @@ def actualizar_producto(
     """Actualiza los datos o el stock de un producto."""
     return ProductoService.modificar_producto(db, producto_id, producto_in)
 
-# 🛡️ PROTEGIDO: El borrado físico o lógico de mercadería queda restringido al dueño
-@router.delete("/{producto_id}", status_code=status.HTTP_204_NO_CONTENT)
-def eliminar_producto(
-    producto_id: int, 
-    db: Session = Depends(get_db),
-    current_user: Usuario = Depends(solo_admin)  # 👈 Inyección de rol
-):
-    """Elimina permanentemente un producto del catálogo."""
-    return ProductoService.borrar_producto(db, producto_id)
+# # 🛡️ PROTEGIDO: El borrado físico o lógico de mercadería queda restringido al dueño
+# @router.delete("/{producto_id}", status_code=status.HTTP_204_NO_CONTENT)
+# def eliminar_producto(
+#     producto_id: int, 
+#     db: Session = Depends(get_db),
+#     current_user: Usuario = Depends(solo_admin)  # 👈 Inyección de rol
+# ):
+#     """Elimina permanentemente un producto del catálogo."""
+#     return ProductoService.borrar_producto(db, producto_id)

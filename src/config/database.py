@@ -4,8 +4,11 @@ from src.config.config import settings
 
 SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL
 
-# Configuración condicional de kwargs para el engine
-engine_kwargs = {}
+# Configuración base de kwargs para el engine
+engine_kwargs = {
+    "pool_pre_ping": True,
+    "pool_recycle": 300,
+}
 
 # check_same_thread es un parámetro exclusivo de SQLite
 if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):

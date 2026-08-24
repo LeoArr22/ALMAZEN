@@ -1,7 +1,7 @@
 from decimal import Decimal
 from typing import Optional, List
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import and_
+from sqlalchemy import select, and_
 from src.models.venta import Venta, VentaDetalle
 from src.models.venta_pago import VentaPago
 from datetime import datetime
@@ -10,7 +10,6 @@ class VentaRepository:
 
     @staticmethod
     def crear_cabecera(db: Session, total: Decimal, ganancia_total: Decimal, caja_id: int, usuario_id: int) -> Venta:
-        """Crea la cabecera de venta. El commit lo gestiona get_db."""
         db_venta = Venta(
             caja_id=caja_id,  
             usuario_id=usuario_id,
@@ -65,16 +64,16 @@ class VentaRepository:
 
     @staticmethod
     def obtener_por_id(db: Session, venta_id: int) -> Optional[Venta]:
-        return (
-            db.query(Venta)
+        stmt = (
+            select(Venta)
             .options(
                 joinedload(Venta.detalles).joinedload(VentaDetalle.producto),
                 joinedload(Venta.pagos),
                 joinedload(Venta.vendedor)
             )
-            .filter(Venta.id == venta_id)
-            .first()
+            .where(Venta.id == venta_id)
         )
+        return db.scalars(stmt).first()
 
     @staticmethod
     def obtener_todas(
@@ -85,7 +84,7 @@ class VentaRepository:
         fecha_desde: Optional[datetime] = None,
         fecha_hasta: Optional[datetime] = None
     ) -> List[Venta]:
-        query = db.query(Venta).options(
+        stmt = select(Venta).options(
             joinedload(Venta.detalles).joinedload(VentaDetalle.producto),
             joinedload(Venta.pagos),
             joinedload(Venta.vendedor)
@@ -100,27 +99,23 @@ class VentaRepository:
             filtros.append(Venta.fecha_venta <= fecha_hasta)
             
         if filtros:
-            query = query.filter(and_(*filtros))
+            stmt = stmt.where(and_(*filtros))
             
-        return (
-            query.order_by(Venta.fecha_venta.desc())
-            .offset(skip)
-            .limit(limit)
-            .all()
-        )
+        stmt = stmt.order_by(Venta.fecha_venta.desc()).offset(skip).limit(limit)
+        return list(db.scalars(stmt).all())
         
     @staticmethod
     def obtener_por_vendedor(db: Session, usuario_id: int, skip: int = 0, limit: int = 100) -> list[Venta]:
-        return (
-            db.query(Venta)
+        stmt = (
+            select(Venta)
             .options(
                 joinedload(Venta.detalles).joinedload(VentaDetalle.producto),
                 joinedload(Venta.pagos),
                 joinedload(Venta.vendedor)
             )
-            .filter(Venta.usuario_id == usuario_id)
+            .where(Venta.usuario_id == usuario_id)
             .order_by(Venta.fecha_venta.desc())
             .offset(skip)
             .limit(limit)
-            .all()
         )
+        return list(db.scalars(stmt).all())
