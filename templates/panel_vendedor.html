@@ -194,7 +194,6 @@
                                 <option value="Transferencia">Transferencia</option>
                                 <option value="Débito">Tarjeta Débito</option>
                                 <option value="Crédito">Tarjeta Crédito</option>
-                                <option value="Mercado Pago">Mercado Pago</option>
                             </select>
                             <input type="number" id="input-monto-pago" step="0.01" min="0.01" placeholder="Monto" 
                                    class="flex-1 bg-gray-900 border border-gray-700 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-emerald-500">
@@ -1227,7 +1226,7 @@
 
         try {
             const res = await fetch('/cajas/cerrar', {
-                method: 'PUT',
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ monto_final_real: montoFinal })
             });

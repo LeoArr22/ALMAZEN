@@ -299,7 +299,10 @@ class VentaService:
                 medio_pago=pago.medio_pago,
                 monto=pago.monto
             )
-        return db_venta    
+
+        # Cargar relaciones en memoria antes de que finalice el request
+        db.flush()
+        return VentaRepository.obtener_por_id(db, db_venta.id)
             
     @staticmethod
     def obtener_venta(db: Session, venta_id: int) -> Venta:

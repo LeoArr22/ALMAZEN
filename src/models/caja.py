@@ -61,3 +61,44 @@ class Caja(Base):
         "Venta", 
         back_populates="turno_caja"
     )
+    
+    # =========================================================================
+    # 🌟 PROPIEDADES CALCULADAS DINÁMICAMENTE (Consumidas por CajaResponse)
+    # =========================================================================
+
+    @property
+    def total_efectivo(self) -> Decimal:
+        total = Decimal("0.00")
+        for venta in self.ventas:
+            if getattr(venta, "es_anulada", False):
+                continue
+            for pago in venta.pagos:
+                if pago.medio_pago.upper() in ["EFECTIVO", "CASH"]:
+                    total += pago.monto
+        return total
+
+    @property
+    def total_transferencia(self) -> Decimal:
+        total = Decimal("0.00")
+        for venta in self.ventas:
+            if getattr(venta, "es_anulada", False):
+                continue
+            for pago in venta.pagos:
+                if pago.medio_pago.upper() in ["TRANSFERENCIA", "MP", "MERCADOPAGO"]:
+                    total += pago.monto
+        return total
+
+    @property
+    def total_tarjeta(self) -> Decimal:
+        total = Decimal("0.00")
+        for venta in self.ventas:
+            if getattr(venta, "es_anulada", False):
+                continue
+            for pago in venta.pagos:
+                if pago.medio_pago.upper() in ["TARJETA", "DEBITO", "CREDITO"]:
+                    total += pago.monto
+        return total
+
+    @property
+    def total_ventas(self) -> Decimal:
+        return self.total_efectivo + self.total_transferencia + self.total_tarjeta

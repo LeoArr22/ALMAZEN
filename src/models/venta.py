@@ -66,6 +66,10 @@ class Venta(Base):
         cascade="all, delete-orphan"
     )
 
+    # 🌟 Propiedad para consumo directo de VentaResponse
+    @property
+    def username_vendedor(self) -> Optional[str]:
+        return self.vendedor.username if self.vendedor else None
 
 class VentaDetalle(Base):
     """

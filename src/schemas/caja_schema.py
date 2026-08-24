@@ -20,8 +20,7 @@ class UsuarioEnCaja(BaseModel):
 # 1. SCHEMAS DE ENTRADA (REQUEST DTOs)
 # ==========================================
 class CajaBase(BaseModel):
-    monto_inicial: Decimal = Field(default=0.00, ge=0, examples=[5000.00])
-
+    monto_inicial: Decimal = Field(default=Decimal("0.00"), ge=0, examples=[5000.00])
 class CajaCreate(CajaBase):
     pass
 
@@ -41,6 +40,11 @@ class CajaResponse(BaseModel):
     estado: str
     usuario_apertura_id: int
     usuario_cierre_id: Optional[int] = None 
+    
+    total_efectivo: Decimal = Decimal("0.00")
+    total_transferencia: Decimal = Decimal("0.00")
+    total_tarjeta: Decimal = Decimal("0.00")
+    total_ventas: Decimal = Decimal("0.00")
     
     # 👥 Relaciones cargadas desde SQLAlchemy para auditoría completa
     usuario_apertura: Optional[UsuarioEnCaja] = None

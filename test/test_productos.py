@@ -98,3 +98,4 @@ def test_actualizar_producto_inexistente(client, override_admin):
     }
     res = client.put("/productos/99999", json=payload)
     assert res.status_code == 404
+    

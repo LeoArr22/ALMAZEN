@@ -22,5 +22,20 @@ def test_flujo_abrir_y_cerrar_caja(client, override_usuario_autenticado):
     assert res_activa.json()["estado"] == "ABIERTA"
 
     # 3. Cerrar Caja
-    res_cerrar = client.put("/cajas/cerrar", json={"monto_final_real": 5000.0})
+    res_cerrar = client.post("/cajas/cerrar", json={"monto_final_real": 5000.0})
     assert res_cerrar.status_code == 200
+    
+def test_cerrar_caja_con_desglose_pagos(client, override_usuario_autenticado):
+    # 1. Abrir caja
+    client.post("/cajas/", json={"monto_inicial": 5000.0})
+
+    # 2. Cerrar caja enviando pagos agregados
+    payload = {
+        "monto_final_real": 15000.0,
+        "pagos": [
+            {"medio_pago": "Efectivo", "monto": 10000.0},
+            {"medio_pago": "Transferencia", "monto": 5000.0}
+        ]
+    }
+    res = client.post("/cajas/cerrar", json=payload)
+    assert res.status_code == 200

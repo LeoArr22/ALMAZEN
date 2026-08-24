@@ -140,10 +140,10 @@
                             <span class="text-xs font-bold text-gray-500 uppercase tracking-wider block">Agregar / Modificar Método de Pago</span>
                             <div class="flex gap-2">
                                 <select id="select-medio-pago-nuevo" class="bg-gray-950 border border-gray-800 text-gray-200 rounded-xl p-2.5 text-xs md:text-sm focus:outline-none focus:border-emerald-500">
-                                    <option value="Efectivo">Efectivo</option>
-                                    <option value="Transferencia">Transferencia</option>
-                                    <option value="Tarjeta de Débito">T. Débito</option>
-                                    <option value="Tarjeta de Crédito">T. Crédito</option>
+                                    <option value="EFECTIVO">Efectivo</option>
+                                    <option value="TRANSFERENCIA">Transferencia</option>
+                                    <option value="TARJETA_DEBITO">T. Débito</option>
+                                    <option value="TARJETA_CREDITO">T. Crédito</option>
                                 </select>
                                 <input type="number" id="input-monto-pago-nuevo" placeholder="0.00" step="0.01"
                                     class="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-sm text-emerald-400 font-mono font-bold focus:outline-none focus:border-emerald-500">
@@ -777,7 +777,7 @@
             document.getElementById('monto-resta-asignar').innerText = `$${(resta > 0 ? resta : 0).toFixed(2)}`;
 
             const efectivoAportadoVal = parseFloat(document.getElementById('input-efectivo-recibido').value || 0);
-            const pagoEfectivoEnLista = pagosAgregados.find(p => p.medio_pago === 'Efectivo');
+            const pagoEfectivoEnLista = pagosAgregados.find(p => p.medio_pago === 'EFECTIVO');
             const montoEfectivoEsperado = pagoEfectivoEnLista ? pagoEfectivoEnLista.monto : 0;
 
             let vuelto = 0;
@@ -843,7 +843,7 @@
             const total = window.obtenerTotalCarritoActual();
             
             // Forzamos el total promocionado en los pagos asignados
-            pagosAgregados = [{ medio_pago: 'Efectivo', monto: total }];
+            pagosAgregados = [{ medio_pago: 'EFECTIVO', monto: total }];
             
             renderizarListaPagos();
 
@@ -919,7 +919,7 @@
             document.getElementById('monto-resta-asignar').innerText = `$${(resta > 0 ? resta : 0).toFixed(2)}`;
 
             const efectivoAportadoVal = parseFloat(document.getElementById('input-efectivo-recibido').value || 0);
-            const pagoEfectivoEnLista = pagosAgregados.find(p => p.medio_pago === 'Efectivo');
+            const pagoEfectivoEnLista = pagosAgregados.find(p => p.medio_pago === 'EFECTIVO');
             const montoEfectivoEsperado = pagoEfectivoEnLista ? pagoEfectivoEnLista.monto : 0;
 
             let vuelto = 0;

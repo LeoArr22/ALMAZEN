@@ -113,17 +113,17 @@
         </div>
 
         <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse min-w-[850px]">
+            <table class="w-full text-left border-collapse min-w-[950px]">
                 <thead>
                     <tr class="border-b border-gray-800 text-[10px] font-mono font-bold uppercase tracking-wider text-gray-400 bg-gray-950/60">
-                        <th class="py-3 px-4 w-20">ID Caja</th>
-                        <th class="py-3 px-4 w-28">Estado</th>
-                        <th class="py-3 px-4 min-w-[200px]">Operarios (Apertura / Cierre)</th>
-                        <th class="py-3 px-4 min-w-[170px]">Apertura / Cierre</th>
-                        <th class="py-3 px-4 text-right w-32">M. Inicial</th>
-                        <th class="py-3 px-4 text-right w-32">Esperado</th>
-                        <th class="py-3 px-4 text-right w-32">Arqueo Real</th>
-                        <th class="py-3 px-4 text-right w-36">Diferencia</th>
+                        <th class="py-3 px-4 w-16">ID</th>
+                        <th class="py-3 px-4 w-24">Estado</th>
+                        <th class="py-3 px-4 min-w-[180px]">Operarios (Apertura / Cierre)</th>
+                        <th class="py-3 px-4 min-w-[160px]">Fechas</th>
+                        <th class="py-3 px-4 text-right w-28">M. Inicial</th>
+                        <th class="py-3 px-4 text-right min-w-[210px]">Esperado en Caja & Desglose</th>
+                        <th class="py-3 px-4 text-right w-28">Arqueo Real</th>
+                        <th class="py-3 px-4 text-right w-32">Diferencia</th>
                     </tr>
                 </thead>
                 <tbody id="tabla-cajas-cuerpo" class="divide-y divide-gray-800/50 text-xs font-mono">
@@ -143,7 +143,6 @@
         const modulo = document.getElementById('modulo-gestion-cajas');
         setTimeout(() => { if(modulo) modulo.classList.remove('opacity-0', 'translate-y-2'); }, 50);
 
-        // Helper ultra-seguro para conversión numérica
         function safeNum(val, defaultVal = 0) {
             if (val === null || val === undefined) return defaultVal;
             const parsed = parseFloat(val);
@@ -153,7 +152,6 @@
         window.cacheCajas = [];
         cargarListadoCajas();
 
-        // Carga inicial por defecto: trae solo los turnos del día de HOY
         async function cargarListadoCajas() {
             const cuerpo = document.getElementById('tabla-cajas-cuerpo');
             const avisoVacio = document.getElementById('tabla-cajas-vacia');
@@ -163,17 +161,14 @@
             if(avisoVacio) avisoVacio.classList.add('hidden');
 
             try {
-                // Generamos la fecha de hoy local en formato YYYY-MM-DD
                 const ahora = new Date();
                 const hoy = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`;
                 
-                // Establecemos la fecha de hoy en el input del filtro por prolijidad visual
                 const inputDesde = document.getElementById('f-desde');
                 if (inputDesde && !inputDesde.value) {
                     inputDesde.value = hoy;
                 }
 
-                // Petición a la API restringida al día de hoy por defecto
                 const r = await fetch(`/cajas/historial?fecha_desde=${hoy}`);
                 if (!r.ok) throw new Error("Error al obtener cajas");
                 
@@ -249,7 +244,6 @@
 
             let filtradas = [...window.cacheCajas];
 
-            // 1. Filtro por Operario
             if (filtroOperario !== 'todos') {
                 filtradas = filtradas.filter(c => {
                     const opA = c.usuario_apertura ? (c.usuario_apertura.nombre || c.usuario_apertura.username) : '';
@@ -258,16 +252,15 @@
                 });
             }
 
-            // 2. Filtro por Estado/Balance
             if (filtroBalance !== 'todos') {
                 filtradas = filtradas.filter(c => {
                     const inicial = safeNum(c.monto_inicial);
                     const finalReal = c.monto_final_real !== null ? safeNum(c.monto_final_real) : null;
-                    const ventasTotal = safeNum(c.total_ventas || c.total_efectivo);
+                    const efectivoVentas = safeNum(c.total_efectivo);
                     
                     const estimado = (c.monto_final_estimado !== null && c.monto_final_estimado !== undefined)
                         ? safeNum(c.monto_final_estimado)
-                        : (inicial + ventasTotal);
+                        : (inicial + efectivoVentas);
 
                     const abierta = (c.activa === true || !c.fecha_cierre);
 
@@ -284,7 +277,6 @@
                 });
             }
 
-            // 3. Ordenamiento
             filtradas.sort((a, b) => {
                 if (filtroOrden === 'recientes') return new Date(b.fecha_apertura) - new Date(a.fecha_apertura);
                 if (filtroOrden === 'antiguas') return new Date(a.fecha_apertura) - new Date(b.fecha_apertura);
@@ -294,7 +286,7 @@
                     const ini = safeNum(c.monto_inicial);
                     const est = (c.monto_final_estimado !== null && c.monto_final_estimado !== undefined) 
                         ? safeNum(c.monto_final_estimado) 
-                        : (ini + safeNum(c.total_ventas));
+                        : (ini + safeNum(c.total_efectivo));
                     return safeNum(c.monto_final_real) - est;
                 };
 
@@ -325,11 +317,18 @@
             cajas.forEach(c => {
                 const inicial = safeNum(c.monto_inicial);
                 const finalReal = (c.monto_final_real !== null && c.monto_final_real !== undefined) ? safeNum(c.monto_final_real) : null;
-                const ventasTotal = safeNum(c.total_ventas || c.total_efectivo);
+                
+                // Desglose de Ventas por Método de Pago
+                const efecVentas = safeNum(c.total_efectivo);
+                const transVentas = safeNum(c.total_transferencia);
+                const debVentas = safeNum(c.total_debito);
+                const credVentas = safeNum(c.total_credito);
+                const consVentas = safeNum(c.total_consumo_interno);
 
-                const esperado = (c.monto_final_estimado !== null && c.monto_final_estimado !== undefined)
+                // Esperado en físico = Monto Inicial + Ventas en Efectivo
+                const esperadoEfectivo = (c.monto_final_estimado !== null && c.monto_final_estimado !== undefined)
                     ? safeNum(c.monto_final_estimado)
-                    : (inicial + ventasTotal);
+                    : (inicial + efecVentas);
 
                 const esAbierta = c.activa === true || !c.fecha_cierre;
                 
@@ -338,7 +337,7 @@
 
                 let diffContent = '<span class="text-gray-600">-</span>';
                 if (!esAbierta && finalReal !== null) {
-                    const diff = finalReal - esperado;
+                    const diff = finalReal - esperadoEfectivo;
                     if (Math.abs(diff) < 0.01) {
                         diffContent = '<span class="text-emerald-400 font-bold">✨ $0.00</span>';
                     } else if (diff > 0) {
@@ -365,7 +364,19 @@
                         ${c.fecha_cierre ? `<div><strong class="text-gray-300">Cierre:</strong> ${formatearFechaISO(c.fecha_cierre)}</div>` : ''}
                     </td>
                     <td class="py-3.5 px-4 text-right text-gray-400">$${inicial.toFixed(2)}</td>
-                    <td class="py-3.5 px-4 text-right text-emerald-400 font-bold">$${esperado.toFixed(2)}</td>
+                    
+                    <!-- Esperado en Efectivo y Desglose Completo -->
+                    <td class="py-3.5 px-4 text-right">
+                        <div class="text-emerald-400 font-black text-sm">$${esperadoEfectivo.toFixed(2)}</div>
+                        <div class="text-[10px] text-gray-400 font-sans space-y-0.5 mt-1 border-t border-gray-800/60 pt-1">
+                            <div class="flex justify-between gap-2"><span>Efectivo:</span> <strong class="text-gray-300">$${efecVentas.toFixed(2)}</strong></div>
+                            <div class="flex justify-between gap-2"><span>Transf:</span> <strong class="text-gray-300">$${transVentas.toFixed(2)}</strong></div>
+                            <div class="flex justify-between gap-2"><span>Débito:</span> <strong class="text-gray-300">$${debVentas.toFixed(2)}</strong></div>
+                            <div class="flex justify-between gap-2"><span>Crédito:</span> <strong class="text-gray-300">$${credVentas.toFixed(2)}</strong></div>
+                            ${consVentas > 0 ? `<div class="flex justify-between gap-2 text-amber-400/80"><span>Cons. Int:</span> <strong>$${consVentas.toFixed(2)}</strong></div>` : ''}
+                        </div>
+                    </td>
+
                     <td class="py-3.5 px-4 text-right font-black text-gray-100">${(finalReal !== null) ? '$' + finalReal.toFixed(2) : '-'}</td>
                     <td class="py-3.5 px-4 text-right">${diffContent}</td>
                 `;
@@ -381,11 +392,11 @@
             cajas.forEach(c => {
                 const inicial = safeNum(c.monto_inicial);
                 const finalReal = (c.monto_final_real !== null && c.monto_final_real !== undefined) ? safeNum(c.monto_final_real) : null;
-                const ventasTotal = safeNum(c.total_ventas || c.total_efectivo);
+                const efecVentas = safeNum(c.total_efectivo);
 
                 const estimado = (c.monto_final_estimado !== null && c.monto_final_estimado !== undefined)
                     ? safeNum(c.monto_final_estimado)
-                    : (inicial + ventasTotal);
+                    : (inicial + efecVentas);
 
                 if (c.activa || !c.fecha_cierre) { 
                     totalActivas += estimado; 

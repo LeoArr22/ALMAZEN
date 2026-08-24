@@ -1,7 +1,7 @@
 from decimal import Decimal
 from typing import Optional, List
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import and_, func
+from sqlalchemy import and_
 from src.models.venta import Venta, VentaDetalle
 from src.models.venta_pago import VentaPago
 from datetime import datetime
@@ -10,7 +10,7 @@ class VentaRepository:
 
     @staticmethod
     def crear_cabecera(db: Session, total: Decimal, ganancia_total: Decimal, caja_id: int, usuario_id: int) -> Venta:
-        """Crea el registro madre de la venta con los totales finales y la caja asociada."""
+        """Crea la cabecera de venta. El commit lo gestiona get_db."""
         db_venta = Venta(
             caja_id=caja_id,  
             usuario_id=usuario_id,
@@ -19,7 +19,7 @@ class VentaRepository:
             ganancia_total=ganancia_total
         )
         db.add(db_venta)
-        db.flush()  # El flush genera el ID de la venta sin cerrar la transacción
+        db.flush()
         return db_venta
 
     @staticmethod
@@ -32,8 +32,6 @@ class VentaRepository:
         costo_historico: Decimal,
         promocion_aplicada: Optional[str] = None
     ) -> VentaDetalle:
-        """Inserta un renglón del carrito asociado a la venta madre con campos calculados."""
-        # Calculamos los montos de forma exacta con Decimal
         subtotal = precio_historico * cantidad
         ganancia_item = (precio_historico - costo_historico) * cantidad
 
@@ -57,7 +55,6 @@ class VentaRepository:
         medio_pago: str, 
         monto: Decimal
     ) -> VentaPago:
-        """Inserta un medio de pago asociado a la venta madre."""
         db_pago = VentaPago(
             venta_id=venta_id,
             medio_pago=medio_pago,
@@ -88,7 +85,6 @@ class VentaRepository:
         fecha_desde: Optional[datetime] = None,
         fecha_hasta: Optional[datetime] = None
     ) -> List[Venta]:
-        """Trae el historial de ventas aplicando filtros de caja y rango de fechas desde la BD."""
         query = db.query(Venta).options(
             joinedload(Venta.detalles).joinedload(VentaDetalle.producto),
             joinedload(Venta.pagos),
@@ -96,13 +92,10 @@ class VentaRepository:
         )
         
         filtros = []
-        
         if caja_id is not None:
             filtros.append(Venta.caja_id == caja_id)
-            
         if fecha_desde:
             filtros.append(Venta.fecha_venta >= fecha_desde)
-
         if fecha_hasta:
             filtros.append(Venta.fecha_venta <= fecha_hasta)
             
@@ -118,12 +111,12 @@ class VentaRepository:
         
     @staticmethod
     def obtener_por_vendedor(db: Session, usuario_id: int, skip: int = 0, limit: int = 100) -> list[Venta]:
-        """Consulta en la base de datos las ventas asociadas a un vendedor específico."""
         return (
             db.query(Venta)
             .options(
-                joinedload(Venta.detalles),
-                joinedload(Venta.pagos)
+                joinedload(Venta.detalles).joinedload(VentaDetalle.producto),
+                joinedload(Venta.pagos),
+                joinedload(Venta.vendedor)
             )
             .filter(Venta.usuario_id == usuario_id)
             .order_by(Venta.fecha_venta.desc())
@@ -131,9 +124,3 @@ class VentaRepository:
             .limit(limit)
             .all()
         )
-
-    
-    @staticmethod
-    def eliminar(db: Session, db_venta: Venta) -> None:
-        """Elimina una venta y sus detalles/pagos por cascada."""
-        db.delete(db_venta)
