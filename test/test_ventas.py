@@ -3,6 +3,8 @@ from src.main import app
 from src.dependencies.auth import get_current_user
 from src.dependencies.roles import RoleChecker
 from src.models.usuario import Usuario
+from src.models.promocion import Promocion, PromocionProducto
+from src.repositories.promocion_repository import PromocionRepository
 
 @pytest.fixture
 def mock_entorno_venta():
@@ -60,3 +62,22 @@ def test_registrar_venta_y_descontar_stock(client, override_admin):
     # 4. Verificar descuento de stock
     res_prod = client.get("/productos/codigo/7791234123412")
     assert float(res_prod.json()["stock"]) == 8.0
+    
+# tests/test_promociones.py (o test_ventas.py)
+
+def test_obtener_todas_promociones_con_multiples_productos(db_session):
+    # Setup: Crear una promoción con MÁS DE UN producto (relación 1-to-Many)
+    promo = Promocion(nombre="Promo 2x1", tipo="DESCUENTO", precio_promocional=100.0)
+    db_session.add(promo)
+    db_session.flush()
+
+    prod1 = PromocionProducto(promocion_id=promo.id, producto_id=1, cantidad_requerida=1)
+    prod2 = PromocionProducto(promocion_id=promo.id, producto_id=2, cantidad_requerida=1)
+    db_session.add_all([prod1, prod2])
+    db_session.commit()
+
+    # Act: Invocar la función del repositorio que usa joinedload
+    promos = PromocionRepository.obtener_todas(db_session)
+
+    # Assert: Si faltaba .unique(), SQLAlchemy lanzará InvalidRequestError al ejecutar este query
+    assert len(promos) == 1

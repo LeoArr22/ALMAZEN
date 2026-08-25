@@ -102,7 +102,7 @@ class VentaRepository:
             stmt = stmt.where(and_(*filtros))
             
         stmt = stmt.order_by(Venta.fecha_venta.desc()).offset(skip).limit(limit)
-        return list(db.scalars(stmt).all())
+        return list(db.scalars(stmt).unique().all())
         
     @staticmethod
     def obtener_por_vendedor(db: Session, usuario_id: int, skip: int = 0, limit: int = 100) -> list[Venta]:
@@ -118,4 +118,4 @@ class VentaRepository:
             .offset(skip)
             .limit(limit)
         )
-        return list(db.scalars(stmt).all())
+        return list(db.scalars(stmt).unique().all())

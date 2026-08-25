@@ -20,8 +20,8 @@ class PromocionRepository:
         stmt = select(Promocion).options(joinedload(Promocion.productos))
         if solo_activas:
             stmt = stmt.where(Promocion.activo == True)
-        return list(db.scalars(stmt).all())
-
+        return list(db.scalars(stmt).unique().all())
+    
     @staticmethod
     def crear(db: Session, promo_in: PromocionCreate) -> Promocion:
         nueva_promo = Promocion(

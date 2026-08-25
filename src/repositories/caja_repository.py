@@ -34,7 +34,7 @@ class CajaRepository:
             .offset(skip)
             .limit(limit)
         )
-        return list(db.scalars(stmt).all())
+        return list(db.scalars(stmt).unique().all())
 
     @staticmethod
     def obtener_activa(db: Session) -> Optional[Caja]:
@@ -75,7 +75,7 @@ class CajaRepository:
             .offset(skip)
             .limit(limit)
         )
-        return list(db.scalars(stmt).all())
+        return list(db.scalars(stmt).unique().all())
     
     @staticmethod
     def obtener_activa_por_usuario(db: Session, usuario_id: int) -> Optional[Caja]:
@@ -126,4 +126,4 @@ class CajaRepository:
             stmt = stmt.where(Caja.fecha_apertura <= fecha_hasta)
             
         stmt = stmt.order_by(Caja.id.desc()).offset(skip).limit(limit)
-        return list(db.scalars(stmt).all())
+        return list(db.scalars(stmt).unique().all())
