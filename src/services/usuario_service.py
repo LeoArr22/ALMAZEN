@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from typing import List
 from fastapi import HTTPException, status
+from src.config.config import settings
 from src.repositories.usuario_repository import UsuarioRepository
 from src.schemas.usuario_schema import UsuarioCreate, UsuarioUpdate, TokenResponse
 from src.config.security import obtener_password_hash, verificar_password, crear_token_acceso
@@ -53,6 +54,13 @@ class UsuarioService:
         if not usuario_db:
             raise HTTPException(status_code=404, detail="Usuario no encontrado.")
 
+        # 🛡️ Protección Sandbox / Demo Mode
+        if settings.DEMO_MODE and (usuario_db.id == 1 or usuario_db.username == "admin"):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="En el entorno de prueba (Demo) no está permitido modificar la cuenta del Administrador."
+            )
+            
         datos_actualizar = usuario_in.model_dump(exclude_unset=True)
 
         # 🛑 RESTRICCIÓN ADMIN: No se puede cambiar el nombre del usuario 'admin'

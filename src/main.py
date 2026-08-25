@@ -50,6 +50,11 @@ app.add_middleware(
 def root_redirect():
     return RedirectResponse(url="/login")
 
+# Endpoint de verificación de salud del servidor
+@app.get("/health", status_code=200)
+def health_check():
+    return {"status": "ok"}
+
 # 🎨 Servir archivos estáticos (CSS, JS, Imágenes)
 os.makedirs("static", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")  
