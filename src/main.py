@@ -51,7 +51,7 @@ def root_redirect():
     return RedirectResponse(url="/login")
 
 # Endpoint de verificación de salud del servidor
-@app.get("/health", status_code=200)
+@app.api_route("/health", methods=["GET", "HEAD"], status_code=200, include_in_schema=False)
 def health_check():
     return {"status": "ok"}
 
