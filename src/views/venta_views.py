@@ -15,3 +15,10 @@ async def servir_punto_de_venta(request: Request, current_user: Usuario = Depend
 @router_vistas_ventas.get("/ventas/historial", response_class=HTMLResponse)
 async def servir_historial_ventas(request: Request, current_user: Usuario = Depends(get_current_user)):
     return templates.TemplateResponse(request, "ventas/historial.html")
+
+@router_vistas_ventas.get("/ventas/expres", response_class=HTMLResponse)
+async def servir_punto_de_venta_expres(request: Request, current_user: Usuario = Depends(get_current_user)):
+    """
+    Vista del modo rápido / accesible para ventas en efectivo (interfaz simplificada de alto contraste).
+    """
+    return templates.TemplateResponse(request, "ventas/expres.html")
