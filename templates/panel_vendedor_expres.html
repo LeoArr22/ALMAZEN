@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlmaZen - Modo Rápido</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body, html { height: 100vh; max-height: 100vh; margin: 0; padding: 0; overflow: hidden; }
+        ::-webkit-scrollbar { width: 12px; }
+        ::-webkit-scrollbar-track { background: #090d16; }
+        ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 8px; }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 font-sans flex flex-col min-h-screen select-none">
+
+    <!-- HEADER ULTRA MINIMALISTA -->
+    <div class="bg-gray-900 border-b border-gray-800 px-6 py-2 flex items-center justify-between shrink-0 h-12">
+        <div class="flex items-center gap-3">
+            <span class="text-lg font-black text-white flex items-center">
+                <i class="fa-solid fa-bolt text-amber-400 mr-2"></i> ALMA<span class="text-emerald-400 font-mono">ZEN</span>
+            </span>
+            <span class="bg-emerald-500/20 text-emerald-400 text-xs px-2.5 py-0.5 rounded-md font-bold border border-emerald-500/30">
+                ⚡ Modo Rápido
+            </span>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <span id="lbl-vendedor" class="text-xs font-semibold text-gray-400">Vendedor</span>
+            <a href="/vistas/ventas/pos" class="text-xs bg-gray-800 hover:bg-gray-700 text-amber-400 border border-amber-500/40 px-3 py-1 rounded-lg font-bold transition flex items-center gap-1">
+                <i class="fa-solid fa-border-all"></i> Volver a POS
+            </a>
+        </div>
+    </div>
+
+    <!-- CONTENEDOR A PANTALLA COMPLETA (ANCHO TOTAL) -->
+    <div class="flex-1 flex flex-col p-4 overflow-hidden gap-4">
+        
+        <!-- BUSCADOR SUPERIOR DESTACADO -->
+        <div class="relative z-30 shrink-0">
+            <div class="relative flex items-center">
+                <i class="fa-solid fa-barcode absolute left-5 text-emerald-400 text-3xl"></i>
+                <input type="text" id="input-busqueda" placeholder="Escaneá o buscá un producto..." 
+                       class="w-full bg-gray-900 border-2 border-emerald-500/60 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-500/20 rounded-2xl pl-16 pr-6 py-4 text-3xl font-black text-white placeholder-gray-600 outline-none transition shadow-2xl"
+                       autocomplete="off" autofocus
+                       oninput="manejarInputBusqueda(event)"
+                       onkeydown="evaluarTeclaBusqueda(event)">
+            </div>
+            
+            <!-- DROPDOWN DE COINCIDENCIAS GIGANTE -->
+            <div id="dropdown-recomendaciones" class="absolute left-0 right-0 top-full mt-2 bg-gray-900 border-2 border-emerald-500/50 rounded-2xl shadow-2xl hidden max-h-[60vh] overflow-y-auto z-50 divide-y-2 divide-gray-800">
+            </div>
+        </div>
+
+        <!-- LISTA / TABLA DE PRODUCTOS (OCUPA TODO EL ANCHO DE PANTALLA Y SE EXPANDE) -->
+        <div class="flex-1 bg-gray-900 rounded-2xl border-2 border-gray-800 shadow-2xl overflow-y-auto relative" id="contenedor-tabla">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-gray-950 text-gray-400 uppercase text-lg tracking-wider border-b-2 border-gray-800 sticky top-0 z-10 shadow">
+                    <tr>
+                        <th class="px-6 py-4">Producto</th>
+                        <th class="px-6 py-4 text-center">Cantidad</th>
+                        <th class="px-6 py-4 text-right">Precio Unitario</th>
+                        <th class="px-6 py-4 text-right">Subtotal</th>
+                        <th class="px-6 py-4 text-center">Quitar</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-carrito" class="divide-y-2 divide-gray-800/80 text-white">
+                </tbody>
+            </table>
+
+            <div id="carrito-vacio-msg" class="p-20 text-center text-gray-500 flex flex-col items-center justify-center gap-4">
+                <i class="fa-solid fa-basket-shopping text-7xl text-gray-800"></i>
+                <p class="text-3xl font-black text-gray-500">Lista vacía. Escaneá un producto para empezar.</p>
+            </div>
+        </div>
+
+        <!-- BARRA INFERIOR CON TOTAL GIGANTE Y ATAJOS -->
+        <div class="bg-gray-900 border-2 border-emerald-500/50 rounded-2xl p-4 flex items-center justify-between shadow-2xl shrink-0">
+            
+            <!-- INDICADORES Y ATAJOS -->
+            <div class="flex items-center gap-6 text-gray-300 font-bold text-lg">
+                <span class="flex items-center gap-2">
+                    <kbd class="bg-gray-800 text-amber-400 px-3 py-1 rounded-xl border border-gray-700 font-black">BORRAR / BACKSPACE</kbd> Eliminar último
+                </span>
+                <span class="flex items-center gap-2">
+                    <kbd class="bg-gray-800 text-emerald-400 px-3 py-1 rounded-xl border border-gray-700 font-black">ENTER</kbd> Procesar venta
+                </span>
+                <button onclick="vaciarCarrito()" class="text-red-400 hover:text-red-300 transition flex items-center gap-2 ml-4 bg-red-950/40 border border-red-800 px-3 py-1.5 rounded-xl text-base">
+                    <i class="fa-solid fa-trash-can"></i> Vaciar
+                </button>
+            </div>
+
+            <!-- MONTO TOTAL GIGANTE -->
+            <div class="flex items-center gap-6">
+                <div class="text-right">
+                    <span class="text-xs font-black text-emerald-400 uppercase tracking-widest block">TOTAL A COBRAR</span>
+                    <div id="lbl-cant-items" class="text-sm font-bold text-gray-400">0 ítems</div>
+                </div>
+                <div id="lbl-total-pagar" class="text-6xl font-black text-emerald-400 tracking-tight bg-gray-950 px-8 py-2 rounded-2xl border-2 border-emerald-500/60 shadow-inner">
+                    $0.00
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3"></div>
+
+    <script>
+        let carrito = [];
+        let catalogoProductos = [];
+        let productosFiltradosActuales = [];
+
+        document.addEventListener("DOMContentLoaded", () => {
+            cargarCatalogo();
+            cargarInfoUsuario();
+
+            const inputBusqueda = document.getElementById('input-busqueda');
+            if (inputBusqueda) inputBusqueda.focus();
+            
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#input-busqueda') && !e.target.closest('#dropdown-recomendaciones')) {
+                    ocultarRecomendaciones();
+                }
+            });
+        });
+
+        async function cargarInfoUsuario() {
+            try {
+                const res = await fetch('/usuarios/me');
+                if (res.ok) {
+                    const u = await res.json();
+                    document.getElementById('lbl-vendedor').innerText = u.nombre || u.username || 'Vendedor';
+                }
+            } catch (err) {}
+        }
+
+        async function cargarCatalogo() {
+            try {
+                const res = await fetch("/productos/");
+                if (res.ok) catalogoProductos = await res.json();
+            } catch (err) {
+                lanzarToast("Error al cargar productos", "error");
+            }
+        }
+
+        function manejarInputBusqueda(e) {
+            const query = e.target.value.trim().toLowerCase();
+            const dropdown = document.getElementById('dropdown-recomendaciones');
+
+            if (!query) {
+                ocultarRecomendaciones();
+                return;
+            }
+
+            productosFiltradosActuales = catalogoProductos.filter(p => {
+                const cod = p.codigo_barras || p.codigo || '';
+                return p.nombre.toLowerCase().includes(query) || cod.toLowerCase().includes(query);
+            });
+
+            if (productosFiltradosActuales.length === 0) {
+                dropdown.innerHTML = `<div class="p-4 text-xl text-gray-400 text-center font-bold">No se encontró ningún producto</div>`;
+                dropdown.classList.remove('hidden');
+                return;
+            }
+
+            dropdown.innerHTML = '';
+            productosFiltradosActuales.forEach((p, idx) => {
+                const div = document.createElement('div');
+                div.className = `p-4 flex justify-between items-center cursor-pointer hover:bg-gray-800 transition ${idx === 0 ? 'bg-gray-800/60' : ''}`;
+                div.innerHTML = `
+                    <div>
+                        <div class="text-2xl font-black text-white">${p.nombre}</div>
+                        <div class="text-sm text-gray-400">Código: ${p.codigo_barras || p.codigo || 'N/A'}</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-3xl font-black text-emerald-400">$${parseFloat(p.precio).toFixed(2)}</div>
+                    </div>
+                `;
+                div.onclick = () => seleccionarProducto(p);
+                dropdown.appendChild(div);
+            });
+
+            dropdown.classList.remove('hidden');
+        }
+
+        async function evaluarTeclaBusqueda(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const val = e.target.value.trim();
+                
+                if (val === '' && carrito.length > 0) {
+                    confirmarVentaRapida();
+                    return;
+                }
+
+                if (productosFiltradosActuales.length > 0) {
+                    seleccionarProducto(productosFiltradosActuales[0]);
+                } else if (val !== '') {
+                    try {
+                        const res = await fetch(`/productos/codigo/${encodeURIComponent(val)}`);
+                        if (res.ok) {
+                            const prod = await res.json();
+                            seleccionarProducto(prod);
+                        } else {
+                            lanzarToast("Producto no encontrado", "error");
+                        }
+                    } catch (err) {
+                        lanzarToast("Error al buscar producto", "error");
+                    }
+                }
+            } else if (e.key === 'Escape') {
+                ocultarRecomendaciones();
+            }
+        }
+
+        function seleccionarProducto(prod) {
+            agregarAlCarrito(prod);
+            const input = document.getElementById('input-busqueda');
+            input.value = '';
+            input.focus();
+            ocultarRecomendaciones();
+        }
+
+        function ocultarRecomendaciones() {
+            document.getElementById('dropdown-recomendaciones').classList.add('hidden');
+            productosFiltradosActuales = [];
+        }
+
+        function agregarAlCarrito(producto) {
+            const index = carrito.findIndex(item => item.producto_id === producto.id);
+            if (index !== -1) {
+                carrito[index].cantidad += 1;
+            } else {
+                carrito.push({
+                    producto_id: producto.id,
+                    nombre: producto.nombre,
+                    precio: parseFloat(producto.precio),
+                    cantidad: 1
+                });
+            }
+            renderizarCarrito();
+            lanzarToast(`+ ${producto.nombre}`, "exito");
+        }
+
+        function renderizarCarrito() {
+            const tbody = document.getElementById('tabla-carrito');
+            const msgVacio = document.getElementById('carrito-vacio-msg');
+            tbody.innerHTML = '';
+
+            if (carrito.length === 0) {
+                msgVacio.classList.remove('hidden');
+            } else {
+                msgVacio.classList.add('hidden');
+            }
+
+            let totalPagar = 0;
+            let totalUnidades = 0;
+
+            carrito.forEach((item, index) => {
+                const subtotal = item.cantidad * item.precio;
+                totalPagar += subtotal;
+                totalUnidades += item.cantidad;
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-800/50 transition border-b-2 border-gray-800/60";
+                tr.innerHTML = `
+                    <td class="px-6 py-5">
+                        <div class="text-3xl font-black text-white">${item.nombre}</div>
+                    </td>
+                    <td class="px-6 py-5 text-center">
+                        <span class="text-4xl font-black text-emerald-400 bg-gray-950 px-5 py-2 rounded-2xl border border-gray-800 shadow">${item.cantidad}</span>
+                    </td>
+                    <td class="px-6 py-5 text-right font-bold text-2xl text-gray-300">$${item.precio.toFixed(2)}</td>
+                    <td class="px-6 py-5 text-right font-black text-4xl text-emerald-400">$${subtotal.toFixed(2)}</td>
+                    <td class="px-6 py-5 text-center">
+                        <button onclick="eliminarDelCarrito(${index})" class="bg-red-950/60 hover:bg-red-900 border border-red-800 text-red-400 hover:text-white px-5 py-3 rounded-2xl text-xl transition">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('lbl-cant-items').innerText = `${totalUnidades} unidad(es)`;
+            document.getElementById('lbl-total-pagar').innerText = `$${totalPagar.toFixed(2)}`;
+
+            const contenedor = document.getElementById('contenedor-tabla');
+            contenedor.scrollTop = contenedor.scrollHeight;
+        }
+
+        function eliminarDelCarrito(index) {
+            carrito.splice(index, 1);
+            renderizarCarrito();
+            document.getElementById('input-busqueda').focus();
+        }
+
+        function vaciarCarrito() {
+            if (carrito.length === 0) return;
+            carrito = [];
+            renderizarCarrito();
+            lanzarToast("Lista vaciada", "info");
+            document.getElementById('input-busqueda').focus();
+        }
+
+        async function confirmarVentaRapida() {
+            if (carrito.length === 0) return;
+
+            const total = carrito.reduce((acc, item) => acc + (item.cantidad * item.precio), 0);
+            
+            const payload = {
+                detalles: carrito.map(item => ({
+                    producto_id: item.producto_id,
+                    cantidad: item.cantidad
+                })),
+                pagos: [
+                    { medio_pago: 'Efectivo', monto: total }
+                ]
+            };
+
+            try {
+                const res = await fetch('/ventas/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    const venta = await res.json();
+                    lanzarToast(`¡VENTA #${venta.id} REGISTRADA!`, "exito");
+                    carrito = [];
+                    renderizarCarrito();
+                    const input = document.getElementById('input-busqueda');
+                    input.value = '';
+                    input.focus();
+                } else {
+                    const err = await res.json();
+                    lanzarToast(err.detail || "Error al procesar la venta", "error");
+                }
+            } catch (err) {
+                lanzarToast("Error de conexión al servidor", "error");
+            }
+        }
+
+        function lanzarToast(mensaje, tipo = "info") {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const toast = document.createElement('div');
+            const colores = {
+                exito: 'bg-emerald-500 text-gray-950 font-black border-2 border-emerald-300 text-2xl',
+                error: 'bg-red-600 text-white font-bold text-xl',
+                info: 'bg-gray-800 text-gray-200 border border-gray-700 text-xl'
+            };
+            toast.className = `px-8 py-5 rounded-2xl shadow-2xl flex items-center gap-4 transition transform translate-y-2 opacity-0 ${colores[tipo] || colores.info}`;
+            toast.innerHTML = `<span>${mensaje}</span>`;
+            container.appendChild(toast);
+
+            setTimeout(() => { toast.classList.remove('translate-y-2', 'opacity-0'); }, 10);
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 1800);
+        }
+
+        window.addEventListener('keydown', (e) => {
+            const input = document.getElementById('input-busqueda');
+
+            if (e.key === 'Backspace' && input.value === '') {
+                if (carrito.length > 0) {
+                    e.preventDefault();
+                    carrito.pop();
+                    renderizarCarrito();
+                    lanzarToast("Último producto quitado", "info");
+                }
+            }
+
+            if (e.key === 'Enter' && input.value === '' && carrito.length > 0) {
+                e.preventDefault();
+                confirmarVentaRapida();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -53,11 +53,16 @@
             </span>
         </div>
         <div class="flex items-center space-x-4">
+            <!-- ⚡ NUEVO BOTÓN DE CAMBIO DE MODO -->
+            <a href="/vendedor/expres" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+                <i class="fa-solid fa-bolt text-amber-400"></i> Modo Rápido / Accesible
+            </a>
+
             <div id="info-vendedor" class="text-sm font-medium text-gray-300 flex items-center gap-2">
                 <i class="fa-solid fa-user-check text-emerald-400"></i>
                 <span id="lbl-vendedor-caja">Cargando usuario...</span>
             </div>
-            <!-- BOTÓN ARQUEO/CIERRE DE CAJA (INTACTO) -->
+            
             <button onclick="mostrarModalCierre()" id="btn-cerrar-caja" class="hidden text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold px-3 py-1.5 rounded-lg border border-gray-700 transition-all">
                 🔒 Cerrar Turno / Arqueo
             </button>
