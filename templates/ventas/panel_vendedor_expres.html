@@ -8,96 +8,96 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body, html { height: 100vh; max-height: 100vh; margin: 0; padding: 0; overflow: hidden; }
-        ::-webkit-scrollbar { width: 12px; }
+        ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #090d16; }
-        ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 8px; }
+        ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 4px; }
     </style>
 </head>
 <body class="bg-gray-950 text-gray-100 font-sans flex flex-col min-h-screen select-none">
 
     <!-- HEADER ULTRA MINIMALISTA -->
-    <div class="bg-gray-900 border-b border-gray-800 px-6 py-2 flex items-center justify-between shrink-0 h-12">
+    <div class="bg-gray-900 border-b border-gray-800 px-6 py-1.5 flex items-center justify-between shrink-0 h-10">
         <div class="flex items-center gap-3">
-            <span class="text-lg font-black text-white flex items-center">
+            <span class="text-base font-black text-white flex items-center">
                 <i class="fa-solid fa-bolt text-amber-400 mr-2"></i> ALMA<span class="text-emerald-400 font-mono">ZEN</span>
             </span>
-            <span class="bg-emerald-500/20 text-emerald-400 text-xs px-2.5 py-0.5 rounded-md font-bold border border-emerald-500/30">
+            <span class="bg-emerald-500/20 text-emerald-400 text-[11px] px-2 py-0.5 rounded font-bold border border-emerald-500/30">
                 ⚡ Modo Rápido
             </span>
         </div>
 
         <div class="flex items-center gap-4">
             <span id="lbl-vendedor" class="text-xs font-semibold text-gray-400">Vendedor</span>
-            <a href="/vistas/ventas/pos" class="...">
+            <a href="/vistas/ventas/pos" class="text-xs bg-gray-800 hover:bg-gray-700 text-amber-400 border border-amber-500/40 px-2.5 py-1 rounded-lg font-bold transition flex items-center gap-1">
                 <i class="fa-solid fa-border-all"></i> Volver a POS
             </a>
         </div>
     </div>
 
-    <!-- CONTENEDOR A PANTALLA COMPLETA (ANCHO TOTAL) -->
-    <div class="flex-1 flex flex-col p-4 overflow-hidden gap-4">
+    <!-- CONTENEDOR A PANTALLA COMPLETA -->
+    <div class="flex-1 flex flex-col p-3 overflow-hidden gap-2.5">
         
-        <!-- BUSCADOR SUPERIOR DESTACADO -->
+        <!-- BUSCADOR SUPERIOR COMPACTO -->
         <div class="relative z-30 shrink-0">
             <div class="relative flex items-center">
-                <i class="fa-solid fa-barcode absolute left-5 text-emerald-400 text-3xl"></i>
+                <i class="fa-solid fa-barcode absolute left-4 text-emerald-400 text-xl"></i>
                 <input type="text" id="input-busqueda" placeholder="Escaneá o buscá un producto..." 
-                       class="w-full bg-gray-900 border-2 border-emerald-500/60 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-500/20 rounded-2xl pl-16 pr-6 py-4 text-3xl font-black text-white placeholder-gray-600 outline-none transition shadow-2xl"
+                       class="w-full bg-gray-900 border-2 border-emerald-500/60 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20 rounded-xl pl-12 pr-4 py-2.5 text-xl font-bold text-white placeholder-gray-600 outline-none transition shadow-lg"
                        autocomplete="off" autofocus
                        oninput="manejarInputBusqueda(event)"
                        onkeydown="evaluarTeclaBusqueda(event)">
             </div>
             
-            <!-- DROPDOWN DE COINCIDENCIAS GIGANTE -->
-            <div id="dropdown-recomendaciones" class="absolute left-0 right-0 top-full mt-2 bg-gray-900 border-2 border-emerald-500/50 rounded-2xl shadow-2xl hidden max-h-[60vh] overflow-y-auto z-50 divide-y-2 divide-gray-800">
+            <!-- DROPDOWN DE COINCIDENCIAS -->
+            <div id="dropdown-recomendaciones" class="absolute left-0 right-0 top-full mt-1 bg-gray-900 border-2 border-emerald-500/50 rounded-xl shadow-2xl hidden max-h-[50vh] overflow-y-auto z-50 divide-y divide-gray-800">
             </div>
         </div>
 
-        <!-- LISTA / TABLA DE PRODUCTOS (OCUPA TODO EL ANCHO DE PANTALLA Y SE EXPANDE) -->
-        <div class="flex-1 bg-gray-900 rounded-2xl border-2 border-gray-800 shadow-2xl overflow-y-auto relative" id="contenedor-tabla">
+        <!-- TABLA DE PRODUCTOS (ALTURA OPTIMIZADA) -->
+        <div class="flex-1 bg-gray-900 rounded-xl border border-gray-800 shadow-xl overflow-y-auto relative" id="contenedor-tabla">
             <table class="w-full text-left border-collapse">
-                <thead class="bg-gray-950 text-gray-400 uppercase text-lg tracking-wider border-b-2 border-gray-800 sticky top-0 z-10 shadow">
+                <thead class="bg-gray-950 text-gray-400 uppercase text-xs tracking-wider border-b border-gray-800 sticky top-0 z-10 shadow">
                     <tr>
-                        <th class="px-6 py-4">Producto</th>
-                        <th class="px-6 py-4 text-center">Cantidad</th>
-                        <th class="px-6 py-4 text-right">Precio Unitario</th>
-                        <th class="px-6 py-4 text-right">Subtotal</th>
-                        <th class="px-6 py-4 text-center">Quitar</th>
+                        <th class="px-5 py-2.5">Producto</th>
+                        <th class="px-4 py-2.5 text-center">Cantidad</th>
+                        <th class="px-4 py-2.5 text-right">Precio Unitario</th>
+                        <th class="px-5 py-2.5 text-right">Subtotal</th>
+                        <th class="px-4 py-2.5 text-center">Quitar</th>
                     </tr>
                 </thead>
-                <tbody id="tabla-carrito" class="divide-y-2 divide-gray-800/80 text-white">
+                <tbody id="tabla-carrito" class="divide-y divide-gray-800/80 text-white text-sm">
                 </tbody>
             </table>
 
-            <div id="carrito-vacio-msg" class="p-20 text-center text-gray-500 flex flex-col items-center justify-center gap-4">
-                <i class="fa-solid fa-basket-shopping text-7xl text-gray-800"></i>
-                <p class="text-3xl font-black text-gray-500">Lista vacía. Escaneá un producto para empezar.</p>
+            <div id="carrito-vacio-msg" class="p-16 text-center text-gray-500 flex flex-col items-center justify-center gap-3">
+                <i class="fa-solid fa-basket-shopping text-6xl text-gray-800"></i>
+                <p class="text-2xl font-bold text-gray-500">Lista vacía. Escaneá un producto para empezar.</p>
             </div>
         </div>
 
-        <!-- BARRA INFERIOR CON TOTAL GIGANTE Y ATAJOS -->
-        <div class="bg-gray-900 border-2 border-emerald-500/50 rounded-2xl p-4 flex items-center justify-between shadow-2xl shrink-0">
+        <!-- BARRA INFERIOR COMPACTA CON TOTAL GIGANTE -->
+        <div class="bg-gray-900 border border-emerald-500/40 rounded-xl p-3 flex items-center justify-between shadow-xl shrink-0">
             
             <!-- INDICADORES Y ATAJOS -->
-            <div class="flex items-center gap-6 text-gray-300 font-bold text-lg">
-                <span class="flex items-center gap-2">
-                    <kbd class="bg-gray-800 text-amber-400 px-3 py-1 rounded-xl border border-gray-700 font-black">BORRAR / BACKSPACE</kbd> Eliminar último
+            <div class="flex items-center gap-5 text-gray-300 font-semibold text-sm">
+                <span class="flex items-center gap-1.5">
+                    <kbd class="bg-gray-800 text-amber-400 px-2 py-0.5 rounded border border-gray-700 text-xs font-bold">BACKSPACE</kbd> Quitar último
                 </span>
-                <span class="flex items-center gap-2">
-                    <kbd class="bg-gray-800 text-emerald-400 px-3 py-1 rounded-xl border border-gray-700 font-black">ENTER</kbd> Procesar venta
+                <span class="flex items-center gap-1.5">
+                    <kbd class="bg-gray-800 text-emerald-400 px-2 py-0.5 rounded border border-gray-700 text-xs font-bold">2x ENTER</kbd> Confirmar Venta
                 </span>
-                <button onclick="vaciarCarrito()" class="text-red-400 hover:text-red-300 transition flex items-center gap-2 ml-4 bg-red-950/40 border border-red-800 px-3 py-1.5 rounded-xl text-base">
+                <button onclick="vaciarCarrito()" class="text-red-400 hover:text-red-300 transition flex items-center gap-1.5 ml-2 bg-red-950/40 border border-red-800/60 px-2.5 py-1 rounded-lg text-xs">
                     <i class="fa-solid fa-trash-can"></i> Vaciar
                 </button>
             </div>
 
             <!-- MONTO TOTAL GIGANTE -->
-            <div class="flex items-center gap-6">
+            <div class="flex items-center gap-4">
                 <div class="text-right">
-                    <span class="text-xs font-black text-emerald-400 uppercase tracking-widest block">TOTAL A COBRAR</span>
-                    <div id="lbl-cant-items" class="text-sm font-bold text-gray-400">0 ítems</div>
+                    <span class="text-[10px] font-black text-emerald-400 uppercase tracking-widest block">TOTAL A COBRAR</span>
+                    <div id="lbl-cant-items" class="text-xs font-bold text-gray-400">0 ítems</div>
                 </div>
-                <div id="lbl-total-pagar" class="text-6xl font-black text-emerald-400 tracking-tight bg-gray-950 px-8 py-2 rounded-2xl border-2 border-emerald-500/60 shadow-inner">
+                <div id="lbl-total-pagar" class="text-5xl font-black text-emerald-400 tracking-tight bg-gray-950 px-6 py-1.5 rounded-xl border border-emerald-500/50 shadow-inner">
                     $0.00
                 </div>
             </div>
@@ -105,12 +105,14 @@
 
     </div>
 
-    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3"></div>
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2"></div>
 
     <script>
         let carrito = [];
         let catalogoProductos = [];
         let productosFiltradosActuales = [];
+        let esperandoConfirmacionEnter = false;
+        let timerConfirmacion = null;
 
         document.addEventListener("DOMContentLoaded", () => {
             cargarCatalogo();
@@ -145,7 +147,16 @@
             }
         }
 
+        function resetearConfirmacionEnter() {
+            esperandoConfirmacionEnter = false;
+            if (timerConfirmacion) {
+                clearTimeout(timerConfirmacion);
+                timerConfirmacion = null;
+            }
+        }
+
         function manejarInputBusqueda(e) {
+            resetearConfirmacionEnter();
             const query = e.target.value.trim().toLowerCase();
             const dropdown = document.getElementById('dropdown-recomendaciones');
 
@@ -160,7 +171,7 @@
             });
 
             if (productosFiltradosActuales.length === 0) {
-                dropdown.innerHTML = `<div class="p-4 text-xl text-gray-400 text-center font-bold">No se encontró ningún producto</div>`;
+                dropdown.innerHTML = `<div class="p-3 text-sm text-gray-400 text-center font-bold">No se encontró ningún producto</div>`;
                 dropdown.classList.remove('hidden');
                 return;
             }
@@ -168,14 +179,14 @@
             dropdown.innerHTML = '';
             productosFiltradosActuales.forEach((p, idx) => {
                 const div = document.createElement('div');
-                div.className = `p-4 flex justify-between items-center cursor-pointer hover:bg-gray-800 transition ${idx === 0 ? 'bg-gray-800/60' : ''}`;
+                div.className = `p-3 flex justify-between items-center cursor-pointer hover:bg-gray-800 transition ${idx === 0 ? 'bg-gray-800/60' : ''}`;
                 div.innerHTML = `
                     <div>
-                        <div class="text-2xl font-black text-white">${p.nombre}</div>
-                        <div class="text-sm text-gray-400">Código: ${p.codigo_barras || p.codigo || 'N/A'}</div>
+                        <div class="text-lg font-bold text-white">${p.nombre}</div>
+                        <div class="text-xs text-gray-400">Código: ${p.codigo_barras || p.codigo || 'N/A'}</div>
                     </div>
                     <div class="text-right">
-                        <div class="text-3xl font-black text-emerald-400">$${parseFloat(p.precio).toFixed(2)}</div>
+                        <div class="text-xl font-black text-emerald-400">$${parseFloat(p.precio).toFixed(2)}</div>
                     </div>
                 `;
                 div.onclick = () => seleccionarProducto(p);
@@ -191,7 +202,7 @@
                 const val = e.target.value.trim();
                 
                 if (val === '' && carrito.length > 0) {
-                    confirmarVentaRapida();
+                    manejarDobleEnterCobro();
                     return;
                 }
 
@@ -211,11 +222,26 @@
                     }
                 }
             } else if (e.key === 'Escape') {
+                resetearConfirmacionEnter();
                 ocultarRecomendaciones();
             }
         }
 
+        function manejarDobleEnterCobro() {
+            if (!esperandoConfirmacionEnter) {
+                esperandoConfirmacionEnter = true;
+                lanzarToast("⚠️ Presioná ENTER de nuevo para CONFIRMAR la venta", "advertencia");
+                timerConfirmacion = setTimeout(() => {
+                    esperandoConfirmacionEnter = false;
+                }, 2500);
+            } else {
+                resetearConfirmacionEnter();
+                confirmarVentaRapida();
+            }
+        }
+
         function seleccionarProducto(prod) {
+            resetearConfirmacionEnter();
             agregarAlCarrito(prod);
             const input = document.getElementById('input-busqueda');
             input.value = '';
@@ -264,18 +290,18 @@
                 totalUnidades += item.cantidad;
 
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-gray-800/50 transition border-b-2 border-gray-800/60";
+                tr.className = "hover:bg-gray-800/50 transition border-b border-gray-800/60";
                 tr.innerHTML = `
-                    <td class="px-6 py-5">
-                        <div class="text-3xl font-black text-white">${item.nombre}</div>
+                    <td class="px-5 py-2.5">
+                        <div class="text-xl font-bold text-white">${item.nombre}</div>
                     </td>
-                    <td class="px-6 py-5 text-center">
-                        <span class="text-4xl font-black text-emerald-400 bg-gray-950 px-5 py-2 rounded-2xl border border-gray-800 shadow">${item.cantidad}</span>
+                    <td class="px-4 py-2.5 text-center">
+                        <span class="text-2xl font-black text-emerald-400 bg-gray-950 px-3 py-1 rounded-xl border border-gray-800 shadow">${item.cantidad}</span>
                     </td>
-                    <td class="px-6 py-5 text-right font-bold text-2xl text-gray-300">$${item.precio.toFixed(2)}</td>
-                    <td class="px-6 py-5 text-right font-black text-4xl text-emerald-400">$${subtotal.toFixed(2)}</td>
-                    <td class="px-6 py-5 text-center">
-                        <button onclick="eliminarDelCarrito(${index})" class="bg-red-950/60 hover:bg-red-900 border border-red-800 text-red-400 hover:text-white px-5 py-3 rounded-2xl text-xl transition">
+                    <td class="px-4 py-2.5 text-right font-semibold text-lg text-gray-300">$${item.precio.toFixed(2)}</td>
+                    <td class="px-5 py-2.5 text-right font-black text-2xl text-emerald-400">$${subtotal.toFixed(2)}</td>
+                    <td class="px-4 py-2.5 text-center">
+                        <button onclick="eliminarDelCarrito(${index})" class="bg-red-950/60 hover:bg-red-900 border border-red-800 text-red-400 hover:text-white px-3.5 py-2 rounded-xl text-sm transition">
                             <i class="fa-solid fa-trash"></i>
                         </button>
                     </td>
@@ -291,6 +317,7 @@
         }
 
         function eliminarDelCarrito(index) {
+            resetearConfirmacionEnter();
             carrito.splice(index, 1);
             renderizarCarrito();
             document.getElementById('input-busqueda').focus();
@@ -298,6 +325,7 @@
 
         function vaciarCarrito() {
             if (carrito.length === 0) return;
+            resetearConfirmacionEnter();
             carrito = [];
             renderizarCarrito();
             lanzarToast("Lista vaciada", "info");
@@ -348,11 +376,12 @@
             if (!container) return;
             const toast = document.createElement('div');
             const colores = {
-                exito: 'bg-emerald-500 text-gray-950 font-black border-2 border-emerald-300 text-2xl',
-                error: 'bg-red-600 text-white font-bold text-xl',
-                info: 'bg-gray-800 text-gray-200 border border-gray-700 text-xl'
+                exito: 'bg-emerald-500 text-gray-950 font-black border-2 border-emerald-300 text-xl',
+                advertencia: 'bg-amber-500 text-gray-950 font-black border-2 border-amber-300 text-xl animate-bounce',
+                error: 'bg-red-600 text-white font-bold text-lg',
+                info: 'bg-gray-800 text-gray-200 border border-gray-700 text-lg'
             };
-            toast.className = `px-8 py-5 rounded-2xl shadow-2xl flex items-center gap-4 transition transform translate-y-2 opacity-0 ${colores[tipo] || colores.info}`;
+            toast.className = `px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 transition transform translate-y-2 opacity-0 ${colores[tipo] || colores.info}`;
             toast.innerHTML = `<span>${mensaje}</span>`;
             container.appendChild(toast);
 
@@ -360,7 +389,7 @@
             setTimeout(() => {
                 toast.classList.add('opacity-0');
                 setTimeout(() => toast.remove(), 300);
-            }, 1800);
+            }, 2200);
         }
 
         window.addEventListener('keydown', (e) => {
@@ -369,6 +398,7 @@
             if (e.key === 'Backspace' && input.value === '') {
                 if (carrito.length > 0) {
                     e.preventDefault();
+                    resetearConfirmacionEnter();
                     carrito.pop();
                     renderizarCarrito();
                     lanzarToast("Último producto quitado", "info");
@@ -377,7 +407,7 @@
 
             if (e.key === 'Enter' && input.value === '' && carrito.length > 0) {
                 e.preventDefault();
-                confirmarVentaRapida();
+                manejarDobleEnterCobro();
             }
         });
     </script>
