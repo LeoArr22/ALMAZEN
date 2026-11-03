@@ -18,3 +18,7 @@ async def get_dashboard(request: Request, current_user: Usuario = Depends(get_cu
         return templates.TemplateResponse(request, "dashboard.html", {"usuario": current_user})
     else:
         return templates.TemplateResponse(request, "panel_vendedor.html", {"usuario": current_user})
+    
+@router_core.get("/vistas/panel-vendedor", response_class=HTMLResponse)
+async def get_panel_vendedor(request: Request, current_user: Usuario = Depends(get_current_user)):
+    return templates.TemplateResponse(request, "panel_vendedor.html", {"usuario": current_user})
