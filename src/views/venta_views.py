@@ -21,4 +21,4 @@ async def servir_punto_de_venta_expres(request: Request, current_user: Usuario =
     """
     Vista del modo rápido / accesible para ventas en efectivo (interfaz simplificada de alto contraste).
     """
-    return templates.TemplateResponse(request, "ventas/expres.html")
+    return templates.TemplateResponse(request, "panel_vendedor_expres.html")
