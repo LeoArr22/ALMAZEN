@@ -53,7 +53,7 @@
             </div>
         </div>
 
-        <!-- LISTA / TABLA DE PRODUCTOS (OCUPA TODO EL ANCHO DE PANTALLA Y SE EXPANDE) -->
+        <!-- LISTA / TABLA DE PRODUCTOS -->
         <div class="flex-1 bg-gray-900 rounded-2xl border-2 border-gray-800 shadow-2xl overflow-y-auto relative" id="contenedor-tabla">
             <table class="w-full text-left border-collapse">
                 <thead class="bg-gray-950 text-gray-400 uppercase text-lg tracking-wider border-b-2 border-gray-800 sticky top-0 z-10 shadow">
@@ -78,23 +78,29 @@
         <!-- BARRA INFERIOR CON TOTAL GIGANTE Y ATAJOS -->
         <div class="bg-gray-900 border-2 border-emerald-500/50 rounded-2xl p-4 flex items-center justify-between shadow-2xl shrink-0">
             
-            <!-- INDICADORES Y ATAJOS -->
-            <div class="flex items-center gap-6 text-gray-300 font-bold text-lg">
-                <span class="flex items-center gap-2">
-                    <kbd class="bg-gray-800 text-amber-400 px-3 py-1 rounded-xl border border-gray-700 font-black">BORRAR / BACKSPACE</kbd> Eliminar último
+            <!-- INDICADORES Y ATAJOS ACTUALIZADOS CON SÍMBOLOS -->
+            <div class="flex items-center gap-4 text-gray-300 font-bold text-base">
+                <span class="flex items-center gap-1.5 bg-gray-950 px-3 py-1.5 rounded-xl border border-gray-800">
+                    <kbd class="bg-gray-800 text-amber-400 px-2 py-0.5 rounded border border-gray-700 font-black">←</kbd> o <kbd class="bg-gray-800 text-amber-400 px-2 py-0.5 rounded border border-gray-700 font-black">⌫</kbd> Borrar ítem
                 </span>
-                <span class="flex items-center gap-2">
-                    <kbd class="bg-gray-800 text-emerald-400 px-3 py-1 rounded-xl border border-gray-700 font-black">ENTER</kbd> Procesar venta
+                <span class="flex items-center gap-1.5 bg-gray-950 px-3 py-1.5 rounded-xl border border-gray-800">
+                    <kbd class="bg-gray-800 text-rose-400 px-2 py-0.5 rounded border border-gray-700 font-black">b</kbd> Vaciar todo
                 </span>
-                <button onclick="vaciarCarrito()" class="text-red-400 hover:text-red-300 transition flex items-center gap-2 ml-4 bg-red-950/40 border border-red-800 px-3 py-1.5 rounded-xl text-base">
-                    <i class="fa-solid fa-trash-can"></i> Vaciar
-                </button>
+                <span class="flex items-center gap-1.5 bg-gray-950 px-3 py-1.5 rounded-xl border border-gray-800">
+                    <kbd class="bg-gray-800 text-cyan-400 px-2 py-0.5 rounded border border-gray-700 font-black">e</kbd> Extra
+                </span>
+                <span class="flex items-center gap-1.5 bg-gray-950 px-3 py-1.5 rounded-xl border border-gray-800">
+                    <kbd class="bg-gray-800 text-amber-400 px-2 py-0.5 rounded border border-gray-700 font-black">c</kbd> Cambio
+                </span>
+                <span class="flex items-center gap-1.5 bg-gray-950 px-3 py-1.5 rounded-xl border border-gray-800">
+                    <kbd class="bg-gray-800 text-emerald-400 px-2 py-0.5 rounded border border-gray-700 font-black">k</kbd> Finalizar venta
+                </span>
             </div>
 
             <!-- MONTO TOTAL GIGANTE -->
             <div class="flex items-center gap-6">
                 <div class="text-right">
-                    <span class="text-xs font-black text-emerald-400 uppercase tracking-widest block">TOTAL A COBRAR</span>
+                    <span class="text-xs font-black text-emerald-400 uppercase tracking-widest block" id="lbl-info-extra">TOTAL A COBRAR</span>
                     <div id="lbl-cant-items" class="text-sm font-bold text-gray-400">0 ítems</div>
                 </div>
                 <div id="lbl-total-pagar" class="text-6xl font-black text-emerald-400 tracking-tight bg-gray-950 px-8 py-2 rounded-2xl border-2 border-emerald-500/60 shadow-inner">
@@ -105,12 +111,58 @@
 
     </div>
 
+    <!-- MODAL CALCULAR CAMBIO (Tecla c) -->
+    <div id="modal-cambio" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+        <div class="bg-gray-900 border-2 border-amber-500/50 rounded-3xl p-8 max-w-md w-full shadow-2xl space-y-6 text-center">
+            <div class="w-16 h-16 bg-amber-500/10 text-amber-400 rounded-2xl flex items-center justify-center text-3xl mx-auto border border-amber-500/20">
+                <i class="fa-solid fa-calculator"></i>
+            </div>
+            <div class="space-y-1">
+                <h3 class="text-2xl font-black text-white">Calcular Vuelto / Cambio</h3>
+                <p class="text-sm text-gray-400">Ingrese el monto en efectivo entregado por el cliente.</p>
+            </div>
+            <div class="bg-gray-950 p-4 rounded-2xl border border-gray-800 flex justify-between items-center">
+                <span class="text-sm text-gray-400 font-bold">Total a Pagar:</span>
+                <span id="modal-cambio-total" class="text-2xl font-black text-emerald-400">$0.00</span>
+            </div>
+            <div>
+                <input type="number" id="input-efectivo-recibido" step="any" min="0" placeholder="0.00"
+                    class="w-full bg-gray-950 border-2 border-gray-700 focus:border-amber-400 rounded-2xl px-4 py-4 text-3xl font-black text-amber-400 text-center outline-none transition"
+                    oninput="calcularVueltoModal()">
+            </div>
+            <div class="bg-gray-950/60 p-4 rounded-2xl border border-gray-800">
+                <span class="text-xs font-bold text-gray-400 uppercase block mb-1">Vuelto a Entregar</span>
+                <div id="lbl-vuelto-resultado" class="text-4xl font-black text-amber-400">$0.00</div>
+            </div>
+            <p class="text-xs text-gray-500 font-semibold">Presioná <kbd class="bg-gray-800 px-2 py-1 rounded text-gray-300 font-bold">C</kbd> o <kbd class="bg-gray-800 px-2 py-1 rounded text-gray-300 font-bold">Enter</kbd> para volver</p>
+        </div>
+    </div>
+
+    <!-- MODAL AGREGAR EXTRA (Tecla e) -->
+    <div id="modal-extra" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+        <div class="bg-gray-900 border-2 border-cyan-500/50 rounded-3xl p-8 max-w-md w-full shadow-2xl space-y-6 text-center">
+            <div class="w-16 h-16 bg-cyan-500/10 text-cyan-400 rounded-2xl flex items-center justify-center text-3xl mx-auto border border-cyan-500/20">
+                <i class="fa-solid fa-plus-minus"></i>
+            </div>
+            <div class="space-y-1">
+                <h3 class="text-2xl font-black text-white">Agregar Monto Extra</h3>
+                <p class="text-sm text-gray-400">Sumá un recargo o ajuste manual (dejalo vacío para 0).</p>
+            </div>
+            <div>
+                <input type="number" id="input-monto-extra" step="any" placeholder="0.00"
+                    class="w-full bg-gray-950 border-2 border-gray-700 focus:border-cyan-400 rounded-2xl px-4 py-4 text-3xl font-black text-cyan-400 text-center outline-none transition">
+            </div>
+            <p class="text-xs text-gray-500 font-semibold">Presioná <kbd class="bg-gray-800 px-2 py-1 rounded text-gray-300 font-bold">E</kbd> o <kbd class="bg-gray-800 px-2 py-1 rounded text-gray-300 font-bold">Enter</kbd> para confirmar</p>
+        </div>
+    </div>
+
     <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3"></div>
 
     <script>
         let carrito = [];
         let catalogoProductos = [];
         let productosFiltradosActuales = [];
+        let montoExtraActual = 0;
 
         document.addEventListener("DOMContentLoaded", () => {
             cargarCatalogo();
@@ -244,6 +296,14 @@
             lanzarToast(`+ ${producto.nombre}`, "exito");
         }
 
+        function calcularSubtotalBruto() {
+            return carrito.reduce((acc, item) => acc + (item.cantidad * item.precio), 0);
+        }
+
+        function calcularTotalFinal() {
+            return calcularSubtotalBruto() + montoExtraActual;
+        }
+
         function renderizarCarrito() {
             const tbody = document.getElementById('tabla-carrito');
             const msgVacio = document.getElementById('carrito-vacio-msg');
@@ -255,12 +315,10 @@
                 msgVacio.classList.add('hidden');
             }
 
-            let totalPagar = 0;
             let totalUnidades = 0;
 
             carrito.forEach((item, index) => {
                 const subtotal = item.cantidad * item.precio;
-                totalPagar += subtotal;
                 totalUnidades += item.cantidad;
 
                 const tr = document.createElement('tr');
@@ -283,8 +341,18 @@
                 tbody.appendChild(tr);
             });
 
+            const totalPagar = calcularTotalFinal();
             document.getElementById('lbl-cant-items').innerText = `${totalUnidades} unidad(es)`;
             document.getElementById('lbl-total-pagar').innerText = `$${totalPagar.toFixed(2)}`;
+
+            const infoExtraElem = document.getElementById('lbl-info-extra');
+            if (montoExtraActual > 0) {
+                infoExtraElem.innerText = `TOTAL A COBRAR (Inc. Extra: $${montoExtraActual.toFixed(2)})`;
+                infoExtraElem.className = "text-xs font-black text-cyan-400 uppercase tracking-widest block";
+            } else {
+                infoExtraElem.innerText = `TOTAL A COBRAR`;
+                infoExtraElem.className = "text-xs font-black text-emerald-400 uppercase tracking-widest block";
+            }
 
             const contenedor = document.getElementById('contenedor-tabla');
             contenedor.scrollTop = contenedor.scrollHeight;
@@ -299,24 +367,93 @@
         function vaciarCarrito() {
             if (carrito.length === 0) return;
             carrito = [];
+            montoExtraActual = 0;
             renderizarCarrito();
             lanzarToast("Lista vaciada", "info");
+            document.getElementById('input-busqueda').focus();
+        }
+
+        // VENTANA EMERGENTE DE CAMBIO (Tecla c)
+        function abrirModalCambio() {
+            if (carrito.length === 0) {
+                lanzarToast("El carrito está vacío", "error");
+                return;
+            }
+            const modal = document.getElementById('modal-cambio');
+            const total = calcularTotalFinal();
+            document.getElementById('modal-cambio-total').innerText = `$${total.toFixed(2)}`;
+            document.getElementById('input-efectivo-recibido').value = '';
+            document.getElementById('lbl-vuelto-resultado').innerText = '$0.00';
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => {
+                document.getElementById('input-efectivo-recibido').focus();
+            }, 50);
+        }
+
+        function cerrarModalCambio() {
+            const modal = document.getElementById('modal-cambio');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.getElementById('input-busqueda').focus();
+        }
+
+        function calcularVueltoModal() {
+            const recibido = parseFloat(document.getElementById('input-efectivo-recibido').value);
+            const total = calcularTotalFinal();
+            if (!isNaN(recibido) && recibido >= total) {
+                const vuelto = recibido - total;
+                document.getElementById('lbl-vuelto-resultado').innerText = `$${vuelto.toFixed(2)}`;
+            } else {
+                document.getElementById('lbl-vuelto-resultado').innerText = '$0.00';
+            }
+        }
+
+        // VENTANA EMERGENTE DE EXTRA (Tecla e)
+        function abrirModalExtra() {
+            const modal = document.getElementById('modal-extra');
+            document.getElementById('input-monto-extra').value = montoExtraActual > 0 ? montoExtraActual : '';
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => {
+                document.getElementById('input-monto-extra').focus();
+            }, 50);
+        }
+
+        function cerrarModalExtra(guardar = true) {
+            const modal = document.getElementById('modal-extra');
+            if (guardar) {
+                const val = parseFloat(document.getElementById('input-monto-extra').value);
+                montoExtraActual = isNaN(val) || val < 0 ? 0 : val;
+                renderizarCarrito();
+                if (montoExtraActual > 0) {
+                    lanzarToast(`Extra agregado: $${montoExtraActual.toFixed(2)}`, "exito");
+                } else {
+                    lanzarToast("Sin monto extra", "info");
+                }
+            }
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
             document.getElementById('input-busqueda').focus();
         }
 
         async function confirmarVentaRapida() {
             if (carrito.length === 0) return;
 
-            const total = carrito.reduce((acc, item) => acc + (item.cantidad * item.precio), 0);
+            const total = calcularTotalFinal();
             
+            const pagosPayload = [{ medio_pago: 'Efectivo', monto: total }];
+            if (montoExtraActual > 0) {
+                pagosPayload.push({ medio_pago: 'Extra / Ajuste', monto: montoExtraActual });
+            }
+
             const payload = {
                 detalles: carrito.map(item => ({
                     producto_id: item.producto_id,
                     cantidad: item.cantidad
                 })),
-                pagos: [
-                    { medio_pago: 'Efectivo', monto: total }
-                ]
+                pagos: pagosPayload
             };
 
             try {
@@ -330,6 +467,7 @@
                     const venta = await res.json();
                     lanzarToast(`¡VENTA #${venta.id} REGISTRADA!`, "exito");
                     carrito = [];
+                    montoExtraActual = 0;
                     renderizarCarrito();
                     const input = document.getElementById('input-busqueda');
                     input.value = '';
@@ -363,19 +501,74 @@
             }, 1800);
         }
 
+        // GESTIÓN DE ATAJOS DE TECLADO GLOBALES
         window.addEventListener('keydown', (e) => {
-            const input = document.getElementById('input-busqueda');
+            const inputBusqueda = document.getElementById('input-busqueda');
+            const modalCambioVisible = !document.getElementById('modal-cambio').classList.contains('hidden');
+            const modalExtraVisible = !document.getElementById('modal-extra').classList.contains('hidden');
 
-            if (e.key === 'Backspace' && input.value === '') {
-                if (carrito.length > 0) {
+            // 1. Control dentro del Modal de Cambio
+            if (modalCambioVisible) {
+                if (e.key === 'c' || e.key === 'C' || e.key === 'Enter') {
                     e.preventDefault();
-                    carrito.pop();
-                    renderizarCarrito();
-                    lanzarToast("Último producto quitado", "info");
+                    cerrarModalCambio();
+                }
+                return;
+            }
+
+            // 2. Control dentro del Modal de Extra
+            if (modalExtraVisible) {
+                if (e.key === 'e' || e.key === 'E' || e.key === 'Enter') {
+                    e.preventDefault();
+                    cerrarModalExtra(true);
+                }
+                return;
+            }
+
+            // 3. Atajos globales (cuando el buscador está vacío o no enfocado exclusivamente)
+            if (document.activeElement !== inputBusqueda || inputBusqueda.value === '') {
+                
+                // Tecla Backspace o Flecha Izquierda (<-): Eliminar último ítem
+                if (e.key === 'Backspace' || e.key === 'ArrowLeft') {
+                    if (carrito.length > 0) {
+                        e.preventDefault();
+                        carrito.pop();
+                        renderizarCarrito();
+                        lanzarToast("Último producto quitado", "info");
+                    }
+                }
+
+                // Tecla b o B: Vaciar todo
+                if (e.key === 'b' || e.key === 'B') {
+                    e.preventDefault();
+                    vaciarCarrito();
+                }
+
+                // Tecla k o K: Finalizar venta
+                if (e.key === 'k' || e.key === 'K') {
+                    e.preventDefault();
+                    if (carrito.length > 0) {
+                        confirmarVentaRapida();
+                    } else {
+                        lanzarToast("No hay productos en el carrito", "error");
+                    }
+                }
+
+                // Tecla c o C: Abrir modal calcular cambio
+                if (e.key === 'c' || e.key === 'C') {
+                    e.preventDefault();
+                    abrirModalCambio();
+                }
+
+                // Tecla e o E: Abrir modal agregar extra
+                if (e.key === 'e' || e.key === 'E') {
+                    e.preventDefault();
+                    abrirModalExtra();
                 }
             }
 
-            if (e.key === 'Enter' && input.value === '' && carrito.length > 0) {
+            // Enter en el buscador vacío procesa venta rápida
+            if (e.key === 'Enter' && inputBusqueda === document.activeElement && inputBusqueda.value === '' && carrito.length > 0) {
                 e.preventDefault();
                 confirmarVentaRapida();
             }
