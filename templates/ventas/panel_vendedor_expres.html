@@ -191,9 +191,17 @@
         async function cargarCatalogo() {
             try {
                 const res = await fetch("/productos/");
-                if (res.ok) catalogoProductos = await res.json();
+                if (res.ok) {
+                    const data = await res.json();
+                    // Soporte robusto por si la API devuelve array directo u objeto paginado
+                    catalogoProductos = Array.isArray(data) ? data : (data.items || data.productos || []);
+                    console.log("Catálogo cargado correctamente:", catalogoProductos.length, "productos.");
+                } else {
+                    lanzarToast("Error al cargar productos del servidor", "error");
+                }
             } catch (err) {
-                lanzarToast("Error al cargar productos", "error");
+                console.error("Error de red cargando catálogo:", err);
+                lanzarToast("No se pudo conectar con el servidor", "error");
             }
         }
 
@@ -207,8 +215,10 @@
             }
 
             productosFiltradosActuales = catalogoProductos.filter(p => {
-                const cod = p.codigo_barras || p.codigo || '';
-                return p.nombre.toLowerCase().includes(query) || cod.toLowerCase().includes(query);
+                const nombre = String(p.nombre || '').toLowerCase();
+                const codBarras = String(p.codigo_barras || '').toLowerCase();
+                const codigo = String(p.codigo || '').toLowerCase();
+                return nombre.includes(query) || codBarras.includes(query) || codigo.includes(query);
             });
 
             if (productosFiltradosActuales.length === 0) {
@@ -227,7 +237,7 @@
                         <div class="text-sm text-gray-400">Código: ${p.codigo_barras || p.codigo || 'N/A'}</div>
                     </div>
                     <div class="text-right">
-                        <div class="text-3xl font-black text-emerald-400">$${parseFloat(p.precio).toFixed(2)}</div>
+                        <div class="text-3xl font-black text-emerald-400">$${parseFloat(p.precio || 0).toFixed(2)}</div>
                     </div>
                 `;
                 div.onclick = () => seleccionarProducto(p);
@@ -250,6 +260,7 @@
                 if (productosFiltradosActuales.length > 0) {
                     seleccionarProducto(productosFiltradosActuales[0]);
                 } else if (val !== '') {
+                    // Intento de búsqueda directa por código en backend si no matcheó en local
                     try {
                         const res = await fetch(`/productos/codigo/${encodeURIComponent(val)}`);
                         if (res.ok) {
@@ -259,7 +270,7 @@
                             lanzarToast("Producto no encontrado", "error");
                         }
                     } catch (err) {
-                        lanzarToast("Error al buscar producto", "error");
+                        lanzarToast("Error al buscar producto por código", "error");
                     }
                 }
             } else if (e.key === 'Escape') {
@@ -281,14 +292,15 @@
         }
 
         function agregarAlCarrito(producto) {
-            const index = carrito.findIndex(item => item.producto_id === producto.id);
+            const prodId = producto.id || producto.producto_id;
+            const index = carrito.findIndex(item => item.producto_id === prodId);
             if (index !== -1) {
                 carrito[index].cantidad += 1;
             } else {
                 carrito.push({
-                    producto_id: producto.id,
+                    producto_id: prodId,
                     nombre: producto.nombre,
-                    precio: parseFloat(producto.precio),
+                    precio: parseFloat(producto.precio || 0),
                     cantidad: 1
                 });
             }
@@ -525,10 +537,12 @@
                 return;
             }
 
-            // 3. Atajos globales (cuando el buscador está vacío o no enfocado exclusivamente)
-            if (document.activeElement !== inputBusqueda || inputBusqueda.value === '') {
+            // 3. Atajos globales
+            const buscadorActivo = (document.activeElement === inputBusqueda);
+            const buscadorVacio = inputBusqueda.value.trim() === '';
+
+            if (!buscadorActivo || buscadorVacio) {
                 
-                // Tecla Backspace o Flecha Izquierda (<-): Eliminar último ítem
                 if (e.key === 'Backspace' || e.key === 'ArrowLeft') {
                     if (carrito.length > 0) {
                         e.preventDefault();
@@ -538,13 +552,11 @@
                     }
                 }
 
-                // Tecla b o B: Vaciar todo
                 if (e.key === 'b' || e.key === 'B') {
                     e.preventDefault();
                     vaciarCarrito();
                 }
 
-                // Tecla k o K: Finalizar venta
                 if (e.key === 'k' || e.key === 'K') {
                     e.preventDefault();
                     if (carrito.length > 0) {
@@ -554,21 +566,18 @@
                     }
                 }
 
-                // Tecla c o C: Abrir modal calcular cambio
-                if (e.key === 'c' || e.key === 'C') {
+                if ((e.key === 'c' || e.key === 'C') && buscadorVacio) {
                     e.preventDefault();
                     abrirModalCambio();
                 }
 
-                // Tecla e o E: Abrir modal agregar extra
-                if (e.key === 'e' || e.key === 'E') {
+                if ((e.key === 'e' || e.key === 'E') && buscadorVacio) {
                     e.preventDefault();
                     abrirModalExtra();
                 }
             }
 
-            // Enter en el buscador vacío procesa venta rápida
-            if (e.key === 'Enter' && inputBusqueda === document.activeElement && inputBusqueda.value === '' && carrito.length > 0) {
+            if (e.key === 'Enter' && buscadorActivo && buscadorVacio && carrito.length > 0) {
                 e.preventDefault();
                 confirmarVentaRapida();
             }
