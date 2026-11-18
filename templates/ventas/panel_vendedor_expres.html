@@ -34,7 +34,7 @@
         </div>
     </div>
 
-    <!-- CONTENEDOR A PANTALLA COMPLETA (ANCHO TOTAL) -->
+    <!-- CONTENEDOR A PANTALLA COMPLETA -->
     <div class="flex-1 flex flex-col p-4 overflow-hidden gap-4">
         
         <!-- BUSCADOR SUPERIOR DESTACADO -->
@@ -75,11 +75,10 @@
             </div>
         </div>
 
-        <!-- BARRA INFERIOR CON TOTAL GIGANTE Y ATAJOS -->
+        <!-- BARRA INFERIOR CON TOTAL Y ATAJOS -->
         <div class="bg-gray-900 border-2 border-emerald-500/50 rounded-2xl p-4 flex items-center justify-between shadow-2xl shrink-0">
             
-            <!-- INDICADORES Y ATAJOS ACTUALIZADOS CON SÍMBOLOS -->
-            <div class="flex items-center gap-4 text-gray-300 font-bold text-base">
+            <div class="flex items-center gap-3 text-gray-300 font-bold text-sm lg:text-base flex-wrap">
                 <span class="flex items-center gap-1.5 bg-gray-950 px-3 py-1.5 rounded-xl border border-gray-800">
                     <kbd class="bg-gray-800 text-amber-400 px-2 py-0.5 rounded border border-gray-700 font-black">←</kbd> o <kbd class="bg-gray-800 text-amber-400 px-2 py-0.5 rounded border border-gray-700 font-black">⌫</kbd> Borrar ítem
                 </span>
@@ -97,21 +96,20 @@
                 </span>
             </div>
 
-            <!-- MONTO TOTAL GIGANTE -->
-            <div class="flex items-center gap-6">
+            <div class="flex items-center gap-5 shrink-0">
                 <div class="text-right">
                     <span class="text-xs font-black text-emerald-400 uppercase tracking-widest block" id="lbl-info-extra">TOTAL A COBRAR</span>
                     <div id="lbl-cant-items" class="text-sm font-bold text-gray-400">0 ítems</div>
                 </div>
-                <div id="lbl-total-pagar" class="text-6xl font-black text-emerald-400 tracking-tight bg-gray-950 px-8 py-2 rounded-2xl border-2 border-emerald-500/60 shadow-inner">
-                    $0.00
+                <div id="lbl-total-pagar" class="text-5xl lg:text-6xl font-black text-emerald-400 tracking-tight bg-gray-950 px-7 py-2 rounded-2xl border-2 border-emerald-500/60 shadow-inner">
+                    $0
                 </div>
             </div>
         </div>
 
     </div>
 
-    <!-- MODAL CALCULAR CAMBIO (Tecla c) -->
+    <!-- MODAL CALCULAR CAMBIO -->
     <div id="modal-cambio" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
         <div class="bg-gray-900 border-2 border-amber-500/50 rounded-3xl p-8 max-w-md w-full shadow-2xl space-y-6 text-center">
             <div class="w-16 h-16 bg-amber-500/10 text-amber-400 rounded-2xl flex items-center justify-center text-3xl mx-auto border border-amber-500/20">
@@ -123,22 +121,22 @@
             </div>
             <div class="bg-gray-950 p-4 rounded-2xl border border-gray-800 flex justify-between items-center">
                 <span class="text-sm text-gray-400 font-bold">Total a Pagar:</span>
-                <span id="modal-cambio-total" class="text-2xl font-black text-emerald-400">$0.00</span>
+                <span id="modal-cambio-total" class="text-2xl font-black text-emerald-400">$0</span>
             </div>
             <div>
-                <input type="number" id="input-efectivo-recibido" step="any" min="0" placeholder="0.00"
+                <input type="number" id="input-efectivo-recibido" step="any" min="0" placeholder="0"
                     class="w-full bg-gray-950 border-2 border-gray-700 focus:border-amber-400 rounded-2xl px-4 py-4 text-3xl font-black text-amber-400 text-center outline-none transition"
                     oninput="calcularVueltoModal()">
             </div>
             <div class="bg-gray-950/60 p-4 rounded-2xl border border-gray-800">
                 <span class="text-xs font-bold text-gray-400 uppercase block mb-1">Vuelto a Entregar</span>
-                <div id="lbl-vuelto-resultado" class="text-4xl font-black text-amber-400">$0.00</div>
+                <div id="lbl-vuelto-resultado" class="text-4xl font-black text-amber-400">$0</div>
             </div>
             <p class="text-xs text-gray-500 font-semibold">Presioná <kbd class="bg-gray-800 px-2 py-1 rounded text-gray-300 font-bold">C</kbd> o <kbd class="bg-gray-800 px-2 py-1 rounded text-gray-300 font-bold">Enter</kbd> para volver</p>
         </div>
     </div>
 
-    <!-- MODAL AGREGAR EXTRA (Tecla e) -->
+    <!-- MODAL AGREGAR EXTRA -->
     <div id="modal-extra" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
         <div class="bg-gray-900 border-2 border-cyan-500/50 rounded-3xl p-8 max-w-md w-full shadow-2xl space-y-6 text-center">
             <div class="w-16 h-16 bg-cyan-500/10 text-cyan-400 rounded-2xl flex items-center justify-center text-3xl mx-auto border border-cyan-500/20">
@@ -146,10 +144,10 @@
             </div>
             <div class="space-y-1">
                 <h3 class="text-2xl font-black text-white">Agregar Monto Extra</h3>
-                <p class="text-sm text-gray-400">Sumá un recargo o ajuste manual (dejalo vacío para 0).</p>
+                <p class="text-sm text-gray-400">Para fraccionables (pan, fiambre, etc.) o recargos. Dejalo vacío para 0.</p>
             </div>
             <div>
-                <input type="number" id="input-monto-extra" step="any" placeholder="0.00"
+                <input type="number" id="input-monto-extra" step="any" placeholder="0"
                     class="w-full bg-gray-950 border-2 border-gray-700 focus:border-cyan-400 rounded-2xl px-4 py-4 text-3xl font-black text-cyan-400 text-center outline-none transition">
             </div>
             <p class="text-xs text-gray-500 font-semibold">Presioná <kbd class="bg-gray-800 px-2 py-1 rounded text-gray-300 font-bold">E</kbd> o <kbd class="bg-gray-800 px-2 py-1 rounded text-gray-300 font-bold">Enter</kbd> para confirmar</p>
@@ -163,6 +161,12 @@
         let catalogoProductos = [];
         let productosFiltradosActuales = [];
         let montoExtraActual = 0;
+
+        // Formateador sin decimales innecesarios ($3000 en lugar de $3000.00)
+        function formatearMoneda(valor) {
+            const num = Math.round(Number(valor) || 0);
+            return `$${num}`;
+        }
 
         document.addEventListener("DOMContentLoaded", () => {
             cargarCatalogo();
@@ -193,15 +197,10 @@
                 const res = await fetch("/productos/");
                 if (res.ok) {
                     const data = await res.json();
-                    // Soporte robusto por si la API devuelve array directo u objeto paginado
                     catalogoProductos = Array.isArray(data) ? data : (data.items || data.productos || []);
-                    console.log("Catálogo cargado correctamente:", catalogoProductos.length, "productos.");
-                } else {
-                    lanzarToast("Error al cargar productos del servidor", "error");
                 }
             } catch (err) {
-                console.error("Error de red cargando catálogo:", err);
-                lanzarToast("No se pudo conectar con el servidor", "error");
+                lanzarToast("Error al cargar productos", "error");
             }
         }
 
@@ -216,9 +215,8 @@
 
             productosFiltradosActuales = catalogoProductos.filter(p => {
                 const nombre = String(p.nombre || '').toLowerCase();
-                const codBarras = String(p.codigo_barras || '').toLowerCase();
-                const codigo = String(p.codigo || '').toLowerCase();
-                return nombre.includes(query) || codBarras.includes(query) || codigo.includes(query);
+                const codigoBarras = String(p.codigo_barras || p.codigo || '').toLowerCase();
+                return nombre.includes(query) || codigoBarras.includes(query);
             });
 
             if (productosFiltradosActuales.length === 0) {
@@ -237,7 +235,7 @@
                         <div class="text-sm text-gray-400">Código: ${p.codigo_barras || p.codigo || 'N/A'}</div>
                     </div>
                     <div class="text-right">
-                        <div class="text-3xl font-black text-emerald-400">$${parseFloat(p.precio || 0).toFixed(2)}</div>
+                        <div class="text-3xl font-black text-emerald-400">${formatearMoneda(p.precio)}</div>
                     </div>
                 `;
                 div.onclick = () => seleccionarProducto(p);
@@ -247,20 +245,18 @@
             dropdown.classList.remove('hidden');
         }
 
+        // ENTER SOLO SELECCIONA PRODUCTOS (NUNCA CIERRA LA VENTA)
         async function evaluarTeclaBusqueda(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
+                e.stopPropagation();
                 const val = e.target.value.trim();
                 
-                if (val === '' && carrito.length > 0) {
-                    confirmarVentaRapida();
-                    return;
-                }
+                if (val === '') return;
 
                 if (productosFiltradosActuales.length > 0) {
                     seleccionarProducto(productosFiltradosActuales[0]);
-                } else if (val !== '') {
-                    // Intento de búsqueda directa por código en backend si no matcheó en local
+                } else {
                     try {
                         const res = await fetch(`/productos/codigo/${encodeURIComponent(val)}`);
                         if (res.ok) {
@@ -270,7 +266,7 @@
                             lanzarToast("Producto no encontrado", "error");
                         }
                     } catch (err) {
-                        lanzarToast("Error al buscar producto por código", "error");
+                        lanzarToast("Error al buscar producto", "error");
                     }
                 }
             } else if (e.key === 'Escape') {
@@ -321,7 +317,7 @@
             const msgVacio = document.getElementById('carrito-vacio-msg');
             tbody.innerHTML = '';
 
-            if (carrito.length === 0) {
+            if (carrito.length === 0 && montoExtraActual === 0) {
                 msgVacio.classList.remove('hidden');
             } else {
                 msgVacio.classList.add('hidden');
@@ -342,8 +338,8 @@
                     <td class="px-6 py-5 text-center">
                         <span class="text-4xl font-black text-emerald-400 bg-gray-950 px-5 py-2 rounded-2xl border border-gray-800 shadow">${item.cantidad}</span>
                     </td>
-                    <td class="px-6 py-5 text-right font-bold text-2xl text-gray-300">$${item.precio.toFixed(2)}</td>
-                    <td class="px-6 py-5 text-right font-black text-4xl text-emerald-400">$${subtotal.toFixed(2)}</td>
+                    <td class="px-6 py-5 text-right font-bold text-2xl text-gray-300">${formatearMoneda(item.precio)}</td>
+                    <td class="px-6 py-5 text-right font-black text-4xl text-emerald-400">${formatearMoneda(subtotal)}</td>
                     <td class="px-6 py-5 text-center">
                         <button onclick="eliminarDelCarrito(${index})" class="bg-red-950/60 hover:bg-red-900 border border-red-800 text-red-400 hover:text-white px-5 py-3 rounded-2xl text-xl transition">
                             <i class="fa-solid fa-trash"></i>
@@ -355,11 +351,11 @@
 
             const totalPagar = calcularTotalFinal();
             document.getElementById('lbl-cant-items').innerText = `${totalUnidades} unidad(es)`;
-            document.getElementById('lbl-total-pagar').innerText = `$${totalPagar.toFixed(2)}`;
+            document.getElementById('lbl-total-pagar').innerText = formatearMoneda(totalPagar);
 
             const infoExtraElem = document.getElementById('lbl-info-extra');
             if (montoExtraActual > 0) {
-                infoExtraElem.innerText = `TOTAL A COBRAR (Inc. Extra: $${montoExtraActual.toFixed(2)})`;
+                infoExtraElem.innerText = `TOTAL (Inc. Extra: ${formatearMoneda(montoExtraActual)})`;
                 infoExtraElem.className = "text-xs font-black text-cyan-400 uppercase tracking-widest block";
             } else {
                 infoExtraElem.innerText = `TOTAL A COBRAR`;
@@ -377,7 +373,7 @@
         }
 
         function vaciarCarrito() {
-            if (carrito.length === 0) return;
+            if (carrito.length === 0 && montoExtraActual === 0) return;
             carrito = [];
             montoExtraActual = 0;
             renderizarCarrito();
@@ -385,23 +381,20 @@
             document.getElementById('input-busqueda').focus();
         }
 
-        // VENTANA EMERGENTE DE CAMBIO (Tecla c)
         function abrirModalCambio() {
-            if (carrito.length === 0) {
-                lanzarToast("El carrito está vacío", "error");
+            const total = calcularTotalFinal();
+            if (total <= 0) {
+                lanzarToast("No hay monto para calcular", "error");
                 return;
             }
             const modal = document.getElementById('modal-cambio');
-            const total = calcularTotalFinal();
-            document.getElementById('modal-cambio-total').innerText = `$${total.toFixed(2)}`;
+            document.getElementById('modal-cambio-total').innerText = formatearMoneda(total);
             document.getElementById('input-efectivo-recibido').value = '';
-            document.getElementById('lbl-vuelto-resultado').innerText = '$0.00';
+            document.getElementById('lbl-vuelto-resultado').innerText = '$0';
             
             modal.classList.remove('hidden');
             modal.classList.add('flex');
-            setTimeout(() => {
-                document.getElementById('input-efectivo-recibido').focus();
-            }, 50);
+            setTimeout(() => document.getElementById('input-efectivo-recibido').focus(), 50);
         }
 
         function cerrarModalCambio() {
@@ -415,22 +408,18 @@
             const recibido = parseFloat(document.getElementById('input-efectivo-recibido').value);
             const total = calcularTotalFinal();
             if (!isNaN(recibido) && recibido >= total) {
-                const vuelto = recibido - total;
-                document.getElementById('lbl-vuelto-resultado').innerText = `$${vuelto.toFixed(2)}`;
+                document.getElementById('lbl-vuelto-resultado').innerText = formatearMoneda(recibido - total);
             } else {
-                document.getElementById('lbl-vuelto-resultado').innerText = '$0.00';
+                document.getElementById('lbl-vuelto-resultado').innerText = '$0';
             }
         }
 
-        // VENTANA EMERGENTE DE EXTRA (Tecla e)
         function abrirModalExtra() {
             const modal = document.getElementById('modal-extra');
             document.getElementById('input-monto-extra').value = montoExtraActual > 0 ? montoExtraActual : '';
             modal.classList.remove('hidden');
             modal.classList.add('flex');
-            setTimeout(() => {
-                document.getElementById('input-monto-extra').focus();
-            }, 50);
+            setTimeout(() => document.getElementById('input-monto-extra').focus(), 50);
         }
 
         function cerrarModalExtra(guardar = true) {
@@ -440,7 +429,7 @@
                 montoExtraActual = isNaN(val) || val < 0 ? 0 : val;
                 renderizarCarrito();
                 if (montoExtraActual > 0) {
-                    lanzarToast(`Extra agregado: $${montoExtraActual.toFixed(2)}`, "exito");
+                    lanzarToast(`Extra: ${formatearMoneda(montoExtraActual)}`, "exito");
                 } else {
                     lanzarToast("Sin monto extra", "info");
                 }
@@ -450,22 +439,47 @@
             document.getElementById('input-busqueda').focus();
         }
 
+        // CIERRE DE VENTA (SOLO CON TECLA 'K') CON SOPORTE PARA EXTRA Y PRODUCTO COMODÍN
         async function confirmarVentaRapida() {
-            if (carrito.length === 0) return;
-
             const total = calcularTotalFinal();
-            
-            const pagosPayload = [{ medio_pago: 'Efectivo', monto: total }];
+            if (total <= 0) {
+                lanzarToast("No hay nada para cobrar", "error");
+                return;
+            }
+
+            let detallesPayload = carrito.map(item => ({
+                producto_id: item.producto_id,
+                cantidad: item.cantidad
+            }));
+
+            // Si hay monto extra, utilizamos el producto comodín "Varios / Extra" (o el primero disponible)
             if (montoExtraActual > 0) {
-                pagosPayload.push({ medio_pago: 'Extra / Ajuste', monto: montoExtraActual });
+                const prodComodin = catalogoProductos.find(p => 
+                    ['varios', 'extra', 'pan', 'ajuste'].some(k => String(p.nombre || '').toLowerCase().includes(k))
+                ) || (carrito.length > 0 ? catalogoProductos.find(p => p.id === carrito[0].producto_id) : catalogoProductos[0]);
+
+                if (!prodComodin || !prodComodin.precio || prodComodin.precio <= 0) {
+                    lanzarToast("Creá un producto comodín llamado 'Varios / Extra' con precio $1", "error");
+                    return;
+                }
+
+                const precioComodin = parseFloat(prodComodin.precio);
+                const cantidadFraccion = Number((montoExtraActual / precioComodin).toFixed(4));
+                
+                const existente = detallesPayload.find(d => d.producto_id === prodComodin.id);
+                if (existente) {
+                    existente.cantidad = Number((existente.cantidad + cantidadFraccion).toFixed(4));
+                } else {
+                    detallesPayload.push({
+                        producto_id: prodComodin.id,
+                        cantidad: cantidadFraccion
+                    });
+                }
             }
 
             const payload = {
-                detalles: carrito.map(item => ({
-                    producto_id: item.producto_id,
-                    cantidad: item.cantidad
-                })),
-                pagos: pagosPayload
+                detalles: detallesPayload,
+                pagos: [{ medio_pago: 'Efectivo', monto: total }]
             };
 
             try {
@@ -513,73 +527,57 @@
             }, 1800);
         }
 
-        // GESTIÓN DE ATAJOS DE TECLADO GLOBALES
+        // ATAJOS GLOBALES DE TECLADO
         window.addEventListener('keydown', (e) => {
             const inputBusqueda = document.getElementById('input-busqueda');
             const modalCambioVisible = !document.getElementById('modal-cambio').classList.contains('hidden');
             const modalExtraVisible = !document.getElementById('modal-extra').classList.contains('hidden');
 
-            // 1. Control dentro del Modal de Cambio
             if (modalCambioVisible) {
-                if (e.key === 'c' || e.key === 'C' || e.key === 'Enter') {
+                if (e.key === 'c' || e.key === 'C' || e.key === 'Enter' || e.key === 'Escape') {
                     e.preventDefault();
                     cerrarModalCambio();
                 }
                 return;
             }
 
-            // 2. Control dentro del Modal de Extra
             if (modalExtraVisible) {
                 if (e.key === 'e' || e.key === 'E' || e.key === 'Enter') {
                     e.preventDefault();
                     cerrarModalExtra(true);
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    cerrarModalExtra(false);
                 }
                 return;
             }
 
-            // 3. Atajos globales
-            const buscadorActivo = (document.activeElement === inputBusqueda);
-            const buscadorVacio = inputBusqueda.value.trim() === '';
+            const buscadorVacio = (inputBusqueda.value.trim() === '');
+            const enBuscador = (document.activeElement === inputBusqueda);
 
-            if (!buscadorActivo || buscadorVacio) {
-                
-                if (e.key === 'Backspace' || e.key === 'ArrowLeft') {
-                    if (carrito.length > 0) {
-                        e.preventDefault();
-                        carrito.pop();
-                        renderizarCarrito();
-                        lanzarToast("Último producto quitado", "info");
-                    }
-                }
-
-                if (e.key === 'b' || e.key === 'B') {
-                    e.preventDefault();
-                    vaciarCarrito();
-                }
-
-                if (e.key === 'k' || e.key === 'K') {
-                    e.preventDefault();
-                    if (carrito.length > 0) {
-                        confirmarVentaRapida();
-                    } else {
-                        lanzarToast("No hay productos en el carrito", "error");
-                    }
-                }
-
-                if ((e.key === 'c' || e.key === 'C') && buscadorVacio) {
-                    e.preventDefault();
-                    abrirModalCambio();
-                }
-
-                if ((e.key === 'e' || e.key === 'E') && buscadorVacio) {
-                    e.preventDefault();
-                    abrirModalExtra();
-                }
+            if (enBuscador && !buscadorVacio) {
+                return;
             }
 
-            if (e.key === 'Enter' && buscadorActivo && buscadorVacio && carrito.length > 0) {
+            if (e.key === 'Backspace' || e.key === 'ArrowLeft') {
+                if (carrito.length > 0) {
+                    e.preventDefault();
+                    carrito.pop();
+                    renderizarCarrito();
+                    lanzarToast("Último producto quitado", "info");
+                }
+            } else if (e.key === 'b' || e.key === 'B') {
+                e.preventDefault();
+                vaciarCarrito();
+            } else if (e.key === 'k' || e.key === 'K') {
                 e.preventDefault();
                 confirmarVentaRapida();
+            } else if (e.key === 'c' || e.key === 'C') {
+                e.preventDefault();
+                abrirModalCambio();
+            } else if (e.key === 'e' || e.key === 'E') {
+                e.preventDefault();
+                abrirModalExtra();
             }
         });
     </script>
