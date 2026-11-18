@@ -75,27 +75,29 @@
             </div>
         </div>
 
-        <!-- BARRA INFERIOR CON TOTAL Y ATAJOS -->
+        <!-- BARRA INFERIOR CON TOTAL Y ATAJOS AMPLIADOS -->
         <div class="bg-gray-900 border-2 border-emerald-500/50 rounded-2xl p-4 flex items-center justify-between shadow-2xl shrink-0">
             
-            <div class="flex items-center gap-3 text-gray-300 font-bold text-sm lg:text-base flex-wrap">
-                <span class="flex items-center gap-1.5 bg-gray-950 px-3 py-1.5 rounded-xl border border-gray-800">
-                    <kbd class="bg-gray-800 text-amber-400 px-2 py-0.5 rounded border border-gray-700 font-black">←</kbd> o <kbd class="bg-gray-800 text-amber-400 px-2 py-0.5 rounded border border-gray-700 font-black">⌫</kbd> Borrar ítem
+            <!-- AYUDA DE ATAJOS MÁS GRANDE Y LIMPIA -->
+            <div class="flex items-center gap-4 text-gray-200 font-extrabold text-lg lg:text-xl flex-wrap">
+                <span class="flex items-center gap-2 bg-gray-950 px-4 py-2 rounded-xl border border-gray-800">
+                    <kbd class="bg-gray-800 text-amber-400 px-2.5 py-1 rounded border border-gray-700 font-black text-lg">←</kbd> Borrar ítem
                 </span>
-                <span class="flex items-center gap-1.5 bg-gray-950 px-3 py-1.5 rounded-xl border border-gray-800">
-                    <kbd class="bg-gray-800 text-rose-400 px-2 py-0.5 rounded border border-gray-700 font-black">b</kbd> Vaciar todo
+                <span class="flex items-center gap-2 bg-gray-950 px-4 py-2 rounded-xl border border-gray-800">
+                    <kbd class="bg-gray-800 text-rose-400 px-2.5 py-1 rounded border border-gray-700 font-black text-lg">b</kbd> Vaciar todo
                 </span>
-                <span class="flex items-center gap-1.5 bg-gray-950 px-3 py-1.5 rounded-xl border border-gray-800">
-                    <kbd class="bg-gray-800 text-cyan-400 px-2 py-0.5 rounded border border-gray-700 font-black">e</kbd> Extra
+                <span class="flex items-center gap-2 bg-gray-950 px-4 py-2 rounded-xl border border-gray-800">
+                    <kbd class="bg-gray-800 text-cyan-400 px-2.5 py-1 rounded border border-gray-700 font-black text-lg">e</kbd> Extra
                 </span>
-                <span class="flex items-center gap-1.5 bg-gray-950 px-3 py-1.5 rounded-xl border border-gray-800">
-                    <kbd class="bg-gray-800 text-amber-400 px-2 py-0.5 rounded border border-gray-700 font-black">c</kbd> Cambio
+                <span class="flex items-center gap-2 bg-gray-950 px-4 py-2 rounded-xl border border-gray-800">
+                    <kbd class="bg-gray-800 text-amber-400 px-2.5 py-1 rounded border border-gray-700 font-black text-lg">c</kbd> Cambio
                 </span>
-                <span class="flex items-center gap-1.5 bg-gray-950 px-3 py-1.5 rounded-xl border border-gray-800">
-                    <kbd class="bg-gray-800 text-emerald-400 px-2 py-0.5 rounded border border-gray-700 font-black">k</kbd> Finalizar venta
+                <span class="flex items-center gap-2 bg-gray-950 px-4 py-2 rounded-xl border border-gray-800">
+                    <kbd class="bg-gray-800 text-emerald-400 px-2.5 py-1 rounded border border-gray-700 font-black text-lg">k</kbd> Finalizar venta
                 </span>
             </div>
 
+            <!-- MONTO TOTAL GIGANTE -->
             <div class="flex items-center gap-5 shrink-0">
                 <div class="text-right">
                     <span class="text-xs font-black text-emerald-400 uppercase tracking-widest block" id="lbl-info-extra">TOTAL A COBRAR</span>
@@ -162,10 +164,10 @@
         let productosFiltradosActuales = [];
         let montoExtraActual = 0;
 
-        // Formateador sin decimales innecesarios ($3000 en lugar de $3000.00)
+        // Formateador con separador de miles y sin decimales (ej: $10.000)
         function formatearMoneda(valor) {
             const num = Math.round(Number(valor) || 0);
-            return `$${num}`;
+            return `$${num.toLocaleString('es-AR')}`;
         }
 
         document.addEventListener("DOMContentLoaded", () => {
@@ -245,7 +247,6 @@
             dropdown.classList.remove('hidden');
         }
 
-        // ENTER SOLO SELECCIONA PRODUCTOS (NUNCA CIERRA LA VENTA)
         async function evaluarTeclaBusqueda(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -439,7 +440,6 @@
             document.getElementById('input-busqueda').focus();
         }
 
-        // CIERRE DE VENTA (SOLO CON TECLA 'K') CON SOPORTE PARA EXTRA Y PRODUCTO COMODÍN
         async function confirmarVentaRapida() {
             const total = calcularTotalFinal();
             if (total <= 0) {
@@ -452,7 +452,6 @@
                 cantidad: item.cantidad
             }));
 
-            // Si hay monto extra, utilizamos el producto comodín "Varios / Extra" (o el primero disponible)
             if (montoExtraActual > 0) {
                 const prodComodin = catalogoProductos.find(p => 
                     ['varios', 'extra', 'pan', 'ajuste'].some(k => String(p.nombre || '').toLowerCase().includes(k))
@@ -527,7 +526,6 @@
             }, 1800);
         }
 
-        // ATAJOS GLOBALES DE TECLADO
         window.addEventListener('keydown', (e) => {
             const inputBusqueda = document.getElementById('input-busqueda');
             const modalCambioVisible = !document.getElementById('modal-cambio').classList.contains('hidden');
